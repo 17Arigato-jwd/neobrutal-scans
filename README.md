@@ -106,6 +106,22 @@ To modify settings, open your userscript manager's dashboard, select **Neobrutal
 
 ---
 
+## 🗺️ Roadmap & Planned Features
+
+- [ ] **Multi-Site Expansion**
+  - [ ] Add support for `mangaread.org` (ad debloating, layout cleanup, and reader integration).
+- [ ] **Browse & Homepage Overhaul**
+  - [ ] **Netflix-style Layout**: Transform standard home/browse catalogs into a Netflix-inspired streaming UI with prominent featured hero banners, backdrop previews, and clean categorical shelves.
+  - [ ] **Horizontal Carousel Scrolling**: Add horizontal mouse-wheel scrolling (mapping vertical wheel delta to horizontal rail scroll) and drag-to-scroll interaction for carousel rails.
+- [ ] **Reader Experience Enhancements**
+  - [ ] **Immersive Reader Header (DemonicScans)**: Suppress the default site navigation header while reading chapters on DemonicScans. Replace it with an AsuraScans-style overlay header (series title, chapter number/title, and series overview link) that toggles smoothly on page tap/click in unison with the reader dock.
+  - [ ] **Bottom Dock Chapter Selector**: Add an interactive chapter selection dropdown directly inside the floating bottom dock (`#md-dock`) for instant navigation between chapters without manual scrolling.
+- [ ] **DemonicScans Comment Section Upgrades**
+  - [ ] **Demon Rank Gradients**: Add distinctive custom gradient styles for user comment badges corresponding to different demon tiers and roles.
+  - [ ] **High-Contrast Dark Comment Box**: Render user/author comment boxes in deep black (`#000000`) during dark mode instead of the default purple card surface.
+
+---
+
 ## 📄 License
 
 This project is licensed under the [MIT License](LICENSE).
