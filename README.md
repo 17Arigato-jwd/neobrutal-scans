@@ -119,6 +119,8 @@ To modify settings, open your userscript manager's dashboard, select **Neobrutal
 - [ ] **DemonicScans Comment Section Upgrades**
   - [ ] **Demon Rank Gradients**: Add distinctive custom gradient styles for user comment badges corresponding to different demon tiers and roles.
   - [ ] **High-Contrast Dark Comment Box**: Render user/author comment boxes in deep black (`#000000`) during dark mode instead of the default purple card surface.
+- [ ] **Mobile & UI Optimizations**
+  - [ ] **Mobile Dark/Light Mode Toggle Optimization**: Refine the dark/light mode toggle switch on mobile viewports for improved touch responsiveness, optimized tap target sizing, and seamless header positioning without crowding navigation controls.
 
 ---
 
