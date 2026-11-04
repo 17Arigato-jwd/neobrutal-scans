@@ -7,6 +7,7 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+*.agents
 *~
 
 # Logs and Temporary Files
@@ -16,3 +17,4 @@ Thumbs.db
 
 # Dependencies (if any added in future)
 node_modules/
+
