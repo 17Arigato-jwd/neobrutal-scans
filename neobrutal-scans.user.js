@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans/Asurascans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.6
+// @version      2026-11-02.7
 // @description  Neobrutalist skin for DemonicScans and Asura Scans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -407,101 +407,129 @@
             transition: opacity .25s ease, transform .25s ease;
         }
         #md-hero .md-hero-cta {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            flex-wrap: wrap !important;
+            margin-bottom: 22px !important;
+            position: relative !important;
+            z-index: 5 !important;
         }
         #md-hero .md-hero-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 20px;
-            border: var(--bw) solid #000;
-            border-radius: var(--r);
-            box-shadow: 3px 3px 0 #000;
-            font: 900 14px/1 'DM Sans', sans-serif;
-            text-transform: uppercase;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            padding: 10px 22px !important;
+            min-height: 42px !important;
+            box-sizing: border-box !important;
+            border: var(--bw) solid #000 !important;
+            border-radius: var(--r) !important;
+            box-shadow: 3px 3px 0 #000 !important;
+            font: 900 14px/1 'DM Sans', sans-serif !important;
+            text-transform: uppercase !important;
             text-decoration: none !important;
-            cursor: pointer;
-            transition: transform .15s ease, box-shadow .15s ease;
+            cursor: pointer !important;
+            position: relative !important;
+            z-index: 5 !important;
+            transition: transform .15s ease, box-shadow .15s ease !important;
         }
         #md-hero .md-hero-play {
-            background: var(--yellow);
+            background: var(--yellow) !important;
             color: #000 !important;
         }
         #md-hero .md-hero-more {
-            background: #fff;
+            background: #fff !important;
             color: #000 !important;
         }
         #md-hero .md-hero-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 5px 5px 0 #000;
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 5px 5px 0 #000 !important;
         }
 
         /* Series thumbnail carousel below buttons with falling progress bar */
         #md-hero .md-hero-thumbs {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 20px;
-            padding: 4px 2px;
-            overflow-x: auto;
-            scrollbar-width: none;
-            -webkit-overflow-scrolling: touch;
-            max-width: 100%;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin: 0 !important;
+            padding: 4px 2px 8px !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+            -webkit-overflow-scrolling: touch !important;
+            max-width: 100% !important;
+            position: relative !important;
+            z-index: 4 !important;
         }
-        #md-hero .md-hero-thumbs::-webkit-scrollbar { display: none; }
+        #md-hero .md-hero-thumbs::-webkit-scrollbar { display: none !important; }
         #md-hero .md-hero-thumb {
-            position: relative;
-            flex: 0 0 44px;
-            width: 44px;
-            height: 64px;
-            aspect-ratio: 2 / 3;
-            padding: 0;
-            margin: 0;
-            border: 2px solid #000;
-            border-radius: 6px;
-            overflow: hidden;
-            cursor: pointer;
-            background: #111;
-            box-shadow: 2px 2px 0 #000;
-            opacity: 0.6;
-            transition: transform .2s ease, opacity .2s ease, border-color .2s ease, box-shadow .2s ease;
+            position: relative !important;
+            flex: 0 0 46px !important;
+            width: 46px !important;
+            min-width: 46px !important;
+            max-width: 46px !important;
+            height: 68px !important;
+            min-height: 68px !important;
+            max-height: 68px !important;
+            aspect-ratio: 2 / 3 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            outline: none !important;
+            border: 2px solid #000 !important;
+            border-radius: 6px !important;
+            overflow: hidden !important;
+            cursor: pointer !important;
+            background: #111 !important;
+            box-shadow: 2px 2px 0 #000 !important;
+            opacity: 0.65 !important;
+            transition: transform .2s ease, opacity .2s ease, border-color .2s ease, box-shadow .2s ease !important;
         }
         #md-hero .md-hero-thumb:hover {
-            opacity: 0.95;
-            transform: translateY(-2px);
-            box-shadow: 3px 3px 0 #000;
+            opacity: 0.95 !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 3px 3px 0 #000 !important;
         }
         #md-hero .md-hero-thumb.is-active {
-            opacity: 1;
+            opacity: 1 !important;
             border-color: var(--yellow) !important;
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 3px 3px 0 #000;
+            transform: translateY(-3px) scale(1.05) !important;
+            box-shadow: 0 0 0 2px var(--yellow), 3px 3px 0 #000 !important;
         }
         #md-hero .md-hero-thumb img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none;
+            display: block !important;
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            pointer-events: none !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
         }
         #md-hero .md-thumb-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 0%;
-            background: linear-gradient(to bottom, rgba(254, 228, 64, 0.45) 0%, rgba(254, 228, 64, 0.22) 100%);
-            border-bottom: 3px solid var(--yellow);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            pointer-events: none;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 0% !important;
+            background: linear-gradient(to bottom, rgba(254, 228, 64, 0.45) 0%, rgba(254, 228, 64, 0.22) 100%) !important;
+            border-bottom: 2.5px solid var(--yellow) !important;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5) !important;
+            pointer-events: none !important;
+            z-index: 2 !important;
         }
         #md-hero .md-hero-thumb.is-active .md-thumb-fill {
-            animation: mdProgressFall 5.5s linear forwards;
+            animation: mdProgressFall 5.5s linear forwards !important;
         }
         #md-hero:hover .md-thumb-fill {
-            animation-play-state: paused;
+            animation-play-state: paused !important;
         }
         @keyframes mdProgressFall {
             0% { height: 0%; }
@@ -1649,14 +1677,22 @@
         /* the wordmark PNG is white: only flip it black on light surfaces */
         html[data-md-theme="dark"] :is(nav, #menu, #footer-container) img[src*="title"] { filter: none !important; }
         html[data-md-theme="dark"] #md-hero .md-thumb-fill {
-            background: linear-gradient(to bottom, rgba(193, 176, 255, 0.45) 0%, rgba(124, 92, 255, 0.2) 100%);
-            border-bottom-color: var(--violet);
+            background: linear-gradient(to bottom, rgba(193, 176, 255, 0.45) 0%, rgba(124, 92, 255, 0.2) 100%) !important;
+            border-bottom-color: var(--violet) !important;
         }
         html[data-md-theme="dark"] #md-hero .md-hero-thumb.is-active {
             border-color: var(--violet) !important;
-            box-shadow: 0 0 0 2px var(--violet), 3px 3px 0 #000;
+            box-shadow: 0 0 0 2px var(--violet), 3px 3px 0 #000 !important;
         }
-        html[data-md-theme="dark"] #md-hero :is(.md-hero-play, .md-hero-tag) {
+        html[data-md-theme="dark"] #md-hero .md-hero-play {
+            background: var(--yellow) !important;
+            color: #fff !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-more {
+            background: #fff !important;
+            color: #000 !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-tag {
             color: #fff !important;
         }
 
@@ -1847,7 +1883,7 @@
     const DATE = /^\d{4}-\d{2}-\d{2}$/;
     const SKIP_TAGS = /^(STYLE|SCRIPT|LINK|TEMPLATE|NOSCRIPT)$/;
     // Things we must never treat as a content track or collapse as an "empty block"
-    const UI_ZONES = 'header, nav, footer, #md-top, #md-dock, #menu, #forced-Search, #resultbox, #footer-container, #cw-comments, #manga-info-container, .chapter-info';
+    const UI_ZONES = 'header, nav, footer, #md-hero, #md-top, #md-dock, #menu, #forced-Search, #resultbox, #footer-container, #cw-comments, #manga-info-container, .chapter-info';
     const VOID_SAFE = `${UI_ZONES}, [data-mdc], [data-md="rail"], [data-md="grid"], .shadowimg, .owl-nav, .owl-dots`;
 
     const pad = n => String(n).padStart(2, '0');
@@ -1946,7 +1982,7 @@
     }
 
     function tagCell(cell, kind) {
-        if (cell.nodeType !== 1 || SKIP_TAGS.test(cell.tagName)) return;
+        if (cell.nodeType !== 1 || SKIP_TAGS.test(cell.tagName) || cell.closest('#md-hero')) return;
         cell.dataset.mdc = kind;
         if (cell.dataset.mdDone) return;
 
@@ -2101,7 +2137,7 @@
     }
 
     function buildHead(sec) {
-        if (sec.dataset.mdHead) return;
+        if (sec.closest('#md-hero') || sec.dataset.mdHead) return;
         const heading = findHeading(sec);
         if (!heading && document.readyState !== 'complete') return;   // retry later
         sec.dataset.mdHead = '1';
@@ -2156,7 +2192,7 @@
     function organize() {
         // 1. classify tracks
         for (const t of findTracks()) {
-            if (t.dataset.md) continue;
+            if (t.closest('#md-hero') || t.dataset.md) continue;
             const wide = t.scrollWidth > t.clientWidth + 40 ||
                 (t.parentElement && t.parentElement.scrollWidth > t.parentElement.clientWidth + 40);
             t.dataset.md = (t.querySelector(CH) && !wide) ? 'grid' : 'rail';
@@ -2164,6 +2200,7 @@
 
         // 2. grids made of several row-containers -> parent is the grid, rows dissolve
         document.querySelectorAll('[data-md="grid"],[data-md="gridrow"]').forEach(t => {
+            if (t.closest('#md-hero')) return;
             const p = t.parentElement;
             if (!p || p === document.body) return;
             const sibs = [...p.children].filter(c => c.dataset.md === 'grid' || c.dataset.md === 'gridrow');
@@ -2175,6 +2212,7 @@
 
         // 3. tag cells, wrappers, headings
         document.querySelectorAll('[data-md="rail"],[data-md="grid"]').forEach(sec => {
+            if (sec.closest('#md-hero')) return;
             for (let p = sec.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement)
                 p.dataset.mdw = '1';
             const kind = sec.dataset.md;
@@ -3971,7 +4009,7 @@
     addEventListener('load', schedule);
     new MutationObserver(muts => {
         // ignore our own widgets (progress text updates etc.) so they don't re-trigger a full pass
-        if (muts.every(m => { const el = m.target.nodeType === 1 ? m.target : m.target.parentElement; return el && el.closest('#md-dock, #md-toast, #md-scrim, #md-sel-bar'); })) return;
+        if (muts.every(m => { const el = m.target.nodeType === 1 ? m.target : m.target.parentElement; return el && el.closest('#md-hero, #md-dock, #md-toast, #md-scrim, #md-sel-bar'); })) return;
         schedule();
     }).observe(root, { childList: true, subtree: true });
 })();
