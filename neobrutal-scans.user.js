@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans/Asurascans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.2
+// @version      2026-11-02.3
 // @description  Neobrutalist skin for DemonicScans and Asura Scans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -339,17 +339,136 @@
         #md-dock .md-chap { max-width: 150px; min-width: 0; height: 36px; padding: 0 8px; font: 700 12px/1 inherit; color: var(--ink); background: var(--card); border: var(--bw) solid var(--bd); border-radius: var(--r); box-shadow: var(--sh-sm); cursor: pointer; }
 
         /* Netflix-style hero (layout only, tokens untouched) */
-        #md-hero { position: relative; width: var(--col, min(1200px, 94vw)); margin: 18px auto 8px; min-height: clamp(260px, 36vw, 440px); display: flex; align-items: flex-end; overflow: hidden; border: var(--bw) solid var(--bd); border-radius: var(--r); box-shadow: var(--sh); background: var(--card); box-sizing: border-box; }
-        #md-hero .md-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center 25%; filter: saturate(1.05); }
-        #md-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.45) 50%, transparent 80%), linear-gradient(to right, rgba(0,0,0,.75) 0%, rgba(0,0,0,.35) 45%, transparent 75%); pointer-events: none; }
-        #md-hero .md-hero-body { position: relative; z-index: 2; padding: clamp(16px, 3.5vw, 36px); max-width: 680px; color: #fff; }
-        #md-hero .md-hero-tag { display: inline-block; padding: 3px 10px; margin-bottom: 10px; background: var(--yellow); color: #000; border: 2px solid #000; border-radius: 6px; font: 900 11.5px/1.4 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: .08em; box-shadow: 2px 2px 0 #000; }
-        #md-hero .md-hero-title { margin: 0 0 16px !important; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; color: #fff !important; font: 900 clamp(24px, 4.2vw, 46px)/1.05 'DM Sans', sans-serif !important; text-transform: uppercase; text-shadow: 3px 3px 0 #000; }
-        #md-hero .md-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
-        #md-hero .md-hero-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: var(--bw) solid #000; border-radius: var(--r); box-shadow: 3px 3px 0 #000; font: 900 14px/1 'DM Sans', sans-serif; text-transform: uppercase; text-decoration: none !important; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
-        #md-hero .md-hero-play { background: var(--yellow); color: #000 !important; }
-        #md-hero .md-hero-more { background: #fff; color: #000 !important; }
-        #md-hero .md-hero-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #000; }
+        #md-hero {
+            position: relative;
+            width: var(--col, min(1200px, 94vw));
+            margin: 18px auto 14px;
+            min-height: clamp(280px, 36vw, 440px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            border: var(--bw) solid var(--bd);
+            border-radius: var(--r);
+            box-shadow: var(--sh);
+            background: #0b0813;
+            box-sizing: border-box;
+            padding: clamp(20px, 4vw, 40px);
+            gap: 24px;
+        }
+        #md-hero .md-hero-bg {
+            position: absolute;
+            inset: -20px;
+            background-size: cover;
+            background-position: center 25%;
+            filter: blur(16px) brightness(0.32) saturate(1.2);
+            transform: scale(1.08);
+            pointer-events: none;
+        }
+        #md-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.2) 60%, transparent 100%),
+                        linear-gradient(to right, rgba(0,0,0,.85) 0%, rgba(0,0,0,.4) 55%, transparent 100%);
+            pointer-events: none;
+        }
+        #md-hero .md-hero-body {
+            position: relative;
+            z-index: 2;
+            max-width: 620px;
+            color: #fff;
+            flex: 1 1 auto;
+        }
+        #md-hero .md-hero-tag {
+            display: inline-block;
+            padding: 3px 10px;
+            margin-bottom: 12px;
+            background: var(--yellow);
+            color: #000;
+            border: 2px solid #000;
+            border-radius: 6px;
+            font: 900 11.5px/1.4 'DM Sans', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            box-shadow: 2px 2px 0 #000;
+        }
+        #md-hero .md-hero-title {
+            margin: 0 0 16px !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            color: #fff !important;
+            font: 900 clamp(24px, 4vw, 44px)/1.1 'DM Sans', sans-serif !important;
+            text-transform: uppercase;
+            text-shadow: 3px 3px 0 #000;
+        }
+        #md-hero .md-hero-cta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        #md-hero .md-hero-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border: var(--bw) solid #000;
+            border-radius: var(--r);
+            box-shadow: 3px 3px 0 #000;
+            font: 900 14px/1 'DM Sans', sans-serif;
+            text-transform: uppercase;
+            text-decoration: none !important;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        #md-hero .md-hero-play {
+            background: var(--yellow);
+            color: #000 !important;
+        }
+        #md-hero .md-hero-more {
+            background: #fff;
+            color: #000 !important;
+        }
+        #md-hero .md-hero-btn:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 5px 5px 0 #000;
+        }
+
+        /* Tilted book card on the right */
+        #md-hero .md-hero-card {
+            position: relative;
+            z-index: 2;
+            flex: 0 0 clamp(130px, 16vw, 210px);
+            aspect-ratio: 2 / 3;
+            border: var(--bw) solid #000;
+            border-radius: 12px;
+            box-shadow: 8px 8px 0 #000;
+            overflow: hidden;
+            transform: rotate(6deg);
+            transform-origin: center center;
+            transition: transform .25s cubic-bezier(.2, 1.2, .4, 1), box-shadow .25s ease;
+            background: #111;
+            display: block;
+            text-decoration: none !important;
+        }
+        #md-hero .md-hero-card:hover {
+            transform: rotate(2deg) scale(1.04) translate(-2px, -4px);
+            box-shadow: 12px 12px 0 #000;
+        }
+        #md-hero .md-hero-card img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+        }
+
+        @media (max-width: 640px) {
+            #md-hero { flex-direction: column; align-items: flex-start; padding: 18px 16px; min-height: 0; }
+            #md-hero .md-hero-card { display: none; }
+        }
         html[data-md-page="list"] body > :not(nav) .main-width > h1.section-title a, html[data-md-page="list"] .main-width > .section-title { font-weight: 900; letter-spacing: .02em; }
         /* home carousels: Netflix-style rows */
         html[data-md-page="list"] [data-md="rail"] { cursor: grab; scroll-behavior: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -1963,10 +2082,28 @@
         if (!host) return;
         const hero = document.createElement('section');
         hero.id = 'md-hero';
-        hero.innerHTML = '<div class="md-hero-bg"></div><div class="md-hero-body"><span class="md-hero-tag">Featured</span><h2 class="md-hero-title"></h2><div class="md-hero-cta"><a class="md-hero-btn md-hero-play">&#9654; Read now</a><a class="md-hero-btn md-hero-more">More info</a></div></div>';
+        hero.innerHTML = `
+            <div class="md-hero-bg"></div>
+            <div class="md-hero-body">
+                <span class="md-hero-tag">Featured</span>
+                <h2 class="md-hero-title"></h2>
+                <div class="md-hero-cta">
+                    <a class="md-hero-btn md-hero-play">&#9654; Read now</a>
+                    <a class="md-hero-btn md-hero-more">More info</a>
+                </div>
+            </div>
+            <a class="md-hero-card" title="Read now">
+                <img alt="Book cover">
+            </a>
+        `;
         hero.querySelector('.md-hero-bg').style.backgroundImage = 'url("' + found.src.replace(/"/g, '%22') + '")';
         hero.querySelector('.md-hero-title').textContent = found.title;
-        hero.querySelectorAll('a.md-hero-btn').forEach(b => { b.href = found.a.href; });
+        hero.querySelectorAll('a.md-hero-btn, a.md-hero-card').forEach(b => { b.href = found.a.href; });
+        const cardImg = hero.querySelector('.md-hero-card img');
+        if (cardImg) {
+            cardImg.src = found.src;
+            cardImg.alt = found.title;
+        }
         host.before(hero);
     }
 
