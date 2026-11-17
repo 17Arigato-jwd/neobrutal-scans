@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.5
+// @version      2026-11-02.6
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -1484,6 +1484,17 @@
         }
         /* the wordmark PNG is white: only flip it black on light surfaces */
         html[data-md-theme="dark"] :is(nav, #menu, #footer-container) img[src*="title"] { filter: none !important; }
+        html[data-md-theme="dark"] #md-hero .md-thumb-fill {
+            background: linear-gradient(to bottom, rgba(193, 176, 255, 0.45) 0%, rgba(124, 92, 255, 0.2) 100%);
+            border-bottom-color: var(--violet);
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-thumb.is-active {
+            border-color: var(--violet) !important;
+            box-shadow: 0 0 0 2px var(--violet), 3px 3px 0 #000;
+        }
+        html[data-md-theme="dark"] #md-hero :is(.md-hero-play, .md-hero-tag) {
+            color: #fff !important;
+        }
 
         /* ===== badges / dates / pills: always one tidy row ===== */
         [data-md="row"] { flex-wrap: nowrap !important; gap: 4px 6px !important; }
@@ -2034,31 +2045,72 @@
 
     /* ---------- Netflix-style hero banner: timed carousel for "Most Viewed Today" ---------- */
     function buildHero() {
-        if (document.querySelector('#md-hero')) return;
-        const rails = [...document.querySelectorAll('[data-md="rail"], .owl-carousel .owl-stage, .owl-carousel')];
-        if (!rails.length) return;
-        const rail = rails.find(r => {
-            const txt = (r.closest('.main-width, section, div')?.textContent || '');
-            return /most\s*viewed/i.test(txt);
-        }) || rails[0];
-
-        const cards = [...rail.children].filter(c => !c.classList.contains('cloned'));
-        const candidates = cards.length ? cards : [...rail.children];
-        const items = [];
-        for (const card of candidates) {
-            const a = card.matches('a[href]') ? card : card.querySelector('a[href]');
-            const img = card.querySelector('img');
-            if (!a || !img) continue;
-            const src = img.currentSrc || img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
-            if (!src || src.startsWith('data:image/svg') || /placeholder|blank/i.test(src)) continue;
-            const tEl = card.querySelector('[data-md="title"], h2, h3, .title');
-            const title = (tEl && tEl.textContent.trim()) || img.alt || a.title || '';
-            items.push({ href: a.href, src, title });
+        // 1. Locate the "Most Viewed Today" carousel and its heading
+        let carousel = document.querySelector('#carousel');
+        let heading = null;
+        if (carousel) {
+            const prev = carousel.previousElementSibling;
+            if (prev && /most\s*viewed/i.test(prev.textContent)) heading = prev;
+        } else {
+            const h = [...document.querySelectorAll('h1, h2, h3, .section-title')].find(el => /most\s*viewed/i.test(el.textContent));
+            if (h) {
+                heading = h;
+                carousel = h.parentElement.querySelector('#carousel, .owl-carousel, [data-md="rail"]') || h.nextElementSibling;
+            }
         }
-        if (!items.length) return;
+        if (!carousel) {
+            const rails = [...document.querySelectorAll('.owl-carousel, [data-md="rail"]')];
+            carousel = rails.find(r => /most\s*viewed/i.test(r.closest('.main-width, section, div, #wrapperFst')?.textContent || '')) || rails[0];
+        }
+        if (!carousel) return;
 
-        const host = rail.closest('.main-width') || rail.closest('section, main, .container') || rail.parentElement;
-        if (!host) return;
+        // 2. Extract all distinct series items (handling uninitialized, initialized, and cloned owl stages)
+        const seen = new Set();
+        const items = [];
+        const candidateLinks = [...carousel.querySelectorAll('a[href]')].filter(a => a.querySelector('img'));
+        const candidateNodes = candidateLinks.length
+            ? candidateLinks
+            : [...carousel.querySelectorAll('.owl-item:not(.cloned), .owl-element, [data-mdc="rail"], .card')];
+
+        for (const node of candidateNodes) {
+            if (node.closest('.cloned')) continue;
+            const a = node.matches('a[href]') ? node : node.querySelector('a[href]');
+            const img = node.matches('img') ? node : node.querySelector('img');
+            if (!a || !img) continue;
+
+            const href = a.href || a.getAttribute('href');
+            if (!href || seen.has(href)) continue;
+
+            const src = img.currentSrc || img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || '';
+            if (!src || src.startsWith('data:image/svg') || /placeholder|blank/i.test(src)) continue;
+
+            let title = a.getAttribute('title') || img.getAttribute('title') || img.getAttribute('alt') || '';
+            if (!title) {
+                const card = node.closest('.owl-element, .owl-item, [data-mdc], div') || node;
+                const tEl = card.querySelector('h1, h2, h3, [data-md="title"], .title');
+                if (tEl) {
+                    title = tEl.childNodes[0]?.textContent?.trim() || tEl.textContent.trim();
+                }
+            }
+            title = title.replace(/\s+/g, ' ').trim();
+            if (!title) continue;
+
+            seen.add(href);
+            items.push({ href, src, title });
+        }
+
+        if (items.length === 0 || (items.length < 2 && document.readyState !== 'complete')) return;
+
+        // Check if hero banner already exists and has all items
+        const existingHero = document.querySelector('#md-hero');
+        if (existingHero) {
+            const currentThumbsCount = existingHero.querySelectorAll('.md-hero-thumb').length;
+            if (currentThumbsCount >= items.length && items.length > 1) {
+                return;
+            }
+            // Hero was created with incomplete items; remove and rebuild
+            existingHero.remove();
+        }
 
         const hero = document.createElement('section');
         hero.id = 'md-hero';
@@ -2080,14 +2132,28 @@
 
         const thumbsContainer = hero.querySelector('.md-hero-thumbs');
         let currentSlide = 0;
+        let slideTimer = null;
+
+        function restartTimer() {
+            clearTimeout(slideTimer);
+            if (items.length <= 1) return;
+            slideTimer = setTimeout(() => {
+                if (!hero.matches(':hover')) {
+                    showSlide((currentSlide + 1) % items.length);
+                } else {
+                    restartTimer();
+                }
+            }, 6000);
+        }
 
         items.forEach((item, idx) => {
             const thumb = document.createElement('button');
             thumb.type = 'button';
             thumb.className = 'md-hero-thumb';
             thumb.setAttribute('aria-label', item.title || ('Series ' + (idx + 1)));
+            thumb.setAttribute('title', item.title);
             thumb.innerHTML = `
-                <img src="${item.src.replace(/"/g, '%22')}" alt="">
+                <img src="${item.src.replace(/"/g, '%22')}" alt="${item.title.replace(/"/g, '&quot;')}">
                 <div class="md-thumb-fill"></div>
             `;
             thumb.addEventListener('click', (e) => {
@@ -2102,6 +2168,18 @@
             });
             thumbsContainer.appendChild(thumb);
         });
+
+        // Mouse wheel horizontal scroll on thumbnails
+        thumbsContainer.addEventListener('wheel', (e) => {
+            if (e.deltaY !== 0 && !e.deltaX) {
+                e.preventDefault();
+                thumbsContainer.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+
+        // Hover pause for slide fallback timer
+        hero.addEventListener('mouseenter', () => clearTimeout(slideTimer));
+        hero.addEventListener('mouseleave', restartTimer);
 
         function showSlide(idx) {
             currentSlide = (idx + items.length) % items.length;
@@ -2154,29 +2232,29 @@
                         void f.offsetWidth; // force reflow
                         f.style.animation = '';
                     }
-                    th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                    const left = th.offsetLeft - thumbsContainer.offsetLeft - 12;
+                    thumbsContainer.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
                 } else {
                     th.classList.remove('is-active');
                     if (f) f.style.animation = 'none';
                 }
             });
+
+            restartTimer();
         }
 
         // Initialize first slide
         showSlide(0);
 
-        // Insert hero banner before the main content container
-        host.before(hero);
+        // Insert hero banner before the heading/bar or carousel
+        const headBar = heading ? heading.closest('[data-md="head"]') : null;
+        const anchor = headBar || heading || carousel;
+        anchor.before(hero);
 
-        // Hide only the duplicate "Most Viewed Today" carousel and its heading (keeping Latest Updates and everything else!)
-        const owl = rail.closest('.owl-carousel') || rail;
-        if (owl && !owl.matches('[data-md="grid"]') && !owl.closest('[data-md="grid"]')) {
-            owl.style.display = 'none';
-            const h = owl.previousElementSibling;
-            if (h && (/most\s*viewed|popular/i.test(h.textContent) || (h.classList.contains('section-title') && !/latest|update/i.test(h.textContent)))) {
-                h.style.display = 'none';
-            }
-        }
+        // Hide only the duplicate "Most Viewed Today" carousel and its heading
+        carousel.style.display = 'none';
+        if (headBar) headBar.style.display = 'none';
+        else if (heading) heading.style.display = 'none';
     }
 
     /* ---------- long series descriptions ---------- */
