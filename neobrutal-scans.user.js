@@ -554,7 +554,6 @@
             #md-hero .md-hero-card { display: none; }
             #md-hero .md-hero-thumb { flex: 0 0 38px; width: 38px; height: 56px; }
         }
-        [data-md-hidden-track] { display: none !important; }
         html[data-md-page="list"] body > :not(nav) .main-width > h1.section-title a, html[data-md-page="list"] .main-width > .section-title { font-weight: 900; letter-spacing: .02em; }
         /* home carousels: Netflix-style rows */
         html[data-md-page="list"] [data-md="rail"] { cursor: grab; scroll-behavior: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -2330,9 +2329,18 @@
         // Initialize first slide
         showSlide(0);
 
-        // Insert hero before the rail, then hide the original rail container
+        // Insert hero banner before the main content container
         host.before(hero);
-        host.setAttribute('data-md-hidden-track', '1');
+
+        // Hide only the duplicate "Most Viewed Today" carousel and its heading (keeping Latest Updates and everything else!)
+        const owl = rail.closest('.owl-carousel') || rail;
+        if (owl && !owl.matches('[data-md="grid"]') && !owl.closest('[data-md="grid"]')) {
+            owl.style.display = 'none';
+            const h = owl.previousElementSibling;
+            if (h && (/most\s*viewed|popular/i.test(h.textContent) || (h.classList.contains('section-title') && !/latest|update/i.test(h.textContent)))) {
+                h.style.display = 'none';
+            }
+        }
     }
 
     /* ---------- long series descriptions ---------- */
