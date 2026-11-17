@@ -1,7 +1,7 @@
 # Neobrutal Scans
 
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
-[![Version](https://img.shields.io/badge/version-2026--11--01.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
+[![Version](https://img.shields.io/badge/version-2026--11--02.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 A high-contrast **Neobrutalist skin and debloater** for **Asura Scans** and **DemonicScans** (both comic and novel sides). It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.
@@ -16,9 +16,11 @@ Install a userscript manager extension in your browser:
 - [Violentmonkey](https://violentmonkey.github.io/) (Open-source alternative for Chrome, Firefox, Edge)
 
 ### One-Click Installation
-Click the link below or open it directly in your browser:
 
-**[Install Neobrutal Scans directly](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)**
+Choose the version that fits your needs:
+
+- **[Install Neobrutal Scans (Unified - Asura + DemonicScans)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)**
+- **[Install DemonicScans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** (Standalone, lightweight script specifically for DemonicScans)
 
 Your userscript manager will automatically detect the script and prompt you to click **Install**.
 
@@ -30,7 +32,15 @@ Your userscript manager will automatically detect the script and prompt you to c
 - Bold black borders, hard drop shadows, and high-contrast surfaces.
 - Modern typography powered by **DM Sans** and **JetBrains Mono**.
 - Clean badges, metadata pills, and responsive carousels.
-- Restyled cards and layouts on both home, list, and series overview pages.
+- Restyled cards and layouts on home, browse, and series overview pages.
+
+### Netflix-Style Home Layout
+- Prominent **Featured Hero Banner** on list/home pages displaying high-res cover art, dark gradient overlays, badges, and instant read/info CTA buttons.
+- Responsive design tailored for both wide desktop monitors and mobile screens.
+
+### Fluid Carousel Drag-to-Scroll
+- Native mouse drag-to-scroll on carousel rails with inertial momentum glide.
+- Automatic click cancellation on drag release to prevent unintended navigation.
 
 ### Dark & Light Mode
 - Instant theme toggle in the top-right header with zero flash-of-unstyled-content.
@@ -42,12 +52,13 @@ Your userscript manager will automatically detect the script and prompt you to c
 - **Removes Annoyances**: Eliminates Veyra banners, 0-Ads popups, dead ad gaps, and site announcement overlays.
 - **Account Nag Removal**: Hides login-locked bookmark and rating buttons on series pages when unauthenticated.
 
-### Supercharged Reader Dock
+### Supercharged Reader Dock & Controls
 - Floating, minimalist reader dock that stays hidden until you hover or tap the page.
+- **Dock Chapter Selector**: Jump to any chapter directly from the dock without leaving your reading position.
+- **Immersive Tap-to-Show Mode (DemonicScans)**: Site navigation is hidden while reading and toggles smoothly on tap together with the bottom dock.
 - Auto-hides when you scroll down to maximize screen estate for panels and text.
 - **Zoom Controls**: Scale images from 50% to 200% on the fly.
 - **Background Switcher**: Alternate between contrast backgrounds.
-- **Auto-Hiding Header**: Smoothly slides away when scrolling down and reappears on scroll up.
 
 ### Offline Reader & Downloads
 - **Single Chapter `.cbz` Export**: Package all pages into an offline Comic Book Zip archive (.cbz) with parallel image fetching.
@@ -63,7 +74,7 @@ Your userscript manager will automatically detect the script and prompt you to c
 
 ## Configuration
 
-The script includes user-adjustable settings at the very top of `neobrutal-scans.user.js` in the `CONFIG` object:
+The script includes user-adjustable settings at the very top of each userscript in the `CONFIG` object:
 
 ```javascript
 const CONFIG = {
@@ -94,7 +105,7 @@ To modify settings, open your userscript manager's dashboard, select **Neobrutal
 | Domain | Supported Features |
 |---|---|
 | `asurascans.com` / `*.asurascans.com` | Full Neobrutalism skin, Dark mode, Reader dock, Zoom, Novel reader, Batch downloader |
-| `demonicscans.org` / `*.demonicscans.org` | Popunder killer, Neobrutalism skin, Dark mode, Reader dock, .cbz export, Comment filter |
+| `demonicscans.org` / `*.demonicscans.org` | Popunder killer, Netflix hero, Drag carousel, Chapter dock selector, Neobrutalism skin, Dark mode, Reader dock, .cbz export, Comment filter |
 
 ---
 
@@ -110,12 +121,12 @@ To modify settings, open your userscript manager's dashboard, select **Neobrutal
 
 - [ ] **Multi-Site Expansion**
   - [ ] Add support for `mangaread.org` (ad debloating, layout cleanup, and reader integration).
-- [ ] **Browse & Homepage Overhaul**
-  - [ ] **Netflix-style Layout**: Transform standard home/browse catalogs into a Netflix-inspired streaming UI with prominent featured hero banners, backdrop previews, and clean categorical shelves.
-  - [ ] **Horizontal Carousel Scrolling**: Add horizontal mouse-wheel scrolling (mapping vertical wheel delta to horizontal rail scroll) and drag-to-scroll interaction for carousel rails.
-- [ ] **Reader Experience Enhancements**
-  - [ ] **Immersive Reader Header (DemonicScans)**: Suppress the default site navigation header while reading chapters on DemonicScans. Replace it with an AsuraScans-style overlay header (series title, chapter number/title, and series overview link) that toggles smoothly on page tap/click in unison with the reader dock.
-  - [ ] **Bottom Dock Chapter Selector**: Add an interactive chapter selection dropdown directly inside the floating bottom dock (`#md-dock`) for instant navigation between chapters without manual scrolling.
+- [x] **Browse & Homepage Overhaul**
+  - [x] **Netflix-style Layout**: Transform standard home/browse catalogs into a Netflix-inspired streaming UI with prominent featured hero banners, backdrop previews, and clean categorical shelves.
+  - [x] **Horizontal Carousel Scrolling**: Add horizontal mouse-wheel scrolling and drag-to-scroll interaction for carousel rails.
+- [x] **Reader Experience Enhancements**
+  - [x] **Immersive Reader Header (DemonicScans)**: Suppress the default site navigation header while reading chapters on DemonicScans. Replace it with an overlay header that toggles smoothly on page tap/click in unison with the reader dock.
+  - [x] **Bottom Dock Chapter Selector**: Add an interactive chapter selection dropdown directly inside the floating bottom dock (`#md-dock`) for instant navigation between chapters without manual scrolling.
 - [ ] **DemonicScans Comment Section Upgrades**
   - [ ] **Demon Rank Gradients**: Add distinctive custom gradient styles for user comment badges corresponding to different demon tiers and roles.
   - [ ] **High-Contrast Dark Comment Box**: Render user/author comment boxes in deep black (`#000000`) during dark mode instead of the default purple card surface.

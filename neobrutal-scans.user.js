@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans/Asurascans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-01.2
+// @version      2026-11-02.2
 // @description  Neobrutalist skin for DemonicScans and Asura Scans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -332,6 +332,30 @@
             #md-np { bottom: 0; }
             #md-toast { bottom: calc(72px + env(safe-area-inset-bottom)) !important; }
         }
+
+        /* DemonicScans reader: nav is hidden while reading, comes back with the dock (tap the page) */
+        html[data-md-page="chapter"] nav.navigation { transition: transform .22s ease, opacity .22s ease; }
+        html[data-md-page="chapter"]:not(.md-chrome-on) nav.navigation { transform: translateY(-110%) !important; opacity: 0; pointer-events: none; }
+        #md-dock .md-chap { max-width: 150px; min-width: 0; height: 36px; padding: 0 8px; font: 700 12px/1 inherit; color: var(--ink); background: var(--card); border: var(--bw) solid var(--bd); border-radius: var(--r); box-shadow: var(--sh-sm); cursor: pointer; }
+
+        /* Netflix-style hero (layout only, tokens untouched) */
+        #md-hero { position: relative; width: var(--col, min(1200px, 94vw)); margin: 18px auto 8px; min-height: clamp(260px, 36vw, 440px); display: flex; align-items: flex-end; overflow: hidden; border: var(--bw) solid var(--bd); border-radius: var(--r); box-shadow: var(--sh); background: var(--card); box-sizing: border-box; }
+        #md-hero .md-hero-bg { position: absolute; inset: 0; background-size: cover; background-position: center 25%; filter: saturate(1.05); }
+        #md-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.45) 50%, transparent 80%), linear-gradient(to right, rgba(0,0,0,.75) 0%, rgba(0,0,0,.35) 45%, transparent 75%); pointer-events: none; }
+        #md-hero .md-hero-body { position: relative; z-index: 2; padding: clamp(16px, 3.5vw, 36px); max-width: 680px; color: #fff; }
+        #md-hero .md-hero-tag { display: inline-block; padding: 3px 10px; margin-bottom: 10px; background: var(--yellow); color: #000; border: 2px solid #000; border-radius: 6px; font: 900 11.5px/1.4 'DM Sans', sans-serif; text-transform: uppercase; letter-spacing: .08em; box-shadow: 2px 2px 0 #000; }
+        #md-hero .md-hero-title { margin: 0 0 16px !important; padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important; color: #fff !important; font: 900 clamp(24px, 4.2vw, 46px)/1.05 'DM Sans', sans-serif !important; text-transform: uppercase; text-shadow: 3px 3px 0 #000; }
+        #md-hero .md-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
+        #md-hero .md-hero-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; border: var(--bw) solid #000; border-radius: var(--r); box-shadow: 3px 3px 0 #000; font: 900 14px/1 'DM Sans', sans-serif; text-transform: uppercase; text-decoration: none !important; cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+        #md-hero .md-hero-play { background: var(--yellow); color: #000 !important; }
+        #md-hero .md-hero-more { background: #fff; color: #000 !important; }
+        #md-hero .md-hero-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 #000; }
+        html[data-md-page="list"] body > :not(nav) .main-width > h1.section-title a, html[data-md-page="list"] .main-width > .section-title { font-weight: 900; letter-spacing: .02em; }
+        /* home carousels: Netflix-style rows */
+        html[data-md-page="list"] [data-md="rail"] { cursor: grab; scroll-behavior: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        html[data-md-page="list"] [data-md="rail"]::-webkit-scrollbar { display: none; }
+        html[data-md-page="list"] [data-md="rail"][data-md-dragging] { cursor: grabbing; }
+        html[data-md-page="list"] [data-md="rail"][data-md-dragging] a { pointer-events: none; }
     `;
 
     const css = `
@@ -1768,7 +1792,44 @@
         return null;
     }
 
+    function dragScroll(sec) {
+        if (sec.__mdDrag) return;
+        sec.__mdDrag = true;
+        let down = false, moved = false, sx = 0, sl = 0, lx = 0, lt = 0, vx = 0, raf = 0;
+        const stop = () => cancelAnimationFrame(raf);
+        sec.addEventListener('pointerdown', e => {
+            if (e.pointerType !== 'mouse' || e.button !== 0) return;
+            stop(); down = true; moved = false; sx = lx = e.clientX; sl = sec.scrollLeft; lt = performance.now(); vx = 0;
+        });
+        addEventListener('pointermove', e => {
+            if (!down) return;
+            const dx = e.clientX - sx;
+            if (!moved && Math.abs(dx) > 5) { moved = true; sec.dataset.mdDragging = '1'; sec.style.scrollSnapType = 'none'; }
+            if (!moved) return;
+            sec.scrollLeft = sl - dx;
+            const now = performance.now();
+            vx = (e.clientX - lx) / Math.max(1, now - lt); lx = e.clientX; lt = now;
+        });
+        const up = () => {
+            if (!down) return;
+            down = false;
+            if (!moved) return;
+            let v = -vx * 16;
+            const glide = () => {
+                sec.scrollLeft += v; v *= 0.93;
+                if (Math.abs(v) > 0.4) raf = requestAnimationFrame(glide);
+                else { delete sec.dataset.mdDragging; sec.style.scrollSnapType = ''; }
+            };
+            glide();
+        };
+        addEventListener('pointerup', up);
+        addEventListener('pointercancel', up);
+        sec.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+        sec.addEventListener('dragstart', e => e.preventDefault());
+    }
+
     function makeArrows(sec) {
+        dragScroll(sec);
         const nav = document.createElement('div');
         nav.dataset.md = 'arrows';
         const [prev, next] = [[-1, '‹', 'Scroll left'], [1, '›', 'Scroll right']].map(([dir, glyph, label]) => {
@@ -1876,6 +1937,38 @@
         });
     }
 
+
+    /* ---------- Netflix-style hero: first card of the first rail promoted to a full-width banner ---------- */
+    function buildHero() {
+        if (document.querySelector('#md-hero')) return;
+        const rail = document.querySelector('[data-md="rail"]') || document.querySelector('.owl-carousel .owl-stage, .owl-carousel');
+        if (!rail) return;
+        const cards = [...rail.children].filter(c => !c.classList.contains('cloned'));
+        const candidates = cards.length ? cards : [...rail.children];
+        let found = null;
+        for (const card of candidates) {
+            const a = card.matches('a[href]') ? card : card.querySelector('a[href]');
+            const img = card.querySelector('img');
+            if (!a || !img) continue;
+            const src = img.currentSrc || img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
+            if (src && !src.startsWith('data:image/svg')) {
+                const tEl = card.querySelector('[data-md="title"], h2, h3, .title');
+                const title = (tEl && tEl.textContent.trim()) || img.alt || a.title || '';
+                found = { a, img, src, title };
+                break;
+            }
+        }
+        if (!found) return;
+        const host = rail.closest('.main-width') || rail.closest('section, main, .container') || rail.parentElement;
+        if (!host) return;
+        const hero = document.createElement('section');
+        hero.id = 'md-hero';
+        hero.innerHTML = '<div class="md-hero-bg"></div><div class="md-hero-body"><span class="md-hero-tag">Featured</span><h2 class="md-hero-title"></h2><div class="md-hero-cta"><a class="md-hero-btn md-hero-play">&#9654; Read now</a><a class="md-hero-btn md-hero-more">More info</a></div></div>';
+        hero.querySelector('.md-hero-bg').style.backgroundImage = 'url("' + found.src.replace(/"/g, '%22') + '")';
+        hero.querySelector('.md-hero-title').textContent = found.title;
+        hero.querySelectorAll('a.md-hero-btn').forEach(b => { b.href = found.a.href; });
+        host.before(hero);
+    }
 
     /* ---------- hero carousel: slow drift on desktop, one card at a time on touch ---------- */
     function autoplayHero() {
@@ -2718,6 +2811,15 @@
             (IS_ASURA ? btn('series', ICON.list, 'Back to the series page') : btn('mirror', ICON.refresh, 'Images not loading? Switch mirror')) +
             '<button type="button" class="md-dl" data-act="download"></button>' +
             btn('top', ICON.up, 'Back to top');
+        const srcSel = !IS_ASURA && $('.chapters-nav select');
+        if (srcSel && srcSel.options.length > 1) {
+            const cs = document.createElement('select');
+            cs.className = 'md-chap'; cs.title = 'Jump to chapter'; cs.setAttribute('aria-label', 'Jump to chapter');
+            cs.innerHTML = srcSel.innerHTML;
+            cs.value = srcSel.value;
+            cs.addEventListener('change', () => { if (cs.value) location.href = cs.value; });
+            $('[data-act="next"]', d).after(cs);
+        }
         document.body.appendChild(d);
 
         reader.dl = $('.md-dl', d);
@@ -3304,7 +3406,7 @@
         const isBusy = () => !!(busy && busy());
         const shown = () => !dock.classList.contains('hide');
         let openY = scrollY, last = scrollY;
-        const show = on => { dock.classList.toggle('hide', !on); if (on) openY = scrollY; };
+        const show = on => { dock.classList.toggle('hide', !on); document.documentElement.classList.toggle('md-chrome-on', on); if (on) openY = scrollY; };
 
         if (tapMode) {
             dock.classList.add('hide');
@@ -3454,7 +3556,7 @@
         try { commentsTweaks(); faviconOnce(); } catch (e) { console.warn('[MD] extras', e); }
         try {
             const page = PAGE();
-            if (page === 'list') { removeNovels(); organize(); autoplayHero(); }
+            if (page === 'list') { removeNovels(); organize(); buildHero(); autoplayHero(); }
             else if (page === 'overview') setupOverview();
             else if (page === 'chapter') (isNovelChapter() ? setupNovelReader : setupReader)();
             addExtras(); setupModeToggle();
