@@ -1,0 +1,11 @@
+{
+  "name": "neobrutal-scans",
+  "version": "2026.11.2",
+  "description": "Neobrutalist skin and debloater for DemonicScans and Asura Scans",
+  "scripts": {
+    "test": "node test/verify.js",
+    "verify": "node test/verify.js"
+  },
+  "author": "17Arigato-jwd",
+  "license": "MIT"
+}

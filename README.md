@@ -1,7 +1,7 @@
 # Neobrutal Scans
 
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
-[![Version](https://img.shields.io/badge/version-2026--11--02.7-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
+[![Version](https://img.shields.io/badge/version-2026--11--02.8-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 A high-contrast **Neobrutalist skin and debloater** for **Asura Scans** and **DemonicScans** (both comic and novel sides). It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.
@@ -35,8 +35,10 @@ Your userscript manager will automatically detect the script and prompt you to c
 - Restyled cards and layouts on home, browse, and series overview pages.
 
 ### Netflix-Style Home Layout
-- Prominent **Featured Hero Banner** on list/home pages displaying blurred dark backdrops, bold titles, badges, CTA buttons, and an oversized tilted book cover card clipped under the banner container.
-- **Timed Hero Carousel with Thumbnail Progress Bars**: Automatically transitions through every series in "Most Viewed Today" using mini series thumbnails located directly beneath the Read Now / More Info buttons. A vertical progress bar smoothly falls from the top of the active thumbnail to the bottom to indicate the timer before transitioning. Hovering anywhere on the hero pauses the timer.
+- Prominent **Featured Hero Banner** on list/home pages displaying blurred dark backdrops, Title Case typography, views badge, latest chapter badge, CTA buttons, and an oversized tilted book cover card clipped under the banner container.
+- **Timed Hero Carousel with Falling Progress Bars**: Automatically transitions through every series in "Most Viewed Today" using mini series thumbnails located directly beneath the Read Now / More Info buttons. A vertical progress bar smoothly falls from the top of the active thumbnail to the bottom to indicate the timer before transitioning. Hovering anywhere on the hero pauses the timer.
+- **Stationary Carousel Layout**: The hero card body locks the title line-box height and pins the buttons and thumbnails to prevent vertical bouncing when switching between series of different title lengths.
+- **Views & Latest Chapter Pills**: Dynamically displays formatted view counts (e.g. `18M views`) and the latest chapter badge with background fetching for carousel series.
 - **Streamlined 2-Column Latest Updates**: Wide 2-column card grid on desktop with large thumbnails, crisp chapter buttons, and a centered bottom "See More" action button.
 - Responsive design tailored for both wide desktop monitors and mobile screens.
 
@@ -134,6 +136,23 @@ To modify settings, open your userscript manager's dashboard, select **Neobrutal
   - [ ] **High-Contrast Dark Comment Box**: Render user/author comment boxes in deep black (`#000000`) during dark mode instead of the default purple card surface.
 - [ ] **Mobile & UI Optimizations**
   - [ ] **Mobile Dark/Light Mode Toggle Optimization**: Refine the dark/light mode toggle switch on mobile viewports for improved touch responsiveness, optimized tap target sizing, and seamless header positioning without crowding navigation controls.
+
+---
+
+## Testing & Quality Assurance
+
+A dedicated verification test suite is included to validate userscript syntax, metadata sync, CSS rules, layout stability, and functional components:
+
+```bash
+npm test
+```
+
+The test runner runs natively on Node.js without third-party dependencies, validating:
+- JavaScript syntax and compilation for both standalone and unified userscripts.
+- Metadata headers and cross-file version synchronization.
+- CSS properties ensuring no breaking `!important` flags on progress bar animations.
+- Hero carousel layout isolation and height clamping.
+- String transformations (Title Case casing, compact view count formatting, and DOM extraction).
 
 ---
 

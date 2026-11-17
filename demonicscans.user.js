@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.7
+// @version      2026-11-02.8
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -371,36 +371,84 @@
             pointer-events: none;
         }
         #md-hero .md-hero-body {
-            position: relative;
-            z-index: 2;
-            max-width: min(580px, calc(100% - 470px));
-            color: #fff;
-            flex: 1 1 auto;
+            position: relative !important;
+            z-index: 2 !important;
+            max-width: min(580px, calc(100% - 470px)) !important;
+            color: #fff !important;
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            min-height: 320px !important;
         }
         #md-hero .md-hero-tag {
-            display: inline-block;
-            padding: 3px 10px;
-            margin-bottom: 12px;
-            background: var(--yellow);
-            color: #000;
-            border: 2px solid #000;
-            border-radius: 6px;
-            font: 900 11.5px/1.4 'DM Sans', sans-serif;
-            text-transform: uppercase;
-            letter-spacing: .08em;
-            box-shadow: 2px 2px 0 #000;
+            display: inline-block !important;
+            align-self: flex-start !important;
+            padding: 3px 10px !important;
+            margin-bottom: 12px !important;
+            background: var(--yellow) !important;
+            color: #000 !important;
+            border: 1.5px solid #000 !important;
+            border-radius: 999px !important;
+            font: 800 11px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            letter-spacing: .08em !important;
+            box-shadow: 2px 2px 0 #000 !important;
         }
         #md-hero .md-hero-title {
-            margin: 0 0 16px !important;
+            margin: 0 0 10px !important;
             padding: 0 !important;
             background: none !important;
             border: 0 !important;
             box-shadow: none !important;
             color: #fff !important;
-            font: 900 clamp(24px, 4vw, 44px)/1.1 'DM Sans', sans-serif !important;
-            text-transform: uppercase;
-            text-shadow: 3px 3px 0 #000;
-            transition: opacity .25s ease, transform .25s ease;
+            font: 900 clamp(20px, 3.2vw, 36px)/1.2 'DM Sans', sans-serif !important;
+            text-transform: none !important;
+            text-shadow: 2px 2px 0 #000 !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            min-height: 2.4em !important;
+            max-height: 2.4em !important;
+            transition: opacity .25s ease, transform .25s ease !important;
+        }
+        #md-hero .md-hero-meta {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin: 0 0 16px !important;
+            min-height: 26px !important;
+            font: 700 12px/1 'JetBrains Mono', monospace !important;
+            color: #fff !important;
+        }
+        #md-hero .md-hero-views {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            padding: 4px 10px !important;
+            background: rgba(0, 0, 0, 0.55) !important;
+            border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+            border-radius: 999px !important;
+            color: #fff !important;
+            font-size: 11.5px !important;
+            backdrop-filter: blur(4px) !important;
+        }
+        #md-hero .md-hero-views svg {
+            flex-shrink: 0 !important;
+            display: inline-block !important;
+        }
+        #md-hero .md-hero-chapter {
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 4px 10px !important;
+            background: var(--yellow) !important;
+            color: #000 !important;
+            border: 1.5px solid #000 !important;
+            border-radius: 999px !important;
+            font-size: 11.5px !important;
+            font-weight: 800 !important;
+            box-shadow: 1.5px 1.5px 0 #000 !important;
         }
         #md-hero .md-hero-cta {
             display: flex !important;
@@ -514,15 +562,18 @@
             top: 0 !important;
             left: 0 !important;
             right: 0 !important;
-            height: 0% !important;
-            background: linear-gradient(to bottom, rgba(254, 228, 64, 0.45) 0%, rgba(254, 228, 64, 0.22) 100%) !important;
+            height: 0%;
+            background: linear-gradient(to bottom, rgba(254, 228, 64, 0.5) 0%, rgba(254, 228, 64, 0.22) 100%) !important;
             border-bottom: 2.5px solid var(--yellow) !important;
             box-shadow: 0 2px 5px rgba(0,0,0,0.5) !important;
             pointer-events: none !important;
             z-index: 2 !important;
+            opacity: 0;
+            transition: opacity .15s ease;
         }
         #md-hero .md-hero-thumb.is-active .md-thumb-fill {
-            animation: mdProgressFall 5.5s linear forwards !important;
+            opacity: 1 !important;
+            animation: mdProgressFall 5.5s linear forwards;
         }
         #md-hero:hover .md-thumb-fill {
             animation-play-state: paused !important;
@@ -574,7 +625,7 @@
         }
         @media (max-width: 768px) {
             #md-hero { flex-direction: column; align-items: flex-start; padding: 22px 18px; min-height: 0; }
-            #md-hero .md-hero-body { max-width: 100%; }
+            #md-hero .md-hero-body { max-width: 100%; min-height: 0 !important; }
             #md-hero .md-hero-card { display: none; }
             #md-hero .md-hero-thumb { flex: 0 0 38px; width: 38px; height: 56px; }
         }
@@ -1513,7 +1564,7 @@
         /* the wordmark PNG is white: only flip it black on light surfaces */
         html[data-md-theme="dark"] :is(nav, #menu, #footer-container) img[src*="title"] { filter: none !important; }
         html[data-md-theme="dark"] #md-hero .md-thumb-fill {
-            background: linear-gradient(to bottom, rgba(193, 176, 255, 0.45) 0%, rgba(124, 92, 255, 0.2) 100%) !important;
+            background: linear-gradient(to bottom, rgba(193, 176, 255, 0.5) 0%, rgba(124, 92, 255, 0.2) 100%) !important;
             border-bottom-color: var(--violet) !important;
         }
         html[data-md-theme="dark"] #md-hero .md-hero-thumb.is-active {
@@ -1522,14 +1573,19 @@
         }
         html[data-md-theme="dark"] #md-hero .md-hero-play {
             background: var(--yellow) !important;
-            color: #fff !important;
+            color: #000 !important;
         }
         html[data-md-theme="dark"] #md-hero .md-hero-more {
             background: #fff !important;
             color: #000 !important;
         }
         html[data-md-theme="dark"] #md-hero .md-hero-tag {
-            color: #fff !important;
+            color: #000 !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-chapter {
+            background: var(--yellow) !important;
+            color: #000 !important;
+            border-color: #000 !important;
         }
 
         /* ===== badges / dates / pills: always one tidy row ===== */
@@ -2083,6 +2139,51 @@
 
     /* ---------- Netflix-style hero banner: timed carousel for "Most Viewed Today" ---------- */
     function buildHero() {
+        // Helper: Title Case (first letter of each word capitalized)
+        function toTitleCase(str) {
+            if (!str) return '';
+            return str.toLowerCase().replace(/(?:^|[^\p{L}\p{N}])\p{L}/gu, m => m.toUpperCase());
+        }
+
+        // Helper: normalize series path for chapter cache lookup
+        function normalizeSeriesPath(url) {
+            if (!url) return '';
+            try {
+                const u = new URL(url, location.origin);
+                return u.pathname.replace(/\/+$/, '').toLowerCase();
+            } catch (e) {
+                return String(url).replace(/^[a-z]+:\/\/[^/]+/i, '').replace(/\/+$/, '').toLowerCase();
+            }
+        }
+
+        // Harvest chapter map from current page DOM
+        const chapterMap = new Map();
+        function harvestChapterMap() {
+            try {
+                const cards = document.querySelectorAll('[data-mdc="grid"], .updates-element, .card, div:has(> a[href*="chapter" i])');
+                for (const card of cards) {
+                    const sLink = card.querySelector('a[href*="/title/"], a[href*="/series/"], a[href*="/manga/"], [data-md="title"] a, h2 a, h3 a, a:has(img)');
+                    const cLink = card.querySelector(CH);
+                    if (sLink && cLink) {
+                        const p = normalizeSeriesPath(sLink.getAttribute('href') || sLink.href);
+                        const text = cLink.textContent.trim().replace(/\s+/g, ' ');
+                        if (p && text && !chapterMap.has(p)) chapterMap.set(p, text);
+                    }
+                }
+                for (const ch of document.querySelectorAll(CH)) {
+                    const p = ch.closest('[data-mdc], .updates-element, .card, li, tr') || ch.parentElement;
+                    if (!p) continue;
+                    const sLink = p.querySelector('a[href*="/title/"], a[href*="/series/"], a[href*="/manga/"]');
+                    if (sLink && sLink !== ch) {
+                        const path = normalizeSeriesPath(sLink.getAttribute('href') || sLink.href);
+                        const text = ch.textContent.trim().replace(/\s+/g, ' ');
+                        if (path && text && !chapterMap.has(path)) chapterMap.set(path, text);
+                    }
+                }
+            } catch (e) { /* ignore */ }
+        }
+        harvestChapterMap();
+
         // 1. Locate the "Most Viewed Today" carousel and its heading
         let carousel = document.querySelector('#carousel');
         let heading = null;
@@ -2123,8 +2224,8 @@
             if (!src || src.startsWith('data:image/svg') || /placeholder|blank/i.test(src)) continue;
 
             let title = a.getAttribute('title') || img.getAttribute('title') || img.getAttribute('alt') || '';
+            const card = node.closest('.owl-element, .owl-item, [data-mdc], div') || node;
             if (!title) {
-                const card = node.closest('.owl-element, .owl-item, [data-mdc], div') || node;
                 const tEl = card.querySelector('h1, h2, h3, [data-md="title"], .title');
                 if (tEl) {
                     title = tEl.childNodes[0]?.textContent?.trim() || tEl.textContent.trim();
@@ -2133,8 +2234,34 @@
             title = title.replace(/\s+/g, ' ').trim();
             if (!title) continue;
 
+            // Extract views
+            let views = '';
+            const viewDiv = card.querySelector('div:has(svg), h1 div, .views, [data-md="views"]');
+            const vText = (viewDiv?.textContent || card.querySelector('svg')?.parentElement?.textContent || '').trim();
+            if (vText) {
+                const compactMatch = vText.match(/\b\d+(?:\.\d+)?\s*[KMBkmb]\b/);
+                if (compactMatch) {
+                    views = compactMatch[0].toUpperCase() + ' views';
+                } else {
+                    const rawDigits = vText.replace(/[^\d]/g, '');
+                    if (rawDigits) {
+                        const num = Number(rawDigits);
+                        if (!isNaN(num) && num > 0) views = NF.format(num) + ' views';
+                    }
+                }
+            }
+
+            // Extract latest chapter (from card, or pre-harvested map)
+            let chapter = '';
+            const cardChap = card.querySelector(CH);
+            if (cardChap) {
+                chapter = cardChap.textContent.trim().replace(/\s+/g, ' ');
+            } else {
+                chapter = chapterMap.get(normalizeSeriesPath(href)) || '';
+            }
+
             seen.add(href);
-            items.push({ href, src, title });
+            items.push({ href, src, title, views, chapter });
         }
 
         if (items.length === 0 || (items.length < 2 && document.readyState !== 'complete')) return;
@@ -2157,6 +2284,10 @@
             <div class="md-hero-body">
                 <span class="md-hero-tag">Most Viewed Today</span>
                 <h2 class="md-hero-title"></h2>
+                <div class="md-hero-meta">
+                    <span class="md-hero-views"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg><span class="md-hero-views-text"></span></span>
+                    <span class="md-hero-chapter"></span>
+                </div>
                 <div class="md-hero-cta">
                     <a class="md-hero-btn md-hero-play">&#9654; Read now</a>
                     <a class="md-hero-btn md-hero-more">More info</a>
@@ -2181,17 +2312,18 @@
                 } else {
                     restartTimer();
                 }
-            }, 6000);
+            }, 5500);
         }
 
         items.forEach((item, idx) => {
             const thumb = document.createElement('button');
             thumb.type = 'button';
             thumb.className = 'md-hero-thumb';
-            thumb.setAttribute('aria-label', item.title || ('Series ' + (idx + 1)));
-            thumb.setAttribute('title', item.title);
+            const displayTitle = toTitleCase(item.title);
+            thumb.setAttribute('aria-label', displayTitle || ('Series ' + (idx + 1)));
+            thumb.setAttribute('title', displayTitle);
             thumb.innerHTML = `
-                <img src="${item.src.replace(/"/g, '%22')}" alt="${item.title.replace(/"/g, '&quot;')}">
+                <img src="${item.src.replace(/"/g, '%22')}" alt="${displayTitle.replace(/"/g, '&quot;')}">
                 <div class="md-thumb-fill"></div>
             `;
             thumb.addEventListener('click', (e) => {
@@ -2233,16 +2365,68 @@
                 }, 140);
             }
 
-            // Title crossfade
+            // Title crossfade with toTitleCase
             const titleEl = hero.querySelector('.md-hero-title');
             if (titleEl) {
                 titleEl.style.opacity = '0.2';
                 titleEl.style.transform = 'translateY(2px)';
                 setTimeout(() => {
-                    titleEl.textContent = cur.title;
+                    titleEl.textContent = toTitleCase(cur.title);
                     titleEl.style.opacity = '1';
                     titleEl.style.transform = 'translateY(0)';
                 }, 120);
+            }
+
+            // Views pill update
+            const viewsEl = hero.querySelector('.md-hero-views');
+            const viewsText = hero.querySelector('.md-hero-views-text');
+            if (viewsEl && viewsText) {
+                if (cur.views) {
+                    viewsText.textContent = cur.views;
+                    viewsEl.style.display = 'inline-flex';
+                } else {
+                    viewsEl.style.display = 'none';
+                }
+            }
+
+            // Chapter pill update (with async fetch fallback if not in initial DOM)
+            const chapEl = hero.querySelector('.md-hero-chapter');
+            if (chapEl) {
+                if (cur.chapter) {
+                    chapEl.textContent = cur.chapter;
+                    chapEl.style.display = 'inline-flex';
+                } else {
+                    const cached = chapterMap.get(normalizeSeriesPath(cur.href));
+                    if (cached) {
+                        cur.chapter = cached;
+                        chapEl.textContent = cached;
+                        chapEl.style.display = 'inline-flex';
+                    } else {
+                        chapEl.style.display = 'none';
+                        if (!cur.fetchingChapter) {
+                            cur.fetchingChapter = true;
+                            fetch(cur.href, { credentials: 'same-origin' })
+                                .then(res => res.text())
+                                .then(html => {
+                                    const doc = new DOMParser().parseFromString(html, 'text/html');
+                                    const ch = doc.querySelector('#chapters-list a.chplinks, #chapters-list a[href*="chapter" i], a.chplinks, a[href*="chapter" i]');
+                                    if (ch) {
+                                        const t = [...ch.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
+                                        const raw = (t ? t.nodeValue : ch.textContent).replace(/\s+/g, ' ').trim();
+                                        if (raw) {
+                                            cur.chapter = raw;
+                                            chapterMap.set(normalizeSeriesPath(cur.href), raw);
+                                            if (currentSlide === idx && chapEl) {
+                                                chapEl.textContent = raw;
+                                                chapEl.style.display = 'inline-flex';
+                                            }
+                                        }
+                                    }
+                                })
+                                .catch(() => {});
+                        }
+                    }
+                }
             }
 
             // Links update
@@ -2254,7 +2438,7 @@
                 cardImg.style.opacity = '0.35';
                 setTimeout(() => {
                     cardImg.src = cur.src;
-                    cardImg.alt = cur.title;
+                    cardImg.alt = toTitleCase(cur.title);
                     cardImg.style.opacity = '1';
                 }, 140);
             }
