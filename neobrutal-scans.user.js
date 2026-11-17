@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans/Asurascans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.4
+// @version      2026-11-02.5
 // @description  Neobrutalist skin for DemonicScans and Asura Scans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -343,7 +343,7 @@
             position: relative;
             width: var(--col, min(1200px, 94vw));
             margin: 18px auto 20px;
-            min-height: clamp(340px, 36vw, 460px);
+            min-height: clamp(380px, 38vw, 500px);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -364,6 +364,7 @@
             filter: blur(16px) brightness(0.32) saturate(1.2);
             transform: scale(1.08);
             pointer-events: none;
+            transition: opacity .35s ease;
         }
         #md-hero::after {
             content: "";
@@ -376,7 +377,7 @@
         #md-hero .md-hero-body {
             position: relative;
             z-index: 2;
-            max-width: min(640px, 58%);
+            max-width: min(580px, calc(100% - 470px));
             color: #fff;
             flex: 1 1 auto;
         }
@@ -403,6 +404,7 @@
             font: 900 clamp(24px, 4vw, 44px)/1.1 'DM Sans', sans-serif !important;
             text-transform: uppercase;
             text-shadow: 3px 3px 0 #000;
+            transition: opacity .25s ease, transform .25s ease;
         }
         #md-hero .md-hero-cta {
             display: flex;
@@ -436,13 +438,83 @@
             box-shadow: 5px 5px 0 #000;
         }
 
+        /* Series thumbnail carousel below buttons with falling progress bar */
+        #md-hero .md-hero-thumbs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 4px 2px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            max-width: 100%;
+        }
+        #md-hero .md-hero-thumbs::-webkit-scrollbar { display: none; }
+        #md-hero .md-hero-thumb {
+            position: relative;
+            flex: 0 0 44px;
+            width: 44px;
+            height: 64px;
+            aspect-ratio: 2 / 3;
+            padding: 0;
+            margin: 0;
+            border: 2px solid #000;
+            border-radius: 6px;
+            overflow: hidden;
+            cursor: pointer;
+            background: #111;
+            box-shadow: 2px 2px 0 #000;
+            opacity: 0.6;
+            transition: transform .2s ease, opacity .2s ease, border-color .2s ease, box-shadow .2s ease;
+        }
+        #md-hero .md-hero-thumb:hover {
+            opacity: 0.95;
+            transform: translateY(-2px);
+            box-shadow: 3px 3px 0 #000;
+        }
+        #md-hero .md-hero-thumb.is-active {
+            opacity: 1;
+            border-color: var(--yellow) !important;
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 3px 3px 0 #000;
+        }
+        #md-hero .md-hero-thumb img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+        }
+        #md-hero .md-thumb-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 0%;
+            background: linear-gradient(to bottom, rgba(254, 228, 64, 0.45) 0%, rgba(254, 228, 64, 0.22) 100%);
+            border-bottom: 3px solid var(--yellow);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+        #md-hero .md-hero-thumb.is-active .md-thumb-fill {
+            animation: mdProgressFall 5.5s linear forwards;
+        }
+        #md-hero:hover .md-thumb-fill {
+            animation-play-state: paused;
+        }
+        @keyframes mdProgressFall {
+            0% { height: 0%; }
+            100% { height: 100%; }
+        }
+
         /* Tilted book card on the right, scaled up and clipped under the hero bottom edge */
         #md-hero .md-hero-card {
             position: absolute;
             z-index: 3;
-            right: clamp(24px, 4.5vw, 64px);
-            bottom: -65px;
-            width: clamp(220px, 24vw, 360px);
+            right: 150px;
+            bottom: -75px;
+            width: 320px;
             aspect-ratio: 2 / 3;
             border: var(--bw) solid #000;
             border-radius: 14px;
@@ -456,7 +528,7 @@
             text-decoration: none !important;
         }
         #md-hero .md-hero-card:hover {
-            transform: rotate(3deg) scale(1.03) translate(-4px, -8px);
+            transform: rotate(3deg) translateY(-8px) scale(1.02);
             box-shadow: 14px 14px 0 #000;
         }
         #md-hero .md-hero-card img {
@@ -465,13 +537,24 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
+            transition: opacity .25s ease;
         }
 
+        @media (max-width: 1240px) {
+            #md-hero .md-hero-card {
+                right: clamp(24px, 5vw, 100px);
+                width: clamp(240px, 24vw, 300px);
+                bottom: -65px;
+            }
+            #md-hero .md-hero-body { max-width: min(560px, 56%); }
+        }
         @media (max-width: 768px) {
             #md-hero { flex-direction: column; align-items: flex-start; padding: 22px 18px; min-height: 0; }
             #md-hero .md-hero-body { max-width: 100%; }
             #md-hero .md-hero-card { display: none; }
+            #md-hero .md-hero-thumb { flex: 0 0 38px; width: 38px; height: 56px; }
         }
+        [data-md-hidden-track] { display: none !important; }
         html[data-md-page="list"] body > :not(nav) .main-width > h1.section-title a, html[data-md-page="list"] .main-width > .section-title { font-weight: 900; letter-spacing: .02em; }
         /* home carousels: Netflix-style rows */
         html[data-md-page="list"] [data-md="rail"] { cursor: grab; scroll-behavior: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -2114,107 +2197,142 @@
     }
 
 
-    /* ---------- Netflix-style hero: first card of the first rail promoted to a full-width banner ---------- */
+    /* ---------- Netflix-style hero banner: timed carousel for "Most Viewed Today" ---------- */
     function buildHero() {
         if (document.querySelector('#md-hero')) return;
-        const rail = document.querySelector('[data-md="rail"]') || document.querySelector('.owl-carousel .owl-stage, .owl-carousel');
-        if (!rail) return;
+        const rails = [...document.querySelectorAll('[data-md="rail"], .owl-carousel .owl-stage, .owl-carousel')];
+        if (!rails.length) return;
+        const rail = rails.find(r => {
+            const txt = (r.closest('.main-width, section, div')?.textContent || '');
+            return /most\s*viewed/i.test(txt);
+        }) || rails[0];
+
         const cards = [...rail.children].filter(c => !c.classList.contains('cloned'));
         const candidates = cards.length ? cards : [...rail.children];
-        let found = null;
+        const items = [];
         for (const card of candidates) {
             const a = card.matches('a[href]') ? card : card.querySelector('a[href]');
             const img = card.querySelector('img');
             if (!a || !img) continue;
             const src = img.currentSrc || img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src');
-            if (src && !src.startsWith('data:image/svg')) {
-                const tEl = card.querySelector('[data-md="title"], h2, h3, .title');
-                const title = (tEl && tEl.textContent.trim()) || img.alt || a.title || '';
-                found = { a, img, src, title };
-                break;
-            }
+            if (!src || src.startsWith('data:image/svg') || /placeholder|blank/i.test(src)) continue;
+            const tEl = card.querySelector('[data-md="title"], h2, h3, .title');
+            const title = (tEl && tEl.textContent.trim()) || img.alt || a.title || '';
+            items.push({ href: a.href, src, title });
         }
-        if (!found) return;
+        if (!items.length) return;
+
         const host = rail.closest('.main-width') || rail.closest('section, main, .container') || rail.parentElement;
         if (!host) return;
+
         const hero = document.createElement('section');
         hero.id = 'md-hero';
         hero.innerHTML = `
             <div class="md-hero-bg"></div>
             <div class="md-hero-body">
-                <span class="md-hero-tag">Featured</span>
+                <span class="md-hero-tag">Most Viewed Today</span>
                 <h2 class="md-hero-title"></h2>
                 <div class="md-hero-cta">
                     <a class="md-hero-btn md-hero-play">&#9654; Read now</a>
                     <a class="md-hero-btn md-hero-more">More info</a>
                 </div>
+                <div class="md-hero-thumbs" role="tablist" aria-label="Most viewed series"></div>
             </div>
             <a class="md-hero-card" title="Read now">
                 <img alt="Book cover">
             </a>
         `;
-        hero.querySelector('.md-hero-bg').style.backgroundImage = 'url("' + found.src.replace(/"/g, '%22') + '")';
-        hero.querySelector('.md-hero-title').textContent = found.title;
-        hero.querySelectorAll('a.md-hero-btn, a.md-hero-card').forEach(b => { b.href = found.a.href; });
-        const cardImg = hero.querySelector('.md-hero-card img');
-        if (cardImg) {
-            cardImg.src = found.src;
-            cardImg.alt = found.title;
-        }
-        host.before(hero);
-    }
 
-    /* ---------- hero carousel: slow drift on desktop, one card at a time on touch ---------- */
-    function autoplayHero() {
-        if (!CONFIG.heroAutoplay) return;
-        const rail = document.querySelector('[data-md="rail"]');
-        if (!rail || rail.__mdAuto) return;
-        rail.__mdAuto = true;
-        if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-        rail.style.scrollSnapType = 'none';
-        const mobile = () => matchMedia('(pointer: coarse), (max-width: 720px)').matches;
-        let visible = true, holdUntil = 0, pos = null, dir = 1, last = performance.now(), edgeWait = 0;
-        try { new IntersectionObserver(es => { visible = es[0].isIntersecting; }).observe(rail); } catch (e) { /* always visible */ }
-        const hold = ms => { holdUntil = Math.max(holdUntil, performance.now() + ms); };
-        rail.addEventListener('touchstart', () => hold(9000), { passive: true });
-        rail.addEventListener('touchmove', () => hold(9000), { passive: true });
-        rail.addEventListener('wheel', () => hold(3000), { passive: true });
-        rail.addEventListener('pointerdown', () => hold(3000), { passive: true });
-        rail.addEventListener('focusin', () => hold(6000));
-        let over = false;
-        rail.addEventListener('pointerover', e => { if (e.pointerType === 'mouse') over = true; });
-        rail.addEventListener('pointerleave', () => { over = false; });
+        const thumbsContainer = hero.querySelector('.md-hero-thumbs');
+        let currentSlide = 0;
 
-        const frame = now => {
-            const dt = Math.min(0.1, (now - last) / 1000); last = now;
-            if (!mobile() && visible && !document.hidden && now >= holdUntil && !over && !rail.matches(':hover')) {
-                const max = rail.scrollWidth - rail.clientWidth;
-                if (max > 4) {
-                    if (pos === null || Math.abs(rail.scrollLeft - pos) > 2) {
-                        // somebody else moved it (arrows, drag, wheel): hand over, resume later
-                        if (pos !== null) hold(3000);
-                        pos = rail.scrollLeft;
-                    } else if (edgeWait > 0) {
-                        edgeWait -= dt;
-                    } else {
-                        pos += dir * CONFIG.heroSpeed * dt;
-                        if (pos >= max) { pos = max; dir = -1; edgeWait = 2; }
-                        else if (pos <= 0) { pos = 0; dir = 1; edgeWait = 2; }
-                        rail.scrollLeft = pos;
-                    }
+        items.forEach((item, idx) => {
+            const thumb = document.createElement('button');
+            thumb.type = 'button';
+            thumb.className = 'md-hero-thumb';
+            thumb.setAttribute('aria-label', item.title || ('Series ' + (idx + 1)));
+            thumb.innerHTML = `
+                <img src="${item.src.replace(/"/g, '%22')}" alt="">
+                <div class="md-thumb-fill"></div>
+            `;
+            thumb.addEventListener('click', (e) => {
+                e.preventDefault();
+                showSlide(idx);
+            });
+            const fill = thumb.querySelector('.md-thumb-fill');
+            fill.addEventListener('animationend', (e) => {
+                if (e.animationName === 'mdProgressFall' && thumb.classList.contains('is-active')) {
+                    showSlide((currentSlide + 1) % items.length);
                 }
-            } else pos = null;
-            requestAnimationFrame(frame);
-        };
-        requestAnimationFrame(frame);
+            });
+            thumbsContainer.appendChild(thumb);
+        });
 
-        setInterval(() => {
-            if (!mobile() || !visible || document.hidden || performance.now() < holdUntil) return;
-            const card = rail.firstElementChild;
-            const step = card ? card.getBoundingClientRect().width + 12 : rail.clientWidth * 0.6;
-            const atEnd = rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 4;
-            rail.scrollTo({ left: atEnd ? 0 : rail.scrollLeft + step, behavior: 'smooth' });
-        }, CONFIG.heroStepMs);
+        function showSlide(idx) {
+            currentSlide = (idx + items.length) % items.length;
+            const cur = items[currentSlide];
+
+            // Background crossfade
+            const bg = hero.querySelector('.md-hero-bg');
+            if (bg) {
+                bg.style.opacity = '0.35';
+                setTimeout(() => {
+                    bg.style.backgroundImage = 'url("' + cur.src.replace(/"/g, '%22') + '")';
+                    bg.style.opacity = '1';
+                }, 140);
+            }
+
+            // Title crossfade
+            const titleEl = hero.querySelector('.md-hero-title');
+            if (titleEl) {
+                titleEl.style.opacity = '0.2';
+                titleEl.style.transform = 'translateY(2px)';
+                setTimeout(() => {
+                    titleEl.textContent = cur.title;
+                    titleEl.style.opacity = '1';
+                    titleEl.style.transform = 'translateY(0)';
+                }, 120);
+            }
+
+            // Links update
+            hero.querySelectorAll('a.md-hero-btn, a.md-hero-card').forEach(b => { b.href = cur.href; });
+
+            // Tilted cover update
+            const cardImg = hero.querySelector('.md-hero-card img');
+            if (cardImg) {
+                cardImg.style.opacity = '0.35';
+                setTimeout(() => {
+                    cardImg.src = cur.src;
+                    cardImg.alt = cur.title;
+                    cardImg.style.opacity = '1';
+                }, 140);
+            }
+
+            // Update active state on thumbnails
+            const allThumbs = thumbsContainer.querySelectorAll('.md-hero-thumb');
+            allThumbs.forEach((th, i) => {
+                const f = th.querySelector('.md-thumb-fill');
+                if (i === currentSlide) {
+                    th.classList.add('is-active');
+                    if (f) {
+                        f.style.animation = 'none';
+                        void f.offsetWidth; // force reflow
+                        f.style.animation = '';
+                    }
+                    th.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                } else {
+                    th.classList.remove('is-active');
+                    if (f) f.style.animation = 'none';
+                }
+            });
+        }
+
+        // Initialize first slide
+        showSlide(0);
+
+        // Insert hero before the rail, then hide the original rail container
+        host.before(hero);
+        host.setAttribute('data-md-hidden-track', '1');
     }
 
     /* ---------- long series descriptions ---------- */
@@ -3750,7 +3868,7 @@
         try { commentsTweaks(); faviconOnce(); } catch (e) { console.warn('[MD] extras', e); }
         try {
             const page = PAGE();
-            if (page === 'list') { removeNovels(); organize(); repositionSeeMore(); buildHero(); autoplayHero(); }
+            if (page === 'list') { removeNovels(); organize(); repositionSeeMore(); buildHero(); }
             else if (page === 'overview') setupOverview();
             else if (page === 'chapter') (isNovelChapter() ? setupNovelReader : setupReader)();
             addExtras(); setupModeToggle();
