@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.3
+// @version      2026-11-02.4
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -338,8 +338,8 @@
         #md-hero {
             position: relative;
             width: var(--col, min(1200px, 94vw));
-            margin: 18px auto 14px;
-            min-height: clamp(280px, 36vw, 440px);
+            margin: 18px auto 20px;
+            min-height: clamp(340px, 36vw, 460px);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -349,7 +349,7 @@
             box-shadow: var(--sh);
             background: #0b0813;
             box-sizing: border-box;
-            padding: clamp(20px, 4vw, 40px);
+            padding: clamp(24px, 4vw, 44px);
             gap: 24px;
         }
         #md-hero .md-hero-bg {
@@ -372,7 +372,7 @@
         #md-hero .md-hero-body {
             position: relative;
             z-index: 2;
-            max-width: 620px;
+            max-width: min(640px, 58%);
             color: #fff;
             flex: 1 1 auto;
         }
@@ -432,26 +432,28 @@
             box-shadow: 5px 5px 0 #000;
         }
 
-        /* Tilted book card on the right */
+        /* Tilted book card on the right, scaled up and clipped under the hero bottom edge */
         #md-hero .md-hero-card {
-            position: relative;
-            z-index: 2;
-            flex: 0 0 clamp(130px, 16vw, 210px);
+            position: absolute;
+            z-index: 3;
+            right: clamp(24px, 4.5vw, 64px);
+            bottom: -65px;
+            width: clamp(220px, 24vw, 360px);
             aspect-ratio: 2 / 3;
             border: var(--bw) solid #000;
-            border-radius: 12px;
-            box-shadow: 8px 8px 0 #000;
+            border-radius: 14px;
+            box-shadow: 10px 10px 0 #000;
             overflow: hidden;
-            transform: rotate(6deg);
-            transform-origin: center center;
+            transform: rotate(6.5deg);
+            transform-origin: bottom center;
             transition: transform .25s cubic-bezier(.2, 1.2, .4, 1), box-shadow .25s ease;
             background: #111;
             display: block;
             text-decoration: none !important;
         }
         #md-hero .md-hero-card:hover {
-            transform: rotate(2deg) scale(1.04) translate(-2px, -4px);
-            box-shadow: 12px 12px 0 #000;
+            transform: rotate(3deg) scale(1.03) translate(-4px, -8px);
+            box-shadow: 14px 14px 0 #000;
         }
         #md-hero .md-hero-card img {
             display: block;
@@ -461,8 +463,9 @@
             object-position: center;
         }
 
-        @media (max-width: 640px) {
-            #md-hero { flex-direction: column; align-items: flex-start; padding: 18px 16px; min-height: 0; }
+        @media (max-width: 768px) {
+            #md-hero { flex-direction: column; align-items: flex-start; padding: 22px 18px; min-height: 0; }
+            #md-hero .md-hero-body { max-width: 100%; }
             #md-hero .md-hero-card { display: none; }
         }
         html[data-md-page="list"] body > :not(nav) .main-width > h1.section-title a, html[data-md-page="list"] .main-width > .section-title { font-weight: 900; letter-spacing: .02em; }
@@ -745,11 +748,45 @@
             background: linear-gradient(transparent 62%, var(--yellow) 62%) !important; color: var(--ink) !important;
             font: 900 clamp(20px, 2.1vw, 28px)/1.15 'DM Sans', sans-serif !important; text-transform: uppercase !important; text-decoration: none !important;
         }
-        .main-width > h3.see-more { display: block !important; position: static !important; float: none !important; left: auto !important; box-sizing: border-box; width: var(--col) !important; max-width: none !important; margin: -8px auto 12px !important; padding: 0 !important; text-align: left !important; background: none !important; }
-        .main-width > h3.see-more a {
-            display: inline-block; background: var(--card) !important; color: var(--ink) !important; border: var(--bw) solid var(--bd) !important;
-            border-radius: 8px; box-shadow: var(--sh-sm); padding: 6px 14px !important;
-            font: 800 12.5px 'DM Sans', sans-serif !important; letter-spacing: .04em; text-transform: uppercase !important; text-decoration: none !important;
+        [data-md="see-more-bottom"], .main-width > h3.see-more {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            width: var(--col) !important;
+            max-width: none !important;
+            margin: 28px auto 44px !important;
+            padding: 0 !important;
+            text-align: center !important;
+            float: none !important;
+            position: static !important;
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        [data-md="see-more-bottom"] a, .main-width > h3.see-more a {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            min-width: 240px !important;
+            padding: 13px 36px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            font: 900 14px/1 'DM Sans', sans-serif !important;
+            letter-spacing: .06em !important;
+            text-transform: uppercase !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            transition: transform .15s ease, box-shadow .15s ease, background .15s ease !important;
+        }
+        [data-md="see-more-bottom"] a:hover, .main-width > h3.see-more a:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: var(--sh-hover) !important;
+            background: var(--yellow) !important;
+            color: var(--ink) !important;
         }
         [data-md="arrows"] { display: flex; gap: 6px; }
         [data-md="arrows"] button {
@@ -822,34 +859,34 @@
         /* ---------- Latest-updates grid ---------- */
         [data-md="grid"] {
             display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)) !important;
-            gap: var(--gap) !important; width: var(--col) !important; max-width: none !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 16px !important; width: var(--col) !important; max-width: none !important;
             margin: 0 auto !important; padding: 6px !important; box-sizing: border-box !important;
             height: auto !important; float: none !important;
         }
         [data-md="gridrow"] { display: contents !important; }
         [data-mdc="grid"] {
             min-width: 0 !important; width: auto !important; max-width: none !important; height: auto !important;
-            margin: 0 !important; padding: 12px !important; float: none !important; box-sizing: border-box !important;
+            margin: 0 !important; padding: 14px !important; float: none !important; box-sizing: border-box !important;
             background: var(--card) !important; color: var(--ink) !important;
             border: var(--bw) solid var(--bd) !important; border-radius: var(--r) !important;
             box-shadow: var(--sh) !important; transition: transform .15s, box-shadow .15s, background .15s !important;
         }
         [data-mdc="grid"]:hover { transform: translate(-2px, -2px); box-shadow: var(--sh-hover) !important; background: var(--cream) !important; }
         [data-mdc="grid"] div { background: transparent !important; }
-        [data-mdc="grid"] [data-mdf] { display: flex !important; gap: 10px !important; align-items: flex-start !important; width: 100% !important; }
+        [data-mdc="grid"] [data-mdf] { display: flex !important; gap: 14px !important; align-items: flex-start !important; width: 100% !important; }
         [data-mdc="grid"] [data-mdf] > :last-child { flex: 1 1 0 !important; min-width: 0 !important; }
         [data-mdc="grid"] img {
-            flex: 0 0 70px !important; width: 70px !important; height: 100px !important; max-width: none !important;
+            flex: 0 0 84px !important; width: 84px !important; height: 118px !important; max-width: none !important;
             object-fit: cover !important; margin: 0 !important;
-            border: var(--bw) solid var(--bd) !important; border-radius: 6px !important;
+            border: var(--bw) solid var(--bd) !important; border-radius: 8px !important;
         }
         [data-md="title"] {
             display: -webkit-box !important; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden !important;
             overflow-wrap: anywhere;
             margin: 0 0 8px !important; padding: 0 !important; width: auto !important;
             background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important;
-            font: 800 14.5px/1.25 'DM Sans', sans-serif !important; color: var(--ink) !important; text-transform: none !important;
+            font: 900 15px/1.25 'DM Sans', sans-serif !important; color: var(--ink) !important; text-transform: none !important;
         }
         [data-md="titlebox"] {
             background: none !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important;
@@ -1283,9 +1320,12 @@
             #cw-comments #cw-list { padding-inline: 12px !important; }
             #cw-comments .tools-right, #cw-comments label.search, #cw-comments label.search input { width: 100%; }
         }
-        @media (max-width: 640px) {
+        @media (max-width: 768px) {
             :root { --col: calc(100% - 24px); --gap: 12px; }
             [data-md="grid"] { grid-template-columns: 1fr !important; }
+            [data-mdc="grid"] { padding: 10px !important; }
+            [data-mdc="grid"] [data-mdf] { gap: 10px !important; }
+            [data-mdc="grid"] img { flex: 0 0 68px !important; width: 68px !important; height: 96px !important; }
             [data-mdc="rail"] { flex-basis: 130px !important; width: 130px !important; }
             body > nav #demon-title-lg { display: none; }
             body > nav .innav { padding-inline: 10px !important; gap: 8px; }
@@ -1365,9 +1405,6 @@
 
         /* ===== badges / dates / pills: always one tidy row ===== */
         [data-md="row"] { flex-wrap: nowrap !important; gap: 4px 6px !important; }
-        [data-mdc="grid"] { padding: 10px !important; }
-        [data-mdc="grid"] [data-mdf] { gap: 9px !important; }
-        [data-mdc="grid"] img { flex: 0 0 64px !important; width: 64px !important; height: 92px !important; }
         [data-mdc="grid"] a[href*="chapter" i]:not([data-mdd]) {
             display: inline-block !important; flex: 0 1 auto; min-width: 0; max-width: 100%;
             overflow: hidden; text-overflow: ellipsis; padding: 2px 7px !important; font-size: 11.5px !important;
@@ -1820,8 +1857,27 @@
 
         if (heading) { heading.dataset.md = 'headtext'; bar.appendChild(heading); }
         else bar.style.justifyContent = 'flex-end';
-        if (more) { more.dataset.md = 'more'; bar.appendChild(more); }
+        if (more && sec.dataset.md === 'rail') {
+            more.dataset.md = 'more';
+            bar.appendChild(more);
+        } else if (more && sec.dataset.md === 'grid') {
+            more.dataset.md = 'see-more-bottom';
+            sec.after(more);
+        }
         if (CONFIG.arrows && sec.dataset.md === 'rail') bar.appendChild(makeArrows(sec));
+    }
+
+    function repositionSeeMore() {
+        $$('.main-width').forEach(mw => {
+            const more = mw.querySelector(':scope > h3.see-more, :scope > .see-more, h3.see-more, [data-md="see-more-bottom"]');
+            const grid = mw.querySelector('[data-md="grid"]') || mw.querySelector(':scope > div:not(h1):not(h3)');
+            if (more && grid && more !== grid) {
+                more.dataset.md = 'see-more-bottom';
+                if (grid.nextElementSibling !== more) {
+                    grid.after(more);
+                }
+            }
+        });
     }
 
     /* ---------- dead ad slots ---------- */
@@ -1873,6 +1929,7 @@
         });
 
         collapseVoids();
+        repositionSeeMore();
         document.querySelectorAll('[data-md="rail"]').forEach(r => r.__mdSync && r.__mdSync());
 
         if (CONFIG.debug) {
@@ -3294,7 +3351,7 @@
         try { commentsTweaks(); faviconOnce(); } catch (e) { console.warn('[MD] extras', e); }
         try {
             const page = PAGE();
-            if (page === 'list') { removeNovels(); organize(); buildHero(); autoplayHero(); }
+            if (page === 'list') { removeNovels(); organize(); repositionSeeMore(); buildHero(); autoplayHero(); }
             else if (page === 'overview') setupOverview();
             else if (page === 'chapter') (isNovelChapter() ? setupNovelReader : setupReader)();
             addExtras(); setupModeToggle();

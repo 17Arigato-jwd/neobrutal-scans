@@ -1,7 +1,7 @@
 # Neobrutal Scans
 
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
-[![Version](https://img.shields.io/badge/version-2026--11--02.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
+[![Version](https://img.shields.io/badge/version-2026--11--02.4-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 A high-contrast **Neobrutalist skin and debloater** for **Asura Scans** and **DemonicScans** (both comic and novel sides). It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.
@@ -35,7 +35,8 @@ Your userscript manager will automatically detect the script and prompt you to c
 - Restyled cards and layouts on home, browse, and series overview pages.
 
 ### Netflix-Style Home Layout
-- Prominent **Featured Hero Banner** on list/home pages displaying high-res cover art, dark gradient overlays, badges, and instant read/info CTA buttons.
+- Prominent **Featured Hero Banner** on list/home pages displaying blurred dark backdrops, bold titles, badges, CTA buttons, and an oversized tilted book cover card clipped under the banner container.
+- **Streamlined 2-Column Latest Updates**: Wide 2-column card grid on desktop with large thumbnails, crisp chapter buttons, and a centered bottom "See More" action button.
 - Responsive design tailored for both wide desktop monitors and mobile screens.
 
 ### Fluid Carousel Drag-to-Scroll
