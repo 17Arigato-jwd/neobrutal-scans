@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.13
+// @version      2026-11-02.14
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -660,43 +660,49 @@
                 z-index: 3 !important;
                 pointer-events: auto !important;
             }
-            #md-hero .md-hero-title {
-                font-size: clamp(16px, 5vw, 22px) !important;
-                line-height: 1.22 !important;
-                max-width: 100% !important;
-                min-height: 2.45em !important;
-                max-height: 2.45em !important;
-                margin-bottom: 8px !important;
-            }
             #md-hero .md-hero-tag {
-                padding: 3px 10px !important;
-                font-size: 10px !important;
-                margin-bottom: 8px !important;
+                display: inline-block !important;
+                align-self: flex-start !important;
+                padding: 4px 12px !important;
+                font-size: 10.5px !important;
+                margin-bottom: clamp(10px, 2.5vw, 15px) !important;
+            }
+            #md-hero .md-hero-title {
+                font-size: clamp(20px, 6vw, 26px) !important;
+                font-weight: 900 !important;
+                line-height: 1.2 !important;
+                letter-spacing: -0.01em !important;
+                max-width: 100% !important;
+                min-height: 2.4em !important;
+                max-height: 2.4em !important;
+                margin-bottom: clamp(12px, 3vw, 18px) !important;
             }
             #md-hero .md-hero-meta {
                 display: flex !important;
                 flex-wrap: nowrap !important;
-                gap: 6px !important;
-                margin-bottom: 12px !important;
+                gap: 7px !important;
+                margin-bottom: clamp(16px, 4vw, 24px) !important;
                 max-width: 100% !important;
             }
             #md-hero .md-hero-views, #md-hero .md-hero-chapter {
                 white-space: nowrap !important;
-                font-size: 10px !important;
-                padding: 3px 8px !important;
+                font-size: 10.5px !important;
+                font-weight: 800 !important;
+                padding: 4px 9px !important;
             }
             #md-hero .md-hero-cta {
                 display: flex !important;
                 flex-wrap: nowrap !important;
                 gap: 8px !important;
-                margin-bottom: 14px !important;
+                margin-bottom: clamp(20px, 5.5vw, 36px) !important;
             }
             #md-hero .md-hero-btn {
                 white-space: nowrap !important;
-                padding: 7px 12px !important;
-                min-height: 34px !important;
-                font-size: 11px !important;
-                box-shadow: 2px 2px 0 #000 !important;
+                padding: 8px 14px !important;
+                min-height: 38px !important;
+                font-size: 11.5px !important;
+                font-weight: 900 !important;
+                box-shadow: 2.5px 2.5px 0 #000 !important;
             }
             #md-hero .md-hero-thumbs {
                 margin-top: auto !important;
