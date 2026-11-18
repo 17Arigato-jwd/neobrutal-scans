@@ -17,6 +17,7 @@
 // @match        *://*.demonreader.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=demonicscans.org
 // @run-at       document-start
+// @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @connect      demoniclibs.com
@@ -36,6 +37,60 @@
     'use strict';
     // never run inside frames, except our own background reader frame
     if (window.top !== window.self && window.name !== 'md-bg-frame') return;
+
+    // Pre-emptively satisfy demonicscans:reader-membership checks to abort popup logic
+    try {
+        if (typeof document !== 'undefined') {
+            document.cookie = 'reader_membership_seen=1; path=/; max-age=31536000; SameSite=Lax' + (typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '');
+        }
+        if (typeof localStorage !== 'undefined') {
+            localStorage.setItem('demonicscans:reader-membership:last-shown', String(Date.now()));
+        }
+    } catch (_) {}
+
+    function neutralizeReaderMembership() {
+        const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        try { win.__pubadxTagInit = true; } catch (_) {}
+        try { window.__pubadxTagInit = true; } catch (_) {}
+
+        try {
+            if (win.localStorage) {
+                win.localStorage.setItem('demonicscans:reader-membership:last-shown', String(Date.now()));
+            }
+        } catch (_) {}
+
+        const patchDialog = (targetWin) => {
+            if (!targetWin || typeof targetWin.HTMLDialogElement === 'undefined') return;
+            const proto = targetWin.HTMLDialogElement.prototype;
+            if (!proto || !proto.showModal || proto.showModal.__mdPatched) return;
+            const origShowModal = proto.showModal;
+            const patchedShowModal = function() {
+                const isPromo = this.id === 'subpanel' ||
+                    this.classList.contains('reader-membership-promo') ||
+                    (this.matches && this.matches('#subpanel, .reader-membership-promo, dialog.reader-membership-promo, [class*="membership" i]'));
+                if (isPromo) {
+                    if (this.open && typeof this.close === 'function') {
+                        try { this.close(); } catch (_) {}
+                    }
+                    try { this.remove(); } catch (_) {}
+                    if (typeof document !== 'undefined' && document.documentElement) {
+                        document.documentElement.classList.remove('reader-membership-open');
+                        document.documentElement.style.overflow = 'auto';
+                    }
+                    return;
+                }
+                return origShowModal.apply(this, arguments);
+            };
+            patchedShowModal.__mdPatched = true;
+            try {
+                proto.showModal = patchedShowModal;
+            } catch (_) {}
+        };
+
+        patchDialog(win);
+        if (win !== window) patchDialog(window);
+    }
+    neutralizeReaderMembership();
 
     // Neutralize jQuery owlCarousel so it doesn't wrap cards in .owl-stage-outer
     function neutralizeOwl() {
@@ -137,6 +192,27 @@
             };
             try { Object.defineProperty(window, 'popMagic', { configurable: false, get: function () { return dummy; }, set: noop }); } catch (e) {}
             try { Object.defineProperty(window, 'msgJsPop101', { configurable: false, get: function () { return undefined; }, set: noop }); } catch (e) {}
+            // Reader membership & PubAdX pre-emption in page context
+            try { window.__pubadxTagInit = true; } catch (e) {}
+            try {
+                document.cookie = 'reader_membership_seen=1; path=/; max-age=31536000; SameSite=Lax' + (typeof location !== 'undefined' && location.protocol === 'https:' ? '; Secure' : '');
+                if (window.localStorage) window.localStorage.setItem('demonicscans:reader-membership:last-shown', String(Date.now()));
+            } catch (e) {}
+            if (typeof HTMLDialogElement !== 'undefined' && HTMLDialogElement.prototype && HTMLDialogElement.prototype.showModal) {
+                const origShow = HTMLDialogElement.prototype.showModal;
+                HTMLDialogElement.prototype.showModal = function () {
+                    if (this.id === 'subpanel' || this.classList.contains('reader-membership-promo') || (this.matches && this.matches('#subpanel, .reader-membership-promo, dialog.reader-membership-promo, [class*="membership" i]'))) {
+                        if (this.open && typeof this.close === 'function') { try { this.close(); } catch (_) {} }
+                        try { this.remove(); } catch (_) {}
+                        if (document.documentElement) {
+                            document.documentElement.classList.remove('reader-membership-open');
+                            document.documentElement.style.overflow = 'auto';
+                        }
+                        return;
+                    }
+                    return origShow.apply(this, arguments);
+                };
+            }
             // backstop: refuse click-type listeners whose code mentions the ad network
             const BAD = /popMagic|msgJsPop|pemsrv|magsrv|exoclick|exosrv|exdynsrv/i;
             const EV = /^(click|auxclick|mousedown|mouseup|pointerdown|pointerup|touchstart|touchend)$/;
@@ -833,6 +909,10 @@
         :focus-visible { outline: 3px solid var(--ink) !important; outline-offset: 2px !important; }
 
         /* ---------- Kill popups / banners / ad slots / junk ---------- */
+        html.reader-membership-open,
+        html.reader-membership-open body {
+            overflow: auto !important;
+        }
         .modal, .modal-backdrop, .popup, .overlay,
         [id*="modal"], [class*="modal"], [id*="popup"], [class*="popup"],
         [href*="veyra" i], [src*="veyra" i],
@@ -842,6 +922,15 @@
         .ds-ad-space, .ad-container, [data-zoneid], ins.eas6a, [class*="ad-box" i],
         div:has(> a[href*="contact" i]:has(img)),
         [id^="bg-ssp"], #teaser3, #popcont, #subpanel, dialog.reader-membership-promo,
+        dialog.reader-membership-promo::backdrop, #subpanel::backdrop,
+        dialog[id="subpanel"], dialog[id="subpanel"]::backdrop,
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(.reader-membership-close),
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(.reader-membership-subscribe),
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(a[href*="game_noads_paypal"]),
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(img[src*="membership"]),
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(img[src*="noads"]),
+        .payment-widget, .payment-icons, .payment-text, .payment-options, .payment-button,
+        a[href*="game_noads_paypal" i],
         :is(h3, h4, p):has(> a[href*="proton.me" i]), :is(h3, h4, p)[style*="#2da01e" i], :is(h3, h4, p)[style*="2da01e" i],
         html[data-md-mode="comics"] .main-width:has(> h3.see-more a[href*="nvupdates" i]),
         a[href*="reddit" i], a[href*="toraka" i], a[href*="discord" i], a[href*="announce" i], a[href*="ebook" i],
@@ -5457,8 +5546,30 @@
     /* ====================================================================
      *  DEMONICSCANS: purge Discord, comments (Top + hide short + allow GIFs), dark circle favicon
      * ==================================================================== */
+    function purgeMembershipPopup(rootEl = document) {
+        if (typeof document !== 'undefined' && document.documentElement && document.documentElement.classList.contains('reader-membership-open')) {
+            document.documentElement.classList.remove('reader-membership-open');
+            document.documentElement.style.overflow = 'auto';
+        }
+        if (!rootEl || !rootEl.querySelectorAll) return;
+        const targets = rootEl.querySelectorAll(
+            '#subpanel, dialog.reader-membership-promo, #popcont, .payment-widget, ' +
+            'dialog:not(.cw-dialog):not(#md-comments-dialog):has(.reader-membership-close), ' +
+            'dialog:not(.cw-dialog):not(#md-comments-dialog):has(.reader-membership-subscribe), ' +
+            'dialog:not(.cw-dialog):not(#md-comments-dialog):has(a[href*="game_noads_paypal"]), ' +
+            'script[data-reader-ad-src], script[data-reader-ad-inline], ins.pubadx-slot'
+        );
+        targets.forEach(el => {
+            if (el.tagName === 'DIALOG' && el.open && typeof el.close === 'function') {
+                try { el.close(); } catch (_) {}
+            }
+            el.remove();
+        });
+    }
+
     function purgeDiscord(rootEl = document) {
         if (!rootEl) return;
+        purgeMembershipPopup(rootEl);
         rootEl.querySelectorAll('iframe[src*="discord" i], a[href*="discord" i], div:has(> iframe[src*="discord" i])').forEach(el => {
             if (el.matches && (el.matches('.main-width') || el.closest('#cw-comments') || el.closest('#discuscontainer'))) return;
             el.remove();
@@ -5701,6 +5812,7 @@
         refinePage();
         try { nukeAnnoyances(); } catch (e) { console.warn('[MD] nuke', e); }
         try { purgeDiscord(); } catch (e) {}
+        try { purgeMembershipPopup(); } catch (e) {}
         try { setupChrome(); } catch (e) { console.warn('[MD] chrome', e); }
         try { setupThemeToggle(); } catch (e) { console.warn('[MD] theme', e); }
         try { commentsTweaks(); faviconOnce(); } catch (e) { console.warn('[MD] extras', e); }
@@ -5708,7 +5820,7 @@
             const page = PAGE();
             if (page === 'list' || page === 'translations') { removeNovels(); buildHero(); organize(); repositionSeeMore(); setupBookmarks(); }
             else if (page === 'overview') setupOverview();
-            else if (page === 'chapter') { purgeDiscord(); (isNovelChapter() ? setupNovelReader : setupReader)(); }
+            else if (page === 'chapter') { purgeDiscord(); purgeMembershipPopup(); (isNovelChapter() ? setupNovelReader : setupReader)(); }
             addExtras(); setupModeToggle();
         } catch (e) { console.warn('[MD] page', e); }
     }
@@ -5722,8 +5834,15 @@
     addEventListener('DOMContentLoaded', schedule);
     addEventListener('load', schedule);
     new MutationObserver(muts => {
+        if (document.documentElement && document.documentElement.classList.contains('reader-membership-open')) {
+            document.documentElement.classList.remove('reader-membership-open');
+            document.documentElement.style.overflow = 'auto';
+        }
+        if (document.querySelector('#subpanel, dialog.reader-membership-promo, #popcont, .payment-widget')) {
+            purgeMembershipPopup();
+        }
         // ignore our own widgets (progress text updates etc.) so they don't re-trigger a full pass
         if (muts.every(m => { const el = m.target.nodeType === 1 ? m.target : m.target.parentElement; return el && el.closest('#md-hero, #md-dock, #md-toast, #md-scrim, #md-sel-bar'); })) return;
         schedule();
-    }).observe(root, { childList: true, subtree: true });
+    }).observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 })();

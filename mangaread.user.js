@@ -102,6 +102,46 @@
                 return blockOpen(url, target, features);
             };
 
+            // 7. Defeat Reader Membership Promo & Pre-empt Dialog
+            try {
+                if (typeof document !== 'undefined') {
+                    document.cookie = 'reader_membership_seen=1; path=/; max-age=31536000; SameSite=Lax';
+                }
+                if (win.localStorage) {
+                    win.localStorage.setItem('demonicscans:reader-membership:last-shown', String(Date.now()));
+                }
+            } catch (_) {}
+
+            const patchDialog = (targetWin) => {
+                if (!targetWin || typeof targetWin.HTMLDialogElement === 'undefined') return;
+                const proto = targetWin.HTMLDialogElement.prototype;
+                if (!proto || !proto.showModal || proto.showModal.__mdPatched) return;
+                const origShowModal = proto.showModal;
+                const patchedShowModal = function() {
+                    const isPromo = this.id === 'subpanel' ||
+                        this.classList.contains('reader-membership-promo') ||
+                        (this.matches && this.matches('#subpanel, .reader-membership-promo, dialog.reader-membership-promo, [class*="membership" i]'));
+                    if (isPromo) {
+                        if (this.open && typeof this.close === 'function') {
+                            try { this.close(); } catch (_) {}
+                        }
+                        try { this.remove(); } catch (_) {}
+                        if (typeof document !== 'undefined' && document.documentElement) {
+                            document.documentElement.classList.remove('reader-membership-open');
+                            document.documentElement.style.overflow = 'auto';
+                        }
+                        return;
+                    }
+                    return origShowModal.apply(this, arguments);
+                };
+                patchedShowModal.__mdPatched = true;
+                try {
+                    proto.showModal = patchedShowModal;
+                } catch (_) {}
+            };
+            patchDialog(win);
+            if (win !== window) patchDialog(window);
+
             // Mirror stubs to sandbox window if running in userscript manager sandbox
             if (win !== window) {
                 try {
@@ -328,6 +368,10 @@
         }
 
         /* ===== LAYER 1 DE-BLOAT CSS: ZERO-FOUC SUPPRESSION ===== */
+        html.reader-membership-open,
+        html.reader-membership-open body {
+            overflow: auto !important;
+        }
         .ad, .c-ads, .custom-code, .body-top-ads, .body-bottom-ads,
         .code-block, div[class*="code-block"],
         .widget_custom_html, .textwidget.custom-html-widget,
@@ -349,7 +393,13 @@
         #wp-bug-reporter, .modal-bug-report, div:has(> #sendBugReport),
         .cf-turnstile, [id^="cf-turnstile"], .cf-turnstile-br,
         #TB_overlay, #TB_window, #TB_load,
-        dialog.reader-membership-promo, #popcont, #teaser3,
+        dialog.reader-membership-promo, dialog.reader-membership-promo::backdrop,
+        #subpanel, #subpanel::backdrop, dialog[id="subpanel"], dialog[id="subpanel"]::backdrop,
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(.reader-membership-close),
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(.reader-membership-subscribe),
+        dialog:not(.cw-dialog):not(#md-comments-dialog):has(a[href*="paypal"]),
+        .payment-widget, .payment-icons, .payment-text, .payment-options, .payment-button,
+        #popcont, #teaser3,
         #wpd-bubble-wrapper,
         #menu-item-107397, #nav-menu-item-107397,
         li:has(> a[href*="chat-mangaread"]), li:has(> a[href*="/chat"]),
@@ -2215,12 +2265,18 @@
         'a[href*="chat-mangaread"]', 'a[href*="/chat/"]',
         '.chat-container', '#chat', '#cbox',
         'iframe[src*="chat"]', 'iframe[src*="minnit"]', 'iframe[src*="cbox"]', 'iframe[src*="rumbletalk"]',
-        '.go-to-top'
+        '.go-to-top',
+        '#subpanel', 'dialog.reader-membership-promo', '#popcont', '.payment-widget',
+        'script[data-reader-ad-src]', 'script[data-reader-ad-inline]'
     ].join(', ');
 
     function purgeAdContainers(rootEl = document) {
         if (!rootEl || !rootEl.querySelectorAll) return;
         try {
+            if (document.documentElement && document.documentElement.classList.contains('reader-membership-open')) {
+                document.documentElement.classList.remove('reader-membership-open');
+                document.documentElement.style.overflow = 'auto';
+            }
             rootEl.querySelectorAll(PURGE_SELECTORS).forEach(el => el.remove());
             rootEl.querySelectorAll('a[href*="chat-mangaread"], a[href*="/chat/"]').forEach(a => {
                 const li = a.closest('li');

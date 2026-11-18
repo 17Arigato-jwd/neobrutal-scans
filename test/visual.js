@@ -136,7 +136,13 @@ function startFixtureServer(port) {
             let contentType = 'text/html; charset=utf-8';
 
             // 2. Static CSS and JS assets
-            if (pathname === '/css/mainstyle.css' || pathname === '/mainstyle.css' || pathname === '/temp/mainstyle.css') {
+            if (pathname.startsWith('/assets/reader-membership.js')) {
+                filePath = path.join(TEMP_DIR, 'assets', 'reader-membership.js');
+                contentType = 'application/javascript; charset=utf-8';
+            } else if (pathname.startsWith('/assets/reader-membership.css')) {
+                filePath = path.join(TEMP_DIR, 'assets', 'reader-membership.css');
+                contentType = 'text/css; charset=utf-8';
+            } else if (pathname === '/css/mainstyle.css' || pathname === '/mainstyle.css' || pathname === '/temp/mainstyle.css') {
                 filePath = path.join(TEMP_DIR, 'mainstyle.css');
                 contentType = 'text/css; charset=utf-8';
             } else if (pathname === '/wp-content/plugins/madara-core/assets/js/script.js' || pathname === '/mangaread/script.js' || pathname === '/script.js') {
@@ -650,9 +656,24 @@ async function runVisualTests() {
                 const visibleImgs = imgs.filter(i => getComputedStyle(i).display !== 'none' && getComputedStyle(i).visibility !== 'hidden');
                 const cwComments = document.querySelector('#cw-comments');
                 const commentsVisible = cwComments && getComputedStyle(cwComments).display !== 'none';
-                return { count: imgs.length, visible: visibleImgs.length, commentsVisible };
+                const subpanel = document.querySelector('#subpanel, dialog.reader-membership-promo');
+                const payment = document.querySelector('.payment-widget');
+                const popcont = document.querySelector('#popcont');
+                const isLocked = document.documentElement.classList.contains('reader-membership-open');
+                const subpanelVisible = subpanel && (subpanel.open || (getComputedStyle(subpanel).display !== 'none' && getComputedStyle(subpanel).visibility !== 'hidden'));
+                const paymentVisible = payment && (getComputedStyle(payment).display !== 'none' && getComputedStyle(payment).visibility !== 'hidden');
+                return {
+                    count: imgs.length,
+                    visible: visibleImgs.length,
+                    commentsVisible,
+                    subpanelGone: !subpanel || !subpanelVisible,
+                    paymentGone: !payment || !paymentVisible,
+                    popcontGone: !popcont,
+                    isUnlocked: !isLocked
+                };
             });
             console.log(`  - Reader images: ${readerState.visible}/${readerState.count} visible, commentsVisible=${readerState.commentsVisible}`);
+            console.log(`  - Membership popup eliminated: subpanelGone=${readerState.subpanelGone}, paymentGone=${readerState.paymentGone}, isUnlocked=${readerState.isUnlocked}`);
 
             const outPath = path.join(SCREENSHOT_DIR, 'demonicscans-chapter-reader.png');
             await page.screenshot({ path: outPath });

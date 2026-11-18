@@ -668,6 +668,33 @@ test('demonicscans.user.js clamps series titles to 2 lines and standardizes .cha
     assert(/\.chap-date\s*\{[^}]*display:\s*flex\s*!important;\s*flex-direction:\s*row\s*!important/i.test(demonicCode), 'Missing flex-row layout on .chap-date');
 });
 
+// 11. Reader Membership Popup Immunity & De-bloat
+console.log('\n\x1b[36m[Group 11: Reader Membership Popup Immunity & De-bloat]\x1b[0m');
+test('demonicscans.user.js pre-empts reader membership popup via cookie, localStorage, and showModal prototype stubbing', () => {
+    assert(demonicCode.includes('reader_membership_seen=1'), 'Missing reader_membership_seen cookie pre-emption');
+    assert(demonicCode.includes('demonicscans:reader-membership:last-shown'), 'Missing reader membership localStorage pre-emption');
+    assert(demonicCode.includes('function neutralizeReaderMembership'), 'Missing neutralizeReaderMembership helper');
+    assert(demonicCode.includes('HTMLDialogElement.prototype.showModal'), 'Missing showModal monkey-patch');
+    assert(demonicCode.includes('reader-membership-open'), 'Missing reader-membership-open removal in showModal stub');
+});
+
+test('demonicscans.user.js suppresses html.reader-membership-open scroll lock, dialog backdrop, #subpanel, and .payment-widget in CSS and DOM', () => {
+    assert(/html\.reader-membership-open[^{]*\{[^}]*overflow:\s*auto\s*!important/i.test(demonicCode), 'Missing overflow: auto !important on html.reader-membership-open');
+    assert(demonicCode.includes('#subpanel::backdrop'), 'Missing #subpanel::backdrop in CSS debloat');
+    assert(demonicCode.includes('dialog.reader-membership-promo::backdrop'), 'Missing dialog.reader-membership-promo::backdrop in CSS debloat');
+    assert(demonicCode.includes('.payment-widget,'), 'Missing .payment-widget in CSS debloat');
+    assert(demonicCode.includes('function purgeMembershipPopup'), 'Missing purgeMembershipPopup in demonicscans');
+});
+
+test('mangaread.user.js suppresses reader membership promo, #subpanel, and .payment-widget in CSS and DOM', () => {
+    assert(mangareadCode.includes('reader_membership_seen=1'), 'Missing reader_membership_seen cookie pre-emption in mangaread');
+    assert(mangareadCode.includes('demonicscans:reader-membership:last-shown'), 'Missing reader membership localStorage pre-emption in mangaread');
+    assert(/html\.reader-membership-open[^{]*\{[^}]*overflow:\s*auto\s*!important/i.test(mangareadCode), 'Missing overflow: auto !important on html.reader-membership-open in mangaread');
+    assert(mangareadCode.includes('#subpanel::backdrop'), 'Missing #subpanel::backdrop in mangaread CSS debloat');
+    assert(mangareadCode.includes('.payment-widget'), 'Missing .payment-widget in mangaread CSS debloat');
+    assert(mangareadCode.includes('reader-membership-open'), 'Missing reader-membership-open handling in mangaread purgeAdContainers');
+});
+
 // Summary
 console.log('\n----------------------------------------');
 if (failed === 0) {
