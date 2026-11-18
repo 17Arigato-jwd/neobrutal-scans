@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.8
+// @version      2026-11-02.9
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -384,16 +384,16 @@
         #md-hero .md-hero-tag {
             display: inline-block !important;
             align-self: flex-start !important;
-            padding: 3px 10px !important;
+            padding: 4px 12px !important;
             margin-bottom: 12px !important;
             background: var(--yellow) !important;
             color: #000 !important;
-            border: 1.5px solid #000 !important;
-            border-radius: 999px !important;
+            border: 2px solid #000 !important;
+            border-radius: 7px !important;
             font: 800 11px/1 'JetBrains Mono', monospace !important;
             text-transform: uppercase !important;
             letter-spacing: .08em !important;
-            box-shadow: 2px 2px 0 #000 !important;
+            box-shadow: 3px 3px 0 #000 !important;
         }
         #md-hero .md-hero-title {
             margin: 0 0 10px !important;
@@ -576,7 +576,7 @@
             animation: mdProgressFall 5.5s linear forwards;
         }
         #md-hero:hover .md-thumb-fill {
-            animation-play-state: paused !important;
+            animation-duration: 55s !important;
         }
         @keyframes mdProgressFall {
             0% { height: 0%; }
@@ -2223,6 +2223,18 @@
             const src = img.currentSrc || img.src || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || '';
             if (!src || src.startsWith('data:image/svg') || /placeholder|blank/i.test(src)) continue;
 
+            // Upscale: swap small size params in CDN URLs to get higher-res cover images
+            // e.g. /resize/150x/ -> /resize/400x/  or  ?width=150 -> ?width=400
+            function upscaleSrc(url) {
+                return url
+                    .replace(/(\/resize\/)(\d+)(x(?:\/|$))/gi, (_, pre, _w, suf) => pre + '400' + suf)
+                    .replace(/([?&]w(?:idth)?=)\d+/gi, '$1400')
+                    .replace(/([?&]h(?:eight)?=)\d+/gi, '$1600')
+                    .replace(/_\d+x\d+(\.\w+)$/i, '$1') // Cloudinary-style suffix
+                    .replace(/\/(\d+)x(\d+)\//g, (m, w, h) => w < 300 ? '/400x600/' : m); // path segments
+            }
+            const hqSrc = upscaleSrc(src);
+
             let title = a.getAttribute('title') || img.getAttribute('title') || img.getAttribute('alt') || '';
             const card = node.closest('.owl-element, .owl-item, [data-mdc], div') || node;
             if (!title) {
@@ -2251,17 +2263,12 @@
                 }
             }
 
-            // Extract latest chapter (from card, or pre-harvested map)
-            let chapter = '';
-            const cardChap = card.querySelector(CH);
-            if (cardChap) {
-                chapter = cardChap.textContent.trim().replace(/\s+/g, ' ');
-            } else {
-                chapter = chapterMap.get(normalizeSeriesPath(href)) || '';
-            }
+            // Extract latest chapter — ONLY from the pre-harvested map (Latest Updates grid),
+            // never from carousel card links (they point to Chapter 1, not latest).
+            let chapter = chapterMap.get(normalizeSeriesPath(href)) || '';
 
             seen.add(href);
-            items.push({ href, src, title, views, chapter });
+            items.push({ href, src: hqSrc, srcLow: src, title, views, chapter });
         }
 
         if (items.length === 0 || (items.length < 2 && document.readyState !== 'complete')) return;
@@ -2323,7 +2330,7 @@
             thumb.setAttribute('aria-label', displayTitle || ('Series ' + (idx + 1)));
             thumb.setAttribute('title', displayTitle);
             thumb.innerHTML = `
-                <img src="${item.src.replace(/"/g, '%22')}" alt="${displayTitle.replace(/"/g, '&quot;')}">
+                <img src="${item.src.replace(/"/g, '%22')}" alt="${displayTitle.replace(/"/g, '&quot;')}" loading="lazy" decoding="async">
                 <div class="md-thumb-fill"></div>
             `;
             thumb.addEventListener('click', (e) => {
@@ -2347,8 +2354,16 @@
             }
         }, { passive: false });
 
-        // Hover pause for slide fallback timer
-        hero.addEventListener('mouseenter', () => clearTimeout(slideTimer));
+        // Hover: animation slows to crawl (CSS handles it), JS timer also stretches
+        hero.addEventListener('mouseenter', () => {
+            clearTimeout(slideTimer);
+            // Set a very long fallback while hovered so animationend still fires eventually
+            if (items.length > 1) {
+                slideTimer = setTimeout(() => {
+                    if (!hero.matches(':hover')) showSlide((currentSlide + 1) % items.length);
+                }, 60000);
+            }
+        });
         hero.addEventListener('mouseleave', restartTimer);
 
         function showSlide(idx) {
@@ -2392,14 +2407,23 @@
             // Chapter pill update (with async fetch fallback if not in initial DOM)
             const chapEl = hero.querySelector('.md-hero-chapter');
             if (chapEl) {
+                // Format chapter text: strip redundant "chapter" if present, then prefix nicely
+                function fmtChapter(raw) {
+                    if (!raw) return '';
+                    // "Chapter 151" -> "Latest: Ch. 151", "Ch. 42" -> "Latest: Ch. 42"
+                    const m = raw.match(/(?:chapter|ch\.?)\s*([\d.]+)/i);
+                    if (m) return 'Latest: Ch.\u00a0' + m[1];
+                    // Fallback: just prefix whatever was found
+                    return 'Latest: ' + raw;
+                }
                 if (cur.chapter) {
-                    chapEl.textContent = cur.chapter;
+                    chapEl.textContent = fmtChapter(cur.chapter);
                     chapEl.style.display = 'inline-flex';
                 } else {
                     const cached = chapterMap.get(normalizeSeriesPath(cur.href));
                     if (cached) {
                         cur.chapter = cached;
-                        chapEl.textContent = cached;
+                        chapEl.textContent = fmtChapter(cached);
                         chapEl.style.display = 'inline-flex';
                     } else {
                         chapEl.style.display = 'none';
@@ -2409,7 +2433,8 @@
                                 .then(res => res.text())
                                 .then(html => {
                                     const doc = new DOMParser().parseFromString(html, 'text/html');
-                                    const ch = doc.querySelector('#chapters-list a.chplinks, #chapters-list a[href*="chapter" i], a.chplinks, a[href*="chapter" i]');
+                                    // First link in #chapters-list = latest chapter
+                                    const ch = doc.querySelector('#chapters-list a.chplinks, #chapters-list li:first-child a[href*="chapter" i], #chapters-list a[href*="chapter" i]');
                                     if (ch) {
                                         const t = [...ch.childNodes].find(n => n.nodeType === 3 && n.nodeValue.trim());
                                         const raw = (t ? t.nodeValue : ch.textContent).replace(/\s+/g, ' ').trim();
@@ -2417,7 +2442,7 @@
                                             cur.chapter = raw;
                                             chapterMap.set(normalizeSeriesPath(cur.href), raw);
                                             if (currentSlide === idx && chapEl) {
-                                                chapEl.textContent = raw;
+                                                chapEl.textContent = fmtChapter(raw);
                                                 chapEl.style.display = 'inline-flex';
                                             }
                                         }
