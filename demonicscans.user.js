@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.18
+// @version      2026-11-02.19
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -160,8 +160,7 @@
     function detectPage() {
         const p = location.pathname.toLowerCase();
         if (/chaptered\.php$/.test(p)) return 'chapter';
-        if (/^\/(manga|title)\//.test(p)) return 'overview';
-        if (/^\/novel\//.test(p) || /nvupdates/.test(p)) return 'other';
+        if (/^\/(manga|title|novel)\//.test(p)) return 'overview';
         return 'list';
     }
     const PAGE = () => root.dataset.mdPage || 'list';
@@ -170,7 +169,6 @@
 
     function refinePage() {
         let p = PAGE();
-        if (/^\/novel\//i.test(location.pathname)) return;
         if ($('#manga-info-container')) p = 'overview';
         else if ($('img.imgholder[alt]') || $('.chapter-info .chapters-nav')) p = 'chapter';
         if (p !== PAGE()) root.dataset.mdPage = p;
@@ -812,6 +810,7 @@
         .ds-ad-space, .ad-container, [data-zoneid], ins.eas6a, [class*="ad-box" i],
         div:has(> a[href*="contact" i]:has(img)),
         [id^="bg-ssp"], #teaser3, #popcont, #subpanel, dialog.reader-membership-promo,
+        :is(h3, h4, p):has(> a[href*="proton.me" i]), :is(h3, h4, p)[style*="#2da01e" i],
         html[data-md-mode="comics"] .main-width:has(> h3.see-more a[href*="nvupdates" i]),
         a[href*="reddit" i], a[href*="toraka" i], a[href*="discord" i], a[href*="announce" i], a[href*="ebook" i],
         a[href*="subscri" i], a[href*="premium" i], a[href*="membership" i], .toraka-badge,
@@ -1317,18 +1316,23 @@
         }
 
         /* ---------- Advanced Search & Filter Grid ---------- */
-        .advanced-container,
-        [data-md="grid"].advanced-container {
-            display: grid !important;
-            grid-template-columns: repeat(auto-fill, minmax(clamp(140px, 15vw, 190px), 1fr)) !important;
-            gap: 16px !important;
+        .advanced-container {
+            display: block !important;
             width: var(--col) !important;
             max-width: 100% !important;
             margin: 24px auto !important;
             padding: 6px !important;
             box-sizing: border-box !important;
         }
-        .advanced-container .advanced-element,
+        #advanced-content,
+        [data-md="grid"].advanced-container {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(clamp(140px, 15vw, 190px), 1fr)) !important;
+            gap: 16px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        :is(.advanced-container, #advanced-content) .advanced-element,
         .advanced-container [data-mdc] {
             display: flex !important;
             flex-direction: column !important;
@@ -1344,20 +1348,20 @@
             height: 100% !important;
             box-sizing: border-box !important;
         }
-        .advanced-container .advanced-element:hover,
+        :is(.advanced-container, #advanced-content) .advanced-element:hover,
         .advanced-container [data-mdc]:hover {
             transform: translate(-2px, -2px) !important;
             box-shadow: var(--sh-hover) !important;
             background: var(--cream) !important;
         }
-        .advanced-container .advanced-element a {
+        :is(.advanced-container, #advanced-content) .advanced-element a {
             display: flex !important;
             flex-direction: column !important;
             height: 100% !important;
             text-decoration: none !important;
             color: var(--ink) !important;
         }
-        .advanced-container .advanced-element img {
+        :is(.advanced-container, #advanced-content) .advanced-element img {
             width: 100% !important;
             height: auto !important;
             aspect-ratio: 2 / 3 !important;
@@ -1368,7 +1372,7 @@
             margin: 0 !important;
             display: block !important;
         }
-        .advanced-container .advanced-element h1 {
+        :is(.advanced-container, #advanced-content) .advanced-element h1 {
             font: 800 13px/1.3 'DM Sans', sans-serif !important;
             color: var(--ink) !important;
             padding: 8px 10px !important;
@@ -1477,7 +1481,18 @@
             padding: 0 4px !important;
         }
 
-        /* ---------- Static Info & Policy Pages ---------- */
+        /* ---------- Page Titles (List, Updates, Translations, New Manga) ---------- */
+        .big-fat-titles,
+        h1.big-fat-titles {
+            font: 900 clamp(22px, 3.5vw, 34px) 'DM Sans', sans-serif !important;
+            color: var(--ink) !important;
+            text-transform: uppercase !important;
+            letter-spacing: -0.02em !important;
+            margin: 24px auto 16px !important;
+            text-align: center !important;
+        }
+
+        /* ---------- Static Info, Policy & Auth Form Pages ---------- */
         #login-container {
             max-width: var(--col) !important;
             margin: 32px auto !important;
@@ -1489,13 +1504,17 @@
             box-shadow: var(--sh) !important;
             box-sizing: border-box !important;
         }
+        #login-container:has(form) {
+            max-width: min(520px, calc(100vw - 32px)) !important;
+        }
         #login-container h1,
         #login-container h2,
         #login-container h3,
         #login-container p,
         #login-container span,
         #login-container div,
-        #login-container li {
+        #login-container li,
+        #login-container label {
             color: var(--ink) !important;
         }
         #login-container h1 {
@@ -1503,10 +1522,209 @@
             margin-bottom: 16px !important;
             border-bottom: var(--bw) solid var(--bd) !important;
             padding-bottom: 12px !important;
+            text-align: center !important;
         }
         #login-container p {
             font: 500 15px/1.6 'DM Sans', sans-serif !important;
             margin: 12px 0 !important;
+        }
+        #login-container label {
+            display: inline-block !important;
+            font: 800 12px 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            margin-top: 10px !important;
+            margin-bottom: 6px !important;
+        }
+        #login-container .form-input {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 600 14px 'DM Sans', sans-serif !important;
+            padding: 10px 12px !important;
+            margin: 4px 0 12px !important;
+            transition: transform .1s, box-shadow .1s, background .1s !important;
+        }
+        #login-container .form-input:focus {
+            outline: 3px solid var(--ink) !important;
+            outline-offset: 1px !important;
+            background: var(--card) !important;
+        }
+        #login-container .form-submit {
+            width: 100% !important;
+            box-sizing: border-box !important;
+            background: var(--yellow) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh) !important;
+            font: 900 15px 'DM Sans', sans-serif !important;
+            text-transform: uppercase !important;
+            padding: 12px !important;
+            margin-top: 14px !important;
+            cursor: pointer !important;
+            transition: transform .1s, box-shadow .1s !important;
+        }
+        #login-container .form-submit:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh-hover) !important;
+            background: var(--lime) !important;
+        }
+        #login-container .form-submit:active {
+            transform: translate(1px, 1px) !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+        }
+        #new-user {
+            background: var(--cream) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 12px !important;
+            margin-top: 20px !important;
+            font: 700 13.5px 'DM Sans', sans-serif !important;
+            text-align: center !important;
+        }
+        #login-container a,
+        #new-user a {
+            color: var(--ink) !important;
+            font-weight: 800 !important;
+            text-decoration: underline !important;
+            text-underline-offset: 3px !important;
+        }
+        #login-container .error {
+            color: var(--coral) !important;
+            font: 700 12.5px 'DM Sans', sans-serif !important;
+            margin: 4px 0 !important;
+        }
+
+        /* ---------- User Bookmarks Page ---------- */
+        #bookmarks-container {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)) !important;
+            gap: 16px !important;
+            width: var(--col) !important;
+            max-width: 100% !important;
+            margin: 24px auto !important;
+            padding: 6px !important;
+            box-sizing: border-box !important;
+        }
+        #bookmarks-container .book-elements {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: stretch !important;
+            gap: 14px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            padding: 12px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            transition: transform .15s, box-shadow .15s, background .15s !important;
+        }
+        #bookmarks-container .book-elements:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: var(--sh-hover) !important;
+            background: var(--cream) !important;
+        }
+        #bookmarks-container .book-elements img {
+            width: 84px !important;
+            height: 118px !important;
+            object-fit: cover !important;
+            flex: 0 0 84px !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            background: var(--soft) !important;
+        }
+        #bookmarks-container .infobook {
+            flex: 1 1 auto !important;
+            width: auto !important;
+            padding: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            gap: 6px !important;
+            min-width: 0 !important;
+        }
+        #bookmarks-container h1 {
+            font: 900 16px/1.3 'DM Sans', sans-serif !important;
+            margin: 0 !important;
+            color: var(--ink) !important;
+        }
+        #bookmarks-container h1 a {
+            color: var(--ink) !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+        #bookmarks-container span {
+            font: 600 12px/1.4 'JetBrains Mono', monospace !important;
+            color: var(--muted) !important;
+        }
+        #bookmarks-container a:not(h1 a) {
+            color: var(--ink) !important;
+        }
+        #bookmarks-container :is(button, a)[onclick*="unfollow" i],
+        #bookmarks-container .unfollow-btn {
+            align-self: flex-start !important;
+            padding: 5px 12px !important;
+            background: var(--coral) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 11px/1 'JetBrains Mono', monospace !important;
+            cursor: pointer !important;
+            text-transform: uppercase !important;
+            transition: transform .1s, box-shadow .1s !important;
+        }
+        #bookmarks-container :is(button, a)[onclick*="unfollow" i]:hover,
+        #bookmarks-container .unfollow-btn:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 2px 2px 0 var(--bd) !important;
+        }
+        .md-empty-bookmarks {
+            grid-column: 1 / -1 !important;
+            text-align: center !important;
+            padding: 48px 24px !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            margin: 32px auto !important;
+            max-width: 520px !important;
+            box-sizing: border-box !important;
+        }
+        .md-empty-bookmarks h2 {
+            font: 900 24px 'DM Sans', sans-serif !important;
+            margin: 0 0 12px !important;
+            color: var(--ink) !important;
+        }
+        .md-empty-bookmarks p {
+            font: 500 15px/1.5 'DM Sans', sans-serif !important;
+            color: var(--muted) !important;
+            margin: 0 0 20px !important;
+        }
+        .md-empty-bookmarks .md-btn-browse {
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 10px 20px !important;
+            background: var(--yellow) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 13px 'DM Sans', sans-serif !important;
+            text-transform: uppercase !important;
+            text-decoration: none !important;
         }
 
         /* ---------- Footer ---------- */
@@ -4074,6 +4292,8 @@
     function nrSet(patch) { Object.assign(nr.s, patch); store.set('nr', nr.s); nrApply(); }
 
     function findNovelText() {
+        const direct = $('#nov-chap-container');
+        if (direct) return direct;
         const sums = new Map();
         $$('p').forEach(p => {
             if (p.closest('#comments-section, #cw-comments, header, footer, nav, #md-np, #md-dock')) return;
@@ -4448,6 +4668,22 @@
         if (input) { e.preventDefault(); input.focus(); input.select(); }
     });
 
+    function setupBookmarks() {
+        const cont = $('#bookmarks-container');
+        if (!cont || cont.dataset.mdDone) return;
+        cont.dataset.mdDone = '1';
+        if (!cont.querySelector('.book-elements')) {
+            const empty = document.createElement('div');
+            empty.className = 'md-empty-bookmarks';
+            empty.innerHTML = `
+                <h2>No Bookmarks Yet</h2>
+                <p>You haven't bookmarked any series yet. Click Bookmark on any series page to keep track of it here.</p>
+                <a href="/lastupdates.php" class="md-btn-browse">Browse Manga</a>
+            `;
+            cont.appendChild(empty);
+        }
+    }
+
     /* ====================================================================
      *  RUN LOOP
      * ==================================================================== */
@@ -4463,7 +4699,7 @@
         try { commentsTweaks(); faviconOnce(); } catch (e) { console.warn('[MD] extras', e); }
         try {
             const page = PAGE();
-            if (page === 'list') { removeNovels(); buildHero(); organize(); repositionSeeMore(); }
+            if (page === 'list') { removeNovels(); buildHero(); organize(); repositionSeeMore(); setupBookmarks(); }
             else if (page === 'overview') setupOverview();
             else if (page === 'chapter') (isNovelChapter() ? setupNovelReader : setupReader)();
             addExtras(); setupModeToggle();

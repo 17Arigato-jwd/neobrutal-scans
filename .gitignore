@@ -14,6 +14,7 @@ Thumbs.db
 *.log
 *.tmp
 *.bak
+.temp/
 
 # Dependencies (if any added in future)
 node_modules/

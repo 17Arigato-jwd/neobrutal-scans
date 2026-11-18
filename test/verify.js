@@ -168,10 +168,26 @@ test('Advanced search form and grid styles are defined', () => {
     assert(demonicCode.includes('.advanced-container'), 'Missing .advanced-container grid rule');
     assert(demonicCode.includes('.advanced-element'), 'Missing .advanced-element rule');
 });
-test('Static info and policy pages styling with light-mode text fix is defined', () => {
+test('Static info, policy, and auth form pages styling with light-mode text fix is defined', () => {
     assert(demonicCode.includes('#login-container'), 'Missing #login-container rule');
     assert(demonicCode.includes('#login-container p'), 'Missing #login-container p rule');
     assert(/#login-container\s*\{[^}]*background:\s*var\(--card\)/i.test(demonicCode), 'Missing card background on #login-container');
+    assert(demonicCode.includes('#login-container .form-input'), 'Missing .form-input styling');
+    assert(demonicCode.includes('#login-container .form-submit'), 'Missing .form-submit styling');
+});
+test('Bookmarks page grid, elements, and empty state are defined', () => {
+    assert(demonicCode.includes('#bookmarks-container'), 'Missing #bookmarks-container rule');
+    assert(demonicCode.includes('#bookmarks-container .book-elements'), 'Missing .book-elements card rule');
+    assert(demonicCode.includes('.md-empty-bookmarks'), 'Missing .md-empty-bookmarks rule');
+    assert(demonicCode.includes('setupBookmarks();'), 'setupBookmarks must be called in run loop');
+});
+test('General .big-fat-titles heading rule is defined for list and translation pages', () => {
+    assert(demonicCode.includes('.big-fat-titles,'), 'Missing general .big-fat-titles rule');
+    assert(/h1\.big-fat-titles\s*\{[^}]*color:\s*var\(--ink\)/i.test(demonicCode), 'Missing color: var(--ink) on .big-fat-titles');
+});
+test('Novel overview detection and fast reader container lookup are defined', () => {
+    assert(demonicCode.includes('(manga|title|novel)'), 'detectPage must support /novel/ overview routes');
+    assert(demonicCode.includes('#nov-chap-container'), 'findNovelText must check #nov-chap-container');
 });
 
 // 5. DOM Isolation Guards
