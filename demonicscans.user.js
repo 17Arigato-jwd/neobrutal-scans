@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.12
+// @version      2026-11-02.13
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -639,7 +639,7 @@
                 flex: 1 1 auto !important;
                 display: flex !important;
                 flex-direction: column !important;
-                max-width: calc(100% - clamp(135px, 40vw, 185px)) !important;
+                max-width: calc(100% - clamp(160px, 44vw, 205px)) !important;
                 min-height: 0 !important;
                 height: 100% !important;
                 justify-content: flex-start !important;
@@ -648,14 +648,14 @@
                 display: block !important;
                 position: absolute !important;
                 top: auto !important;
-                bottom: -50px !important;
-                right: 8px !important;
-                width: clamp(155px, 45vw, 210px) !important;
+                bottom: -40px !important;
+                right: clamp(16px, 4.5vw, 24px) !important;
+                width: clamp(135px, 39vw, 175px) !important;
                 aspect-ratio: 2 / 3 !important;
                 border-radius: 12px !important;
                 border: var(--bw) solid #000 !important;
                 box-shadow: 6px 6px 0 #000 !important;
-                transform: rotate(5.5deg) !important;
+                transform: rotate(3.5deg) !important;
                 transform-origin: bottom center !important;
                 z-index: 3 !important;
                 pointer-events: auto !important;
