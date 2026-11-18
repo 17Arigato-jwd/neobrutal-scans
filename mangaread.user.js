@@ -596,8 +596,21 @@
         }
 
         /* ===== MANGA CARDS & CATALOG GRID ===== */
-        div.page-item-detail.manga,
-        div.row.c-tabs-item__content {
+        /* Standardized Series Grid Geometry Across All Grid Pages & Lists */
+        .page-listing-item .row > [class*="col-"],
+        .page-content-listing .page-listing-item,
+        .row.c-tabs-item__content .col-6 {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        div.page-item-detail.manga {
+            display: flex !important;
+            flex-direction: row !important;
+            height: 100% !important;
+            min-height: 185px !important;
+            box-sizing: border-box !important;
+            gap: 12px !important;
             background: var(--card) !important;
             border: var(--bw) solid var(--bd) !important;
             border-radius: var(--r) !important;
@@ -606,30 +619,117 @@
             margin-bottom: 16px !important;
             transition: transform .15s ease, box-shadow .15s ease !important;
         }
+        div.row.c-tabs-item__content {
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 12px !important;
+            margin-bottom: 16px !important;
+            transition: transform .15s ease, box-shadow .15s ease !important;
+            height: 100% !important;
+        }
         div.page-item-detail.manga:hover,
         div.row.c-tabs-item__content:hover {
             transform: translate(-2px, -2px) !important;
             box-shadow: var(--sh-hover) !important;
         }
 
-        /* Cover 2:3 Aspect Ratio */
+        /* Strict 2:3 Cover Aspect Ratio & Thumbnails */
+        div.page-item-detail.manga .item-thumb {
+            flex: 0 0 100px !important;
+            width: 100px !important;
+            height: 150px !important;
+            aspect-ratio: 2 / 3 !important;
+            overflow: hidden !important;
+            float: none !important;
+        }
+        div.item-thumb,
+        div.item-thumb a,
+        div.item-thumb a img,
+        div.tab-thumb a img,
+        div.slider__thumb a img,
+        .popular-img img {
+            aspect-ratio: 2 / 3 !important;
+            object-fit: cover !important;
+            width: 100% !important;
+        }
         div.item-thumb a img,
         div.tab-thumb a img,
         div.slider__thumb a img {
-            aspect-ratio: 2 / 3 !important;
-            object-fit: cover !important;
+            height: 100% !important;
             border: var(--bw) solid var(--bd) !important;
             border-radius: 8px !important;
             box-shadow: var(--sh-sm) !important;
         }
 
-        /* Metadata Pills & Typography */
-        div.post-title h3 a,
-        div.post-title h4 a {
+        /* Summary Container: Flex Column with Auto Margins */
+        div.page-item-detail.manga .item-summary {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            height: 100% !important;
+            float: none !important;
+            margin-left: 0 !important;
+        }
+
+        /* Standardized 2-Line Clamped Series Titles with Fixed Slot Height */
+        div.page-item-detail.manga .post-title,
+        .widget-title {
+            margin: 0 !important;
+        }
+        div.page-item-detail.manga .post-title h3,
+        div.page-item-detail.manga .post-title h4,
+        div.page-item-detail.manga .post-title h5,
+        div.page-item-detail.manga .post-title a,
+        .widget-title a {
+            min-height: 2.8em !important;
+            max-height: 2.8em !important;
+            line-height: 1.4 !important;
+            display: -webkit-box !important;
+            -webkit-box-orient: vertical !important;
+            -webkit-line-clamp: 2 !important;
+            overflow: hidden !important;
             font-family: 'DM Sans', sans-serif !important;
             font-weight: 800 !important;
             color: var(--ink) !important;
+            margin: 0 !important;
         }
+
+        div.page-item-detail.manga .meta-item.rating {
+            margin: 4px 0 !important;
+            height: 20px !important;
+            overflow: hidden !important;
+        }
+
+        /* Standardized Chapter Pill / Meta Slots */
+        div.page-item-detail.manga .list-chapter {
+            margin-top: auto !important;
+            min-height: 72px !important;
+            max-height: 72px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            gap: 4px !important;
+            overflow: hidden !important;
+        }
+        div.page-item-detail.manga .chapter-item {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 6px !important;
+            height: 32px !important;
+            min-height: 32px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        div.page-item-detail.manga .chapter-item .post-on {
+            white-space: nowrap !important;
+            font-size: 11px !important;
+            flex: 0 0 auto !important;
+        }
+
         div.post-total-rating span.score,
         span.post-on.font-meta,
         li.wp-manga-chapter a {
@@ -792,7 +892,7 @@
         html[data-md-theme="dark"] .genres-content a,
         html[data-md-theme="dark"] .author-content a,
         html[data-md-theme="dark"] .artist-content a {
-            background: var(--violet, #a855f7) !important;
+            background: #6d28d9 !important;
             color: #ffffff !important;
         }
         /* Action buttons: Read First / Read Last */
@@ -1474,6 +1574,7 @@
             gap: 12px !important;
             padding: 8px 0 !important;
             border-bottom: 1px solid var(--bd) !important;
+            height: 100% !important;
         }
         .popular-item-wrap:last-child {
             border-bottom: none !important;
@@ -1492,6 +1593,13 @@
             font-weight: 800 !important;
             color: var(--ink) !important;
             font-size: 13.5px !important;
+            min-height: 2.8em !important;
+            max-height: 2.8em !important;
+            line-height: 1.4 !important;
+            display: -webkit-box !important;
+            -webkit-box-orient: vertical !important;
+            -webkit-line-clamp: 2 !important;
+            overflow: hidden !important;
         }
 
         /* ===== AJAX LOAD MORE PAGINATION ===== */
@@ -3196,8 +3304,12 @@
                 const anims = activeFill.getAnimations();
                 const a = anims.find(an => an.animationName === 'mdProgressFall') || anims[0];
                 if (a && typeof a.currentTime === 'number') {
-                    const rem = 5500 - a.currentTime;
-                    if (rem > 0 && rem <= 5500) delay = rem + 300;
+                    if (a.currentTime >= 5500) {
+                        delay = 50;
+                    } else {
+                        const rem = 5500 - a.currentTime;
+                        if (rem > 0 && rem <= 5500) delay = rem + 300;
+                    }
                 }
             }
             slideTimer = setTimeout(() => {

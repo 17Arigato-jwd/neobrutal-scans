@@ -618,6 +618,54 @@ test('demonicscans.user.js defines elevated 3-tier podium leaderboard and monosp
     assert(demonicCode.includes('.leaderboard-score'), 'Missing .leaderboard-score rule');
 });
 
+// 10. Standardized Series Card Geometry & Uniform Dimensions
+console.log('\n\x1b[36m[Group 10: Standardized Series Card Geometry & Uniform Dimensions]\x1b[0m');
+test('mangaread.user.js enforces uniform card geometry, flex layouts and 2:3 aspect ratio thumbnails', () => {
+    assert(mangareadCode.includes('.page-listing-item .row > [class*="col-"]'), 'Missing grid col flex rule');
+    assert(mangareadCode.includes('div.page-item-detail.manga'), 'Missing div.page-item-detail.manga rule');
+    assert(/div\.page-item-detail\.manga\s*\{[^}]*display:\s*flex\s*!important/i.test(mangareadCode), 'div.page-item-detail.manga missing display: flex !important');
+    assert(/div\.page-item-detail\.manga\s*\{[^}]*height:\s*100%\s*!important/i.test(mangareadCode), 'div.page-item-detail.manga missing height: 100% !important');
+    assert(/div\.item-thumb[^{]*\{[^}]*aspect-ratio:\s*2\s*\/\s*3\s*!important/i.test(mangareadCode), 'Missing 2:3 aspect ratio on div.item-thumb');
+    assert(/object-fit:\s*cover\s*!important/i.test(mangareadCode), 'Missing object-fit: cover on thumbnails');
+});
+
+test('mangaread.user.js clamps series titles to 2 lines with consistent slot height and standardizes chapter slots', () => {
+    assert(mangareadCode.includes('min-height: 2.8em !important;'), 'Missing min-height: 2.8em on clamped titles');
+    assert(mangareadCode.includes('max-height: 2.8em !important;'), 'Missing max-height: 2.8em on clamped titles');
+    assert(mangareadCode.includes('line-height: 1.4 !important;'), 'Missing line-height: 1.4 on clamped titles');
+    assert(mangareadCode.includes('-webkit-line-clamp: 2 !important;'), 'Missing -webkit-line-clamp: 2 on clamped titles');
+    assert(/div\.page-item-detail\.manga\s+\.list-chapter\s*\{[^}]*margin-top:\s*auto\s*!important/i.test(mangareadCode), 'Missing margin-top: auto on .list-chapter');
+    assert(/min-height:\s*72px\s*!important;\s*max-height:\s*72px\s*!important/i.test(mangareadCode), 'Missing fixed 72px slot height on .list-chapter');
+    assert(/div\.page-item-detail\.manga\s+\.chapter-item\s*\{[^}]*display:\s*flex\s*!important/i.test(mangareadCode), 'Missing display: flex on .chapter-item');
+});
+
+test('mangaread.user.js dark mode metadata links meet WCAG AA and carousel slide-end resume fix is backported', () => {
+    assert(/html\[data-md-theme="dark"\][^{]*\.summary-content\s+a[^{]*\{[^}]*background:\s*#6d28d9\s*!important/i.test(mangareadCode), 'Missing WCAG AA high-contrast background #6d28d9 on dark mode metadata links');
+    assert(/html\[data-md-theme="dark"\][^{]*\.summary-content\s+a[^{]*\{[^}]*color:\s*#ffffff\s*!important/i.test(mangareadCode), 'Missing color: #ffffff on dark mode metadata links');
+    assert(mangareadCode.includes('if (a.currentTime >= 5500)'), 'Missing currentTime >= 5500 check in mangaread restartTimer');
+    assert(mangareadCode.includes('delay = 50;'), 'Missing delay = 50 slide-end advance in mangaread restartTimer');
+});
+
+test('demonicscans.user.js enforces uniform card dimensions across .updates-element, .owl-element and thumbnails', () => {
+    assert(demonicCode.includes('.updates-element,'), 'Missing .updates-element rule in demonicscans');
+    assert(demonicCode.includes('.owl-element'), 'Missing .owl-element in demonicscans card rules');
+    assert(/\.updates-element,\s*\.owl-element\s*\{[^}]*display:\s*inline-flex\s*!important/i.test(demonicCode), 'Missing display: inline-flex on .updates-element');
+    assert(/\.updates-element,\s*\.owl-element\s*\{[^}]*min-height:\s*180px\s*!important/i.test(demonicCode), 'Missing min-height: 180px on .updates-element');
+    assert(/\.updates-element\s+\.thumb\s*\{[^}]*aspect-ratio:\s*2\s*\/\s*3\s*!important/i.test(demonicCode) ||
+           /\.thumb[^{]*\{[^}]*aspect-ratio:\s*2\s*\/\s*3\s*!important/i.test(demonicCode), 'Missing 2:3 aspect ratio on .thumb');
+    assert(/\.updates-element\s+\.thumb\s*\{[^}]*width:\s*100px\s*!important/i.test(demonicCode), 'Missing fixed 100px width on .updates-element .thumb');
+});
+
+test('demonicscans.user.js clamps series titles to 2 lines and standardizes .chap-date auto-margins', () => {
+    assert(/\.updates-element\s+h2[^{]*\{[^}]*min-height:\s*2.8em\s*!important/i.test(demonicCode), 'Missing min-height: 2.8em on demonicscans h2');
+    assert(/\.updates-element\s+h2[^{]*\{[^}]*max-height:\s*2.8em\s*!important/i.test(demonicCode), 'Missing max-height: 2.8em on demonicscans h2');
+    assert(/\.updates-element\s+h2[^{]*\{[^}]*line-height:\s*1.4\s*!important/i.test(demonicCode), 'Missing line-height: 1.4 on demonicscans h2');
+    assert(/\.updates-element\s+h2[^{]*\{[^}]*-webkit-line-clamp:\s*2\s*!important/i.test(demonicCode), 'Missing -webkit-line-clamp: 2 on demonicscans h2');
+    assert(/\.updates-element-info\s*\{[^}]*display:\s*flex\s*!important;\s*flex-direction:\s*column\s*!important/i.test(demonicCode), 'Missing flex-col layout on .updates-element-info');
+    assert(/\.updates-element-info\s*>\s*div:last-child\s*\{[^}]*margin-top:\s*auto\s*!important/i.test(demonicCode), 'Missing margin-top: auto on .updates-element-info > div:last-child');
+    assert(/\.chap-date\s*\{[^}]*display:\s*flex\s*!important;\s*flex-direction:\s*row\s*!important/i.test(demonicCode), 'Missing flex-row layout on .chap-date');
+});
+
 // Summary
 console.log('\n----------------------------------------');
 if (failed === 0) {

@@ -1383,6 +1383,96 @@
         }
 
         /* =================================================================
+           STANDARDIZED SERIES CARD DIMENSIONS ACROSS GRIDS/LISTS
+           ================================================================= */
+        .updates-element,
+        .owl-element {
+            display: inline-flex !important;
+            flex-direction: column !important;
+            vertical-align: top !important;
+            box-sizing: border-box !important;
+            min-height: 180px !important;
+            height: 100% !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 10px !important;
+            margin-bottom: 16px !important;
+            transition: transform .15s ease, box-shadow .15s ease !important;
+            overflow: hidden !important;
+        }
+        .updates-element:hover,
+        .owl-element:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: var(--sh-hover) !important;
+        }
+        .updates-element > .flex.flex-row {
+            display: flex !important;
+            flex-direction: row !important;
+            width: 100% !important;
+            height: 100% !important;
+            gap: 10px !important;
+        }
+        .thumb,
+        .thumb img,
+        .updates-element .thumb,
+        .updates-element .thumb img,
+        .owl-element .thumb img {
+            aspect-ratio: 2 / 3 !important;
+            object-fit: cover !important;
+        }
+        .updates-element .thumb {
+            width: 100px !important;
+            height: 150px !important;
+            flex: 0 0 100px !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+        }
+        .updates-element .thumb img {
+            width: 100% !important;
+            height: 100% !important;
+            border-radius: 8px !important;
+        }
+        .updates-element-info {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            height: 100% !important;
+            margin-left: 0 !important;
+        }
+        .updates-element h2,
+        .updates-element-info h2 a,
+        .md-trans-title {
+            min-height: 2.8em !important;
+            max-height: 2.8em !important;
+            line-height: 1.4 !important;
+            display: -webkit-box !important;
+            -webkit-box-orient: vertical !important;
+            -webkit-line-clamp: 2 !important;
+            overflow: hidden !important;
+            margin: 0 0 4px 0 !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-weight: 800 !important;
+            color: var(--ink) !important;
+        }
+        .updates-element-info > div:last-child {
+            margin-top: auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 4px !important;
+        }
+        .chap-date {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            font-size: 11px !important;
+            line-height: 1.3 !important;
+        }
+
+        /* =================================================================
            CONTINUE READING: Section Under Hero Carousel
            ================================================================= */
         #md-continue-reading {
