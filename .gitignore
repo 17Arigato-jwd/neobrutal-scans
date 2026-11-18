@@ -15,6 +15,7 @@ Thumbs.db
 *.tmp
 *.bak
 .temp/
+prompt
 
 # Dependencies (if any added in future)
 node_modules/

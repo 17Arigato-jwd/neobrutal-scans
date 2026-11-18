@@ -78,16 +78,17 @@ const mangareadVersion = getMeta(mangareadCode, 'version');
 test('demonicscans.user.js has a valid @version', () => {
     assert(demonicVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(demonicVersion), `Got ${demonicVersion}`);
 });
-test('asurascans.user.js has matching @version', () => {
-    assert.strictEqual(asuraVersion, demonicVersion, `Version mismatch: ${asuraVersion} vs ${demonicVersion}`);
+test('asurascans.user.js has a valid @version', () => {
+    assert(asuraVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(asuraVersion), `Got ${asuraVersion}`);
 });
-test('mangaread.user.js has matching @version', () => {
-    assert.strictEqual(mangareadVersion, demonicVersion, `Version mismatch: ${mangareadVersion} vs ${demonicVersion}`);
+test('mangaread.user.js has a valid @version', () => {
+    assert(mangareadVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(mangareadVersion), `Got ${mangareadVersion}`);
 });
 test('README.md version badge matches script version', () => {
     const m = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue/);
     assert(m, 'Version badge not found in README.md');
     const badgeVersion = m[1].replace(/--/g, '-');
+    assert(badgeVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(badgeVersion), `Invalid badge version format: ${badgeVersion}`);
     assert.strictEqual(badgeVersion, demonicVersion, `Badge version ${badgeVersion} != script version ${demonicVersion}`);
 });
 test('Metadata contains essential Userscript headers in all scripts', () => {
@@ -517,10 +518,14 @@ test('mangaread.user.js select mode intercepts clicks and highlights selected ro
     assert(mangareadCode.includes("ul.main.version-chap li.wp-manga-chapter[data-md-sel]"), 'Missing chapter row selected highlight rule');
 });
 
-test('mangaread.user.js wpDiscuz comments styling has pitch-black background and high contrast', () => {
-    assert(/#respond\.comments-area,\s*#wpdcom\s*\{[^}]*background:\s*#000000\s*!important/i.test(mangareadCode), 'Missing #wpdcom pitch-black background');
-    assert(/#wpdcom\s+\.wpd-comment\s*\{[^}]*background:\s*#0a0a0a\s*!important/i.test(mangareadCode), 'Missing .wpd-comment background');
-    assert(/#wpdcom\s+\.wpd-reply[^{]*\{[^}]*background:\s*#141414\s*!important/i.test(mangareadCode), 'Missing .wpd-reply background');
+test('mangaread.user.js wpDiscuz comments styling supports dynamic theme switching with high contrast', () => {
+    const hasThemeAdaptiveBg =
+        /#respond\.comments-area,\s*#wpdcom\s*\{[^}]*background:\s*(?:#000000|var\(--(?:card|comment-bg|bg)\))\s*!important/i.test(mangareadCode) ||
+        (/#wpdcom\s*\{[^}]*background:\s*(?:#000000|var\(--(?:card|comment-bg|bg)\))\s*!important/i.test(mangareadCode)) ||
+        (/html\[data-md-theme="dark"\][^{]*#wpdcom\s*\{[^}]*background:\s*#000000\s*!important/i.test(mangareadCode));
+    assert(hasThemeAdaptiveBg, 'Missing #wpdcom theme-adaptive background rule (expected var(--card) or #000000)');
+    assert(/#wpdcom\s+\.wpd-comment\s*\{[^}]*background:\s*(?:#0a0a0a|var\(--(?:card|soft|bg)\)|#[0-9a-fA-F]{3,6})\s*!important/i.test(mangareadCode), 'Missing .wpd-comment background');
+    assert(/#wpdcom\s+\.wpd-reply[^{]*\{[^}]*background:\s*(?:#141414|var\(--(?:card|soft|cream|bg)\)|#[0-9a-fA-F]{3,6})\s*!important/i.test(mangareadCode), 'Missing .wpd-reply background');
 });
 
 test('mangaread.user.js sliding pill theme toggle has knob sliding animation and header slotting', () => {

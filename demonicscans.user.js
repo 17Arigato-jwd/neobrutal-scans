@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-18.2
+// @version      2026-11-18.3
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -179,7 +179,7 @@
 
     function detectPage() {
         const p = location.pathname.toLowerCase();
-        if (/chaptered\.php$/.test(p)) return 'chapter';
+        if (/chaptered\.php$|reader\.php$|\/chapter\//i.test(p)) return 'chapter';
         if (/^\/(manga|title|novel)\//.test(p)) return 'overview';
         if (/translationlist\.php$/.test(p)) return 'translations';
         return 'list';
@@ -191,7 +191,7 @@
     function refinePage() {
         let p = PAGE();
         if ($('#manga-info-container')) p = 'overview';
-        else if ($('img.imgholder[alt]') || $('.chapter-info .chapters-nav')) p = 'chapter';
+        else if ($('img.imgholder') || $('.chapter-info .chapters-nav')) p = 'chapter';
         if (p !== PAGE()) root.dataset.mdPage = p;
     }
 
@@ -611,6 +611,9 @@
             opacity: 1 !important;
             animation: mdProgressFall 5.5s linear forwards;
         }
+        #md-hero:hover .md-hero-thumb.is-active .md-thumb-fill {
+            animation-play-state: paused !important;
+        }
         @keyframes mdProgressFall {
             0% { height: 0%; }
             100% { height: 100%; }
@@ -835,9 +838,9 @@
         html[data-md-mode="comics"] .main-width:has(> h3.see-more a[href*="nvupdates" i]),
         a[href*="reddit" i], a[href*="toraka" i], a[href*="discord" i], a[href*="announce" i], a[href*="ebook" i],
         a[href*="subscri" i], a[href*="premium" i], a[href*="membership" i], .toraka-badge,
-        iframe[src*="discord" i], div:has(> iframe[src*="discord" i]), div:has(iframe[src*="discord" i]),
+        iframe[src*="discord" i], div:has(> iframe[src*="discord" i]),
         [id*="discord" i], [class*="discord" i],
-        ${CP} iframe[src*="discord" i], ${CP} div:has(iframe[src*="discord" i]),
+        ${CP} iframe[src*="discord" i],
         [data-md="void"] {
             display: none !important;
         }
@@ -1247,7 +1250,10 @@
         /* 2. Title underneath image */
         [data-md-trans="1"] .md-trans-info,
         [data-md-trans="1"] h1,
+        [data-md-trans="1"] :is(.md-trans-info, h1),
         [data-md-page="translations"] [data-mdc="grid"] .updates-element-info {
+            position: static !important;
+            inset: auto !important;
             display: flex !important;
             flex-direction: column !important;
             gap: 6px !important;
@@ -1334,6 +1340,161 @@
             width: 100% !important;
             height: auto !important;
             display: block !important;
+        }
+
+        /* =================================================================
+           CONTINUE READING: Section Under Hero Carousel
+           ================================================================= */
+        #md-continue-reading {
+            display: block !important;
+            width: var(--col) !important;
+            max-width: none !important;
+            margin: 28px auto 20px auto !important;
+            padding: 0 !important;
+            position: relative !important;
+            box-sizing: border-box !important;
+        }
+        #md-continue-reading .md-cr-head {
+            margin-bottom: 12px !important;
+        }
+        #md-continue-reading .section-title {
+            margin: 0 !important;
+            font: 900 clamp(20px, 2.5vw, 26px)/1.2 'DM Sans', sans-serif !important;
+            text-transform: uppercase !important;
+            letter-spacing: .02em !important;
+            color: var(--ink) !important;
+        }
+        #md-continue-reading .md-cr-track {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 16px !important;
+            overflow-x: auto !important;
+            padding: 4px 4px 14px 4px !important;
+            scroll-behavior: smooth !important;
+            scrollbar-width: thin !important;
+        }
+        #md-continue-reading .md-cr-card {
+            flex: 0 0 clamp(165px, 16vw, 200px) !important;
+            width: clamp(165px, 16vw, 200px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            aspect-ratio: auto !important;
+            height: auto !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            overflow: hidden !important;
+            transition: transform .15s ease, box-shadow .15s ease, background .15s ease !important;
+        }
+        #md-continue-reading .md-cr-card:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: var(--sh-hover) !important;
+            background: var(--cream) !important;
+        }
+        #md-continue-reading .md-cr-thumb-wrap {
+            position: relative !important;
+            width: 100% !important;
+            aspect-ratio: 2 / 3 !important;
+            overflow: hidden !important;
+            background: var(--soft) !important;
+            border-bottom: var(--bw) solid var(--bd) !important;
+        }
+        #md-continue-reading .md-cr-thumb-link {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        #md-continue-reading .md-cr-img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+        }
+        #md-continue-reading .md-cr-progress {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 7px !important;
+            background: rgba(0, 0, 0, 0.5) !important;
+            z-index: 2 !important;
+        }
+        #md-continue-reading .md-cr-bar {
+            height: 100% !important;
+            background: var(--lime) !important;
+            transition: width .3s ease !important;
+        }
+        #md-continue-reading .md-cr-body {
+            padding: 10px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            flex: 1 1 auto !important;
+        }
+        #md-continue-reading .md-cr-title {
+            position: static !important;
+            inset: auto !important;
+            margin: 6px 0 !important;
+            font: 800 13px/1.3 'DM Sans', sans-serif !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            color: var(--ink) !important;
+        }
+        #md-continue-reading .md-cr-title a {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        #md-continue-reading .md-cr-title a:hover {
+            color: var(--violet) !important;
+        }
+        #md-continue-reading .md-cr-badges {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 6px !important;
+            flex-wrap: wrap !important;
+        }
+        #md-continue-reading .md-cr-badge {
+            font: 700 10.5px/1.2 'JetBrains Mono', monospace !important;
+            padding: 2px 6px !important;
+            border-radius: 999px !important;
+            border: 1px solid var(--bd) !important;
+            white-space: nowrap !important;
+        }
+        #md-continue-reading .md-cr-last {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+        }
+        #md-continue-reading .md-cr-next {
+            background: var(--yellow) !important;
+            color: #000000 !important;
+            font-weight: 800 !important;
+        }
+        #md-continue-reading .md-cr-btn {
+            margin-top: auto !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 7px 10px !important;
+            background: var(--yellow) !important;
+            color: #000000 !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: 2px 2px 0 var(--bd) !important;
+            font: 800 11.5px/1.2 'DM Sans', sans-serif !important;
+            text-transform: uppercase !important;
+            letter-spacing: .03em !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            transition: transform .1s, box-shadow .1s, background .1s !important;
+        }
+        #md-continue-reading .md-cr-btn:hover {
+            background: var(--lime) !important;
+            transform: translate(1px, 1px) !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
         }
 
         /* =================================================================
@@ -2109,18 +2270,20 @@
            CHAPTER (reader) PAGE
            ================================================================= */
         ${CP} :is(#gotopreader, #info-about-chapter, a[href*="premium.php"]:has(> img), button[onclick*="changeImageDomain"],
-                   p:has(> button[onclick*="changeImageDomain"]), iframe[src*="discord" i], div:has(iframe[src*="discord" i]),
+                   p:has(> button[onclick*="changeImageDomain"]), iframe[src*="discord" i],
                    div:has(> iframe[src*="discord" i]), a[href*="discord" i]) { display: none !important; }
-        ${CP} .main-width { max-width: none !important; width: 100% !important; margin: 0 !important; }
+        ${CP} .main-width { display: block !important; max-width: none !important; width: 100% !important; margin: 0 !important; }
         ${CP} .main-width > br { display: none; }
         ${CP} #md-top { display: none !important; }
-        ${CP} :is(img.imgholder:not([alt]), img.imgholder[src*="/img/"]) { display: none !important; }
-        ${CP} img.imgholder[alt] {
+        ${CP} img.imgholder[src*="/img/"] { display: none !important; }
+        ${CP} img.imgholder {
             display: block !important; margin: 0 auto !important;
             width: min(100%, calc(var(--md-base) * var(--md-zoom))) !important; max-width: 100% !important; height: auto !important;
             min-height: 140px; background: var(--soft); color: var(--muted);
             border-inline: var(--bw) solid var(--rail);
         }
+        ${CP} #discuscontainer { display: block !important; }
+        ${CP} #cw-comments { display: block !important; }
         ${CP} .chapter-info {
             width: min(calc(var(--md-base) * max(var(--md-zoom), .75) + 4px), calc(100% - 24px), 1000px);
             margin: 22px auto !important; padding: 14px 16px !important; text-align: center;
@@ -2878,10 +3041,11 @@
      * ==================================================================== */
     const CH = 'a[href*="chapter" i]';
     const META = /^(chapter|ch\.?|chap\.?)\s*[\d.]+|^\d{4}-\d{2}-\d{2}$|^\d+\s*(s|m|h|d|w|mo|y|min|hour|day|week|month|year)s?\s*ago$/i;
-    const DATE = /^\d{4}-\d{2}-\d{2}$/;
+    const RELATIVE_TIME = /^\d+\s*(?:s|m|h|d|w|mo|y|sec|second|min|minute|hour|day|week|month|year)s?\s*ago$/i;
+    const DATE = /^(?:uploaded:\s*)?(\d{4}-\d{2}-\d{2}|\d+\s*(?:s|m|h|d|w|mo|y|sec|second|min|minute|hour|day|week|month|year)s?\s*ago)$/i;
     const SKIP_TAGS = /^(STYLE|SCRIPT|LINK|TEMPLATE|NOSCRIPT)$/;
     // Things we must never treat as a content track or collapse as an "empty block"
-    const UI_ZONES = 'header, nav, footer, #md-hero, [data-md-hero-source], #md-top, #md-dock, #menu, #forced-Search, #resultbox, #footer-container, #cw-comments, #manga-info-container, .chapter-info';
+    const UI_ZONES = 'header, nav, footer, #md-hero, #md-continue-reading, [data-md-hero-source], #md-top, #md-dock, #menu, #forced-Search, #resultbox, #footer-container, #cw-comments, #manga-info-container, .chapter-info';
     const VOID_SAFE = `${UI_ZONES}, [data-mdc], [data-md="rail"], [data-md="grid"], .shadowimg, .owl-nav, .owl-dots, .owl-stage-outer, .owl-stage`;
 
     const pad = n => String(n).padStart(2, '0');
@@ -2889,9 +3053,12 @@
 
     // Site dates may be server-time (UTC) while the reader is elsewhere: accept either "today".
     function isFresh(text) {
+        if (!text) return false;
+        const clean = text.replace(/^uploaded:\s*/i, '').trim();
+        if (/^\d+\s*(?:s|m|h|sec|second|min|minute|hour)s?\s*ago$/i.test(clean)) return true;
         const d = new Date();
         const local = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-        return text === local || text === d.toISOString().slice(0, 10);
+        return clean === local || clean === d.toISOString().slice(0, 10);
     }
 
     const hasContent = el =>
@@ -2996,8 +3163,9 @@
 
         // Handle .owl-element on homepage: <h1>Title<br><div>Chapter</div><div>Date</div></h1>
         const h1 = cell.querySelector('h1');
+        let rawTitle = '';
+        let chText = '', dtText = '';
         if (h1) {
-            let rawTitle = '';
             for (const n of h1.childNodes) {
                 if (n.nodeType === 3 && n.nodeValue.trim()) {
                     rawTitle = n.nodeValue.trim();
@@ -3007,7 +3175,6 @@
             if (!fullTitle) fullTitle = rawTitle;
 
             const divs = [...h1.querySelectorAll('div')];
-            let chText = '', dtText = '';
             for (const d of divs) {
                 const txt = d.textContent.trim();
                 if (/chapter/i.test(txt)) chText = txt;
@@ -3015,41 +3182,54 @@
                 else if (!chText) chText = txt;
                 else if (!dtText) dtText = txt;
             }
+            h1.remove();
+        }
 
-            h1.innerHTML = '';
-            h1.className = 'md-trans-info';
-
-            const titleDiv = document.createElement('div');
-            titleDiv.className = 'md-trans-title';
-            titleDiv.dataset.md = 'title';
-            titleDiv.textContent = fullTitle || rawTitle;
-            h1.appendChild(titleDiv);
-
-            if (chText || dtText) {
-                const metaDiv = document.createElement('div');
-                metaDiv.className = 'md-trans-meta';
-                metaDiv.dataset.md = 'row';
-                if (chText) {
-                    const chSpan = document.createElement('span');
-                    chSpan.className = 'md-trans-chap';
-                    chSpan.textContent = chText;
-                    metaDiv.appendChild(chSpan);
-                }
-                if (dtText) {
-                    const dtSpan = document.createElement('span');
-                    dtSpan.className = 'md-trans-date';
-                    dtSpan.dataset.mdd = '1';
-                    if (isFresh(dtText)) dtSpan.dataset.new = '1';
-                    dtSpan.textContent = dtText;
-                    metaDiv.appendChild(dtSpan);
-                }
-                h1.appendChild(metaDiv);
+        let info = cell.querySelector('.md-trans-info');
+        if (!info) {
+            info = document.createElement('div');
+            info.className = 'md-trans-info';
+            if (img && img.nextSibling) {
+                img.after(info);
+            } else {
+                a.appendChild(info);
             }
+        } else {
+            info.innerHTML = '';
+        }
+        info.style.setProperty('position', 'static', 'important');
+        info.style.setProperty('inset', 'auto', 'important');
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'md-trans-title';
+        titleDiv.dataset.md = 'title';
+        titleDiv.textContent = fullTitle || rawTitle;
+        info.appendChild(titleDiv);
+
+        if (chText || dtText) {
+            const metaDiv = document.createElement('div');
+            metaDiv.className = 'md-trans-meta';
+            metaDiv.dataset.md = 'row';
+            if (chText) {
+                const chSpan = document.createElement('span');
+                chSpan.className = 'md-trans-chap';
+                chSpan.textContent = chText;
+                metaDiv.appendChild(chSpan);
+            }
+            if (dtText) {
+                const dtSpan = document.createElement('span');
+                dtSpan.className = 'md-trans-date';
+                dtSpan.dataset.mdd = '1';
+                if (isFresh(dtText)) dtSpan.dataset.new = '1';
+                dtSpan.textContent = dtText;
+                metaDiv.appendChild(dtSpan);
+            }
+            info.appendChild(metaDiv);
         }
     }
 
     function tagCell(cell, kind) {
-        if (cell.nodeType !== 1 || SKIP_TAGS.test(cell.tagName) || cell.closest('#md-hero') || cell.closest('[data-md-hero-source]') || cell.hasAttribute('data-md-hero-source')) return;
+        if (cell.nodeType !== 1 || SKIP_TAGS.test(cell.tagName) || cell.closest('#md-hero') || cell.closest('#md-continue-reading') || cell.closest('[data-md-hero-source]') || cell.hasAttribute('data-md-hero-source')) return;
         cell.dataset.mdc = kind;
         if (cell.dataset.mdDone) return;
 
@@ -3099,9 +3279,14 @@
 
         for (const { el, text } of leaves) {
             if (el === title) continue;
-            if (DATE.test(text)) {
+            const dateMatch = text.match(DATE);
+            if (dateMatch) {
                 el.dataset.mdd = '1';
                 if (isFresh(text)) el.dataset.new = '1';
+                const timeStr = (dateMatch[1] || text).trim();
+                if (RELATIVE_TIME.test(timeStr) && !/^uploaded:\s*/i.test(el.textContent)) {
+                    el.textContent = `Uploaded: ${timeStr}`;
+                }
             } else if (kind === 'rail' && !el.dataset.md && !isCh(el)) {
                 el.dataset.md = 'sub';
                 if (CONFIG.compactViews && /^\d{4,}$/.test(text)) compactNumber(el, text);
@@ -3206,7 +3391,7 @@
     }
 
     function buildHead(sec) {
-        if (sec.closest('#md-hero') || sec.closest('[data-md-hero-source]') || sec.hasAttribute('data-md-hero-source') || sec.dataset.mdHead) return;
+        if (sec.closest('#md-hero') || sec.closest('#md-continue-reading') || sec.id === 'md-continue-reading' || sec.closest('[data-md-hero-source]') || sec.hasAttribute('data-md-hero-source') || sec.dataset.mdHead) return;
         const heading = findHeading(sec);
         if (!heading && document.readyState !== 'complete') return;   // retry later
         sec.dataset.mdHead = '1';
@@ -3282,7 +3467,7 @@
 
         // 1. classify tracks
         for (const t of findTracks()) {
-            if (t.closest('#md-hero') || t.closest('[data-md-hero-source]') || t.hasAttribute('data-md-hero-source') || t.dataset.md) continue;
+            if (t.closest('#md-hero') || t.closest('#md-continue-reading') || t.id === 'md-continue-reading' || t.closest('[data-md-hero-source]') || t.hasAttribute('data-md-hero-source') || t.dataset.md) continue;
             if (t.classList.contains('advanced-container') || t.querySelector('.advanced-element')) {
                 t.dataset.md = 'grid';
                 continue;
@@ -3294,7 +3479,7 @@
 
         // 2. grids made of several row-containers -> parent is the grid, rows dissolve
         document.querySelectorAll('[data-md="grid"],[data-md="gridrow"]').forEach(t => {
-            if (t.closest('#md-hero') || t.closest('[data-md-hero-source]') || t.hasAttribute('data-md-hero-source')) return;
+            if (t.closest('#md-hero') || t.closest('#md-continue-reading') || t.id === 'md-continue-reading' || t.closest('[data-md-hero-source]') || t.hasAttribute('data-md-hero-source')) return;
             const p = t.parentElement;
             if (!p || p === document.body) return;
             const sibs = [...p.children].filter(c => c.dataset.md === 'grid' || c.dataset.md === 'gridrow');
@@ -3306,7 +3491,7 @@
 
         // 3. tag cells, wrappers, headings
         document.querySelectorAll('[data-md="rail"],[data-md="grid"]').forEach(sec => {
-            if (sec.closest('#md-hero') || sec.closest('[data-md-hero-source]') || sec.hasAttribute('data-md-hero-source')) return;
+            if (sec.closest('#md-hero') || sec.closest('#md-continue-reading') || sec.id === 'md-continue-reading' || sec.closest('[data-md-hero-source]') || sec.hasAttribute('data-md-hero-source')) return;
             for (let p = sec.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement)
                 p.dataset.mdw = '1';
             const kind = sec.dataset.md;
@@ -3346,6 +3531,182 @@
         });
     }
 
+
+    /* ====================================================================
+     *  CONTINUE READING (Cookie storage & section renderer)
+     * ==================================================================== */
+    function toTitleCase(str) {
+        if (!str) return '';
+        return str.toLowerCase().replace(/(?:^|[^\p{L}\p{N}])\p{L}/gu, m => m.toUpperCase());
+    }
+
+    function normalizeSeriesPath(url) {
+        if (!url) return '';
+        try {
+            const u = new URL(url, location.origin);
+            return u.pathname.replace(/\/+$/, '').toLowerCase();
+        } catch (e) {
+            return String(url).replace(/^[a-z]+:\/\/[^/]+/i, '').replace(/\/+$/, '').toLowerCase();
+        }
+    }
+
+    function getCrCookie() {
+        try {
+            const match = document.cookie.match(/(?:^|;\s*)md_cr=([^;]*)/);
+            if (!match) return [];
+            const decoded = decodeURIComponent(match[1]);
+            const parsed = JSON.parse(decoded);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function setCrCookie(items) {
+        try {
+            let list = Array.isArray(items) ? [...items] : [];
+            if (list.length > 10) list = list.slice(0, 10);
+
+            let encoded = encodeURIComponent(JSON.stringify(list));
+            while (encoded.length > 3800 && list.length > 1) {
+                list.pop(); // prune oldest
+                encoded = encodeURIComponent(JSON.stringify(list));
+            }
+            if (encoded.length > 3800) {
+                list = [];
+                encoded = encodeURIComponent('[]');
+            }
+            const maxAge = 365 * 24 * 60 * 60;
+            document.cookie = `md_cr=${encoded}; path=/; max-age=${maxAge}; SameSite=Lax`;
+        } catch (_) {}
+    }
+
+    function saveContinueReading() {
+        try {
+            const ctx = chapterContext();
+            if (!ctx.series && !ctx.seriesUrl) return;
+            const seriesId = normalizeSeriesPath(ctx.seriesUrl || location.pathname);
+            if (!seriesId) return;
+            const seriesTitle = toTitleCase(ctx.series);
+            const sel = $('.chapters-nav select');
+            const opts = sel ? [...sel.options] : [];
+
+            const lastReadNum = parseFloat(ctx.num) || 0;
+
+            let latestNum = lastReadNum;
+            let nextUrl = ctx.next || '';
+            let nextNum = lastReadNum;
+            let nextLbl = '';
+
+            if (opts.length) {
+                const parsedOpts = opts.map(o => {
+                    const text = o.textContent.trim();
+                    const val = o.value || '';
+                    const m = text.match(/[\d.]+/);
+                    const n = m ? parseFloat(m[0]) : 0;
+                    return { num: n, url: val, label: text };
+                }).filter(o => !isNaN(o.num) && o.num > 0);
+
+                if (parsedOpts.length) {
+                    latestNum = Math.max(...parsedOpts.map(o => o.num));
+                    const higher = parsedOpts.filter(o => o.num > lastReadNum).sort((a, b) => a.num - b.num);
+                    if (higher.length > 0) {
+                        nextUrl = higher[0].url;
+                        nextNum = higher[0].num;
+                        nextLbl = higher[0].label;
+                    }
+                }
+            }
+
+            let list = getCrCookie();
+
+            // Qualifying series: uncompleted (lastReadNum < latestNum)
+            // When lastReadNum >= latestNum, prune from cookie
+            if (lastReadNum >= latestNum) {
+                list = list.filter(item => item.id !== seriesId);
+                setCrCookie(list);
+                return;
+            }
+
+            const ogImg = document.querySelector('meta[property="og:image"]')?.content ||
+                          document.querySelector('meta[name="image"]')?.content || '';
+            const existing = list.find(item => item.id === seriesId);
+            const coverImg = ogImg || (existing && existing.img) || '';
+
+            const newItem = {
+                id: seriesId,
+                title: seriesTitle,
+                img: coverImg,
+                seriesUrl: ctx.seriesUrl || location.pathname,
+                lastReadUrl: location.pathname + location.search,
+                lastReadNum: lastReadNum,
+                lastReadLbl: ctx.label || `Ch. ${lastReadNum}`,
+                nextUrl: nextUrl || ctx.next || '',
+                nextNum: nextNum,
+                nextLbl: nextLbl || `Ch. ${nextNum}`,
+                latestNum: latestNum,
+                ts: Date.now()
+            };
+
+            list = list.filter(item => item.id !== seriesId);
+            list.unshift(newItem);
+            setCrCookie(list);
+        } catch (_) {}
+    }
+
+    function renderContinueReading(heroEl) {
+        if (!heroEl || $('#md-continue-reading')) return;
+        const items = getCrCookie().filter(item => {
+            return item && item.title && item.nextUrl && (item.lastReadNum < item.latestNum);
+        });
+        if (!items.length) return;
+
+        const sec = document.createElement('section');
+        sec.id = 'md-continue-reading';
+        sec.className = 'main-width';
+        sec.dataset.mdContinueReading = '1';
+
+        sec.innerHTML = `
+            <div class="md-cr-head">
+                <h2 class="section-title"><span>Continue Reading</span></h2>
+            </div>
+            <div class="md-cr-track" data-md="cr-track"></div>
+        `;
+
+        const track = sec.querySelector('.md-cr-track');
+
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'md-cr-card';
+
+            const displayTitle = toTitleCase(item.title);
+            const coverSrc = item.img || '';
+
+            card.innerHTML = `
+                <div class="md-cr-thumb-wrap">
+                    <a href="${item.nextUrl}" class="md-cr-thumb-link" title="${displayTitle.replace(/"/g, '&quot;')}">
+                        <img src="${coverSrc.replace(/"/g, '%22')}" alt="${displayTitle.replace(/"/g, '&quot;')}" loading="lazy" class="md-cr-img">
+                    </a>
+                    <div class="md-cr-progress">
+                        <div class="md-cr-bar" style="width: ${(item.lastReadNum / item.latestNum) * 100}%;"></div>
+                    </div>
+                </div>
+                <div class="md-cr-body">
+                    <h3 class="md-cr-title" title="${displayTitle.replace(/"/g, '&quot;')}">
+                        <a href="${item.seriesUrl || item.nextUrl}">${displayTitle}</a>
+                    </h3>
+                    <div class="md-cr-badges">
+                        <span class="md-cr-badge md-cr-last" title="Last read">Last: Ch. ${item.lastReadNum}</span>
+                        <span class="md-cr-badge md-cr-next" title="Next chapter">Next: Ch. ${item.nextNum}</span>
+                    </div>
+                    <a href="${item.nextUrl}" class="md-cr-btn">Continue Reading</a>
+                </div>
+            `;
+            track.appendChild(card);
+        });
+
+        heroEl.after(sec);
+    }
 
     /* ---------- Netflix-style hero banner: timed carousel for "Most Viewed Today" ---------- */
     function buildHero() {
@@ -3570,6 +3931,7 @@
             const fill = thumb.querySelector('.md-thumb-fill');
             fill.addEventListener('animationend', (e) => {
                 if (e.animationName === 'mdProgressFall' && thumb.classList.contains('is-active')) {
+                    if (hero.matches(':hover')) return;
                     showSlide((currentSlide + 1) % items.length);
                 }
             });
@@ -3584,12 +3946,16 @@
             }
         }, { passive: false });
 
-        // Hover: animation slows to crawl smoothly in place (via Web Animations API, no reset!)
+        // Hover: pause animation on active card cleanly
         hero.addEventListener('mouseenter', () => {
             clearTimeout(slideTimer);
-            setProgressRate(0.1);
+            const activeFill = hero.querySelector('.md-hero-thumb.is-active .md-thumb-fill');
+            if (activeFill) activeFill.style.animationPlayState = 'paused';
+            setProgressRate(0);
         });
         hero.addEventListener('mouseleave', () => {
+            const activeFill = hero.querySelector('.md-hero-thumb.is-active .md-thumb-fill');
+            if (activeFill) activeFill.style.animationPlayState = 'running';
             setProgressRate(1.0);
             restartTimer();
         });
@@ -3707,7 +4073,8 @@
                         void f.offsetWidth; // force reflow
                         f.style.animation = '';
                         if (hero.matches(':hover')) {
-                            requestAnimationFrame(() => setProgressRate(0.1));
+                            f.style.animationPlayState = 'paused';
+                            requestAnimationFrame(() => setProgressRate(0));
                         }
                     }
                     const left = th.offsetLeft - thumbsContainer.offsetLeft - 12;
@@ -3739,6 +4106,8 @@
             heading.setAttribute('data-md-hero-source', '1');
             heading.style.setProperty('display', 'none', 'important');
         }
+
+        renderContinueReading(hero);
     }
 
     /* ---------- long series descriptions ---------- */
@@ -3773,9 +4142,9 @@
             return (t ? t.nodeValue : a.textContent).replace(/\s+/g, ' ').trim();
         },
         series: (doc, box) => ((doc.querySelector('.chapter-info h1 a') || doc.querySelector('.chapter-info h1') || $('h1', box) || {}).textContent || document.title).trim(),
-        pages: (doc, url) => [...doc.querySelectorAll('img.imgholder[alt]')]
+        pages: (doc, url) => [...doc.querySelectorAll('img.imgholder')]
             .map(i => i.currentSrc || i.getAttribute('src')).filter(u => u && !/\/img\//.test(u)).map(u => new URL(u, url).href),
-        framePages: doc => $$('img.imgholder[alt]', doc).filter(i => !/\/img\//.test(i.getAttribute('src') || '')),
+        framePages: doc => $$('img.imgholder', doc).filter(i => !/\/img\//.test(i.getAttribute('src') || '')),
     };
 
     function setupSelect(box, A) {
@@ -4152,7 +4521,7 @@
     }
 
     function pageImages() {
-        return $$('img.imgholder[alt]').filter(img => !/\/img\//.test(img.getAttribute('src') || ''));
+        return $$('img.imgholder').filter(img => !/\/img\//.test(img.getAttribute('src') || ''));
     }
 
     function toast(msg, ms = 2200) {
@@ -4541,6 +4910,7 @@
         }
         navButtons(ctx);
         buildDock(ctx);
+        saveContinueReading();
     }
 
     /* ====================================================================
@@ -4801,9 +5171,12 @@
      * ==================================================================== */
     function purgeDiscord(rootEl = document) {
         if (!rootEl) return;
-        rootEl.querySelectorAll('iframe[src*="discord" i], a[href*="discord" i], div:has(iframe[src*="discord" i])').forEach(el => el.remove());
+        rootEl.querySelectorAll('iframe[src*="discord" i], a[href*="discord" i], div:has(> iframe[src*="discord" i])').forEach(el => {
+            if (el.matches && (el.matches('.main-width') || el.closest('#cw-comments') || el.closest('#discuscontainer'))) return;
+            el.remove();
+        });
         rootEl.querySelectorAll('h4, p, div, span').forEach(el => {
-            if (el.closest && el.closest('#cw-comments')) return;
+            if (el.closest && (el.closest('#cw-comments') || el.closest('#discuscontainer') || el.matches('.main-width'))) return;
             const txt = el.textContent || '';
             if (/discord\.gg|in our discord server|contact slayer/i.test(txt)) {
                 el.remove();
