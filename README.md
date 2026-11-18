@@ -1,7 +1,7 @@
 # Neobrutal Scans
 
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
-[![Version](https://img.shields.io/badge/version-2026--11--02.11-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
+[![Version](https://img.shields.io/badge/version-2026--11--02.12-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
 A high-contrast **Neobrutalist skin and debloater** for **DemonicScans** and **Asura Scans** (both comic and novel sides). It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.

@@ -134,6 +134,14 @@ test('.md-hero-meta, .md-hero-views, and .md-hero-chapter styles are defined', (
 test('Mobile responsive hero styling defined for max-width: 768px', () => {
     assert(demonicCode.includes('@media (max-width: 768px)'), 'Missing 768px media query in demonic');
     assert(demonicCode.includes('#md-hero .md-hero-card'), 'Missing mobile hero card styling');
+    assert(demonicCode.includes('margin-top: auto !important;'), 'Carousel thumbs must stick to bottom of card on mobile');
+    assert(/bottom:\s*-\d+px/i.test(demonicCode), 'Hero preview card must clip through bottom edge');
+    assert(/mask-image:\s*linear-gradient\(to right,\s*transparent/i.test(demonicCode), 'Carousel mask must fade in on left edge');
+});
+test('Mobile navigation header controls (sidebar, logo, search) are defined', () => {
+    assert(demonicCode.includes('button[onclick*="pushMenuRight"]'), 'Missing mobile sidebar menu button styling');
+    assert(demonicCode.includes('body > nav a[href="/index.php"]:has(> img[src*="title"])'), 'Missing mobile logo styling');
+    assert(demonicCode.includes(':is(body > nav) .right-nav-cont button'), 'Missing mobile search button styling');
 });
 
 // 5. DOM Isolation Guards

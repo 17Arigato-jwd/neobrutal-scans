@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.11
+// @version      2026-11-02.12
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -357,8 +357,8 @@
             inset: -20px;
             background-size: cover;
             background-position: center 25%;
-            filter: blur(20px) saturate(1.4) brightness(0.96);
-            opacity: 0.65;
+            filter: blur(22px) saturate(1.7) brightness(0.78);
+            opacity: 0.88;
             transform: scale(1.08);
             pointer-events: none;
             transition: opacity .35s ease;
@@ -367,8 +367,8 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(to top, rgba(255,255,255,.82) 0%, rgba(255,255,255,.2) 60%, transparent 100%),
-                        linear-gradient(to right, rgba(255,255,255,.86) 0%, rgba(255,255,255,.35) 60%, transparent 100%);
+            background: linear-gradient(to top, rgba(255,255,255,.65) 0%, rgba(255,255,255,.1) 50%, transparent 100%),
+                        linear-gradient(to right, rgba(255,255,255,.78) 0%, rgba(255,255,255,.18) 55%, transparent 100%);
             pointer-events: none;
         }
         #md-hero .md-hero-body {
@@ -508,8 +508,8 @@
             max-width: 100% !important;
             position: relative !important;
             z-index: 4 !important;
-            mask-image: linear-gradient(to right, black 0%, black calc(100% - 18px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 18px), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
         }
         #md-hero .md-hero-thumbs::-webkit-scrollbar { display: none !important; }
         #md-hero .md-hero-thumb {
@@ -627,30 +627,35 @@
             #md-hero {
                 width: calc(100% - 20px) !important;
                 margin: 12px auto 16px !important;
-                padding: 16px 14px !important;
-                min-height: clamp(330px, 86vw, 390px) !important;
+                padding: 16px 14px 14px !important;
+                min-height: clamp(340px, 88vw, 400px) !important;
+                display: flex !important;
                 flex-direction: column !important;
                 align-items: stretch !important;
                 justify-content: flex-start !important;
                 gap: 10px !important;
             }
             #md-hero .md-hero-body {
-                max-width: calc(100% - clamp(125px, 38vw, 175px)) !important;
+                flex: 1 1 auto !important;
+                display: flex !important;
+                flex-direction: column !important;
+                max-width: calc(100% - clamp(135px, 40vw, 185px)) !important;
                 min-height: 0 !important;
+                height: 100% !important;
                 justify-content: flex-start !important;
             }
             #md-hero .md-hero-card {
                 display: block !important;
                 position: absolute !important;
-                right: 10px !important;
-                top: 20px !important;
-                bottom: -35px !important;
-                width: clamp(130px, 39vw, 180px) !important;
+                top: auto !important;
+                bottom: -50px !important;
+                right: 8px !important;
+                width: clamp(155px, 45vw, 210px) !important;
                 aspect-ratio: 2 / 3 !important;
                 border-radius: 12px !important;
                 border: var(--bw) solid #000 !important;
                 box-shadow: 6px 6px 0 #000 !important;
-                transform: rotate(5deg) !important;
+                transform: rotate(5.5deg) !important;
                 transform-origin: bottom center !important;
                 z-index: 3 !important;
                 pointer-events: auto !important;
@@ -694,12 +699,14 @@
                 box-shadow: 2px 2px 0 #000 !important;
             }
             #md-hero .md-hero-thumbs {
+                margin-top: auto !important;
+                margin-bottom: 0 !important;
                 width: 100% !important;
                 max-width: 100% !important;
                 gap: 7px !important;
-                padding: 2px 4px 4px !important;
-                mask-image: linear-gradient(to right, black 0%, black calc(100% - 16px), transparent 100%) !important;
-                -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 16px), transparent 100%) !important;
+                padding: 4px 0 2px !important;
+                mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%) !important;
+                -webkit-mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%) !important;
             }
             #md-hero .md-hero-thumb {
                 flex: 0 0 38px !important;
@@ -1612,6 +1619,139 @@
         body > nav a[href="/index.php"] img[src*="title"] {
             width: auto !important; height: 22px !important; filter: none !important;
             border: 0 !important; border-radius: 0 !important; box-shadow: none !important;
+        }
+
+        /* mobile header controls: sidebar button, logo, search button, theme switch */
+        @media (max-width: 768px) {
+            body > nav .innav {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                min-height: 44px !important;
+                padding-inline: 12px !important;
+                gap: 8px !important;
+            }
+            body > nav .innav > .flex {
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+            }
+
+            /* sidebar menu button */
+            body > nav button[onclick*="pushMenuRight"] {
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: var(--lime) !important;
+                border: var(--bw) solid var(--bd) !important;
+                border-radius: 8px !important;
+                box-shadow: var(--sh-sm) !important;
+            }
+            body > nav button[onclick*="pushMenuRight"] span {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            body > nav button[onclick*="pushMenuRight"] svg {
+                width: 22px !important;
+                height: 22px !important;
+                display: block !important;
+                margin: 0 !important;
+            }
+
+            /* logo circular badge on mobile */
+            body > nav a[href="/index.php"]:has(> img[src*="title"]) {
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border-radius: 50% !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                background: #161616 !important;
+                border: 2px solid var(--bd) !important;
+                box-shadow: var(--sh-sm) !important;
+                gap: 0 !important;
+            }
+            body > nav a[href="/index.php"] img[src*="logo"] {
+                width: 32px !important;
+                height: 32px !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                background: transparent !important;
+                border-radius: 50% !important;
+                display: block !important;
+            }
+            body > nav #demon-title-lg {
+                display: none !important;
+            }
+
+            /* search button on mobile */
+            :is(body > nav) #header-search-input {
+                display: none !important;
+            }
+            :is(body > nav) .right-nav-cont {
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
+                background: transparent !important;
+                border: 0 !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            :is(body > nav) .right-nav-cont button {
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
+                border: var(--bw) solid var(--bd) !important;
+                border-radius: 8px !important;
+                box-shadow: var(--sh-sm) !important;
+                background: var(--lime) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            :is(body > nav) .right-nav-cont button span {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+            }
+            :is(body > nav) .right-nav-cont button :is(svg, img, i) {
+                width: 20px !important;
+                height: 20px !important;
+                display: block !important;
+                margin: 0 !important;
+            }
+
+            /* theme switch on mobile */
+            #md-theme {
+                height: 38px !important;
+                margin: 0 !important;
+            }
         }
 
         /* short comments */
