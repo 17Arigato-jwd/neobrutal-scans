@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.16
+// @version      2026-11-02.17
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -9,6 +9,12 @@
 // @updateURL    https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js
 // @downloadURL  https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js
 // @match        *://*.demonicscans.org/*
+// @match        *://*.mangademon.org/*
+// @match        *://*.mangademon.com/*
+// @match        *://*.mangademon.cc/*
+// @match        *://*.mangademon.me/*
+// @match        *://*.mgdemon.org/*
+// @match        *://*.demonreader.org/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=demonicscans.org
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
@@ -17,6 +23,12 @@
 // @connect      librarydm.com
 // @connect      readermc.org
 // @connect      mangafirst.org
+// @connect      mangademon.org
+// @connect      mangademon.com
+// @connect      mangademon.cc
+// @connect      mangademon.me
+// @connect      mgdemon.org
+// @connect      demonreader.org
 // @connect      *
 // ==/UserScript==
 
@@ -24,6 +36,29 @@
     'use strict';
     // never run inside frames, except our own background reader frame
     if (window.top !== window.self && window.name !== 'md-bg-frame') return;
+
+    // Neutralize jQuery owlCarousel so it doesn't wrap cards in .owl-stage-outer
+    function neutralizeOwl() {
+        const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        const intercept = (jq) => {
+            if (!jq || !jq.fn) return;
+            try {
+                jq.fn.owlCarousel = function() { return this; };
+            } catch (_) {}
+        };
+        if (win.jQuery) intercept(win.jQuery);
+        if (win.$) intercept(win.$);
+        let _jq = win.jQuery;
+        try {
+            Object.defineProperty(win, 'jQuery', {
+                configurable: true,
+                enumerable: true,
+                get: () => _jq,
+                set: (v) => { _jq = v; intercept(v); }
+            });
+        } catch (_) {}
+    }
+    neutralizeOwl();
 
     // At document-start <html> may not exist yet: wait for it, then run again.
     if (!document.documentElement) {
@@ -1068,7 +1103,22 @@
         [data-md="arrows"] button:hover:not(:disabled) { background: var(--yellow) !important; }
 
         /* ---------- Carousels (Owl is flattened into a native scroller) ---------- */
+        /* Permanently hide hero-extracted source carousel and heading */
+        [data-md-hero-source],
+        #carousel[data-md-hero-source],
+        :is([data-md="rail"], .owl-carousel, [data-md="head"])[data-md-hero-source] {
+            display: none !important;
+        }
+
         .owl-carousel .owl-nav, .owl-carousel .owl-dots, [data-mdc="rail"].cloned { display: none !important; }
+        .owl-carousel .owl-stage-outer, .owl-carousel .owl-stage {
+            display: contents !important;
+            border: none !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+            width: auto !important;
+            height: auto !important;
+        }
 
         [data-md="rail"] {
             display: flex !important; flex-flow: row nowrap !important; gap: var(--gap) !important;
@@ -1194,6 +1244,290 @@
         [data-mdc="grid"] [data-mdd][data-new] {
             background: var(--lime) !important; color: var(--ink) !important; font-weight: 800 !important;
             border: var(--bw) solid var(--bd) !important; border-radius: 999px !important; padding: 1px 8px !important;
+        }
+
+        /* ---------- Advanced Search Filter Box ---------- */
+        form[action="advanced.php"],
+        #browse-form {
+            max-width: var(--col) !important;
+            margin: 20px auto !important;
+            padding: 20px !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            box-sizing: border-box !important;
+        }
+        #genres-container {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 0 20px !important;
+        }
+        #genres-container li {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 6px 12px !important;
+            background: var(--cream) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 999px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 700 12px/1 'JetBrains Mono', monospace !important;
+            cursor: pointer !important;
+            user-select: none !important;
+            transition: transform .1s, background .1s, box-shadow .1s !important;
+        }
+        #genres-container li:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 2px 2px 0 var(--bd) !important;
+            background: var(--yellow) !important;
+        }
+        #genres-container li:has(input:checked) {
+            background: var(--yellow) !important;
+            box-shadow: inset 1px 1px 0 var(--bd), 1px 1px 0 var(--bd) !important;
+        }
+        #genres-container input[type="checkbox"] {
+            accent-color: var(--bd) !important;
+            width: 14px !important;
+            height: 14px !important;
+            cursor: pointer !important;
+        }
+        #filters-container {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding-top: 14px !important;
+            border-top: var(--bw) solid var(--bd) !important;
+        }
+        #filters-container select.form-control {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            padding: 8px 14px !important;
+            font: 700 13px 'DM Sans', sans-serif !important;
+            box-shadow: var(--sh-sm) !important;
+            cursor: pointer !important;
+            outline: none !important;
+        }
+        #filters-container #submitfilter {
+            background: var(--yellow) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            padding: 8px 24px !important;
+            font: 800 14px 'DM Sans', sans-serif !important;
+            text-transform: uppercase !important;
+            letter-spacing: .04em !important;
+            box-shadow: var(--sh-sm) !important;
+            cursor: pointer !important;
+            transition: transform .1s, box-shadow .1s !important;
+        }
+        #filters-container #submitfilter:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0 var(--bd) !important;
+        }
+        #filters-container #submitfilter:active {
+            transform: translate(1px, 1px) !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+        }
+
+        /* ---------- Advanced Search & Filter Grid ---------- */
+        .advanced-container,
+        [data-md="grid"].advanced-container {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(clamp(140px, 15vw, 190px), 1fr)) !important;
+            gap: 16px !important;
+            width: var(--col) !important;
+            max-width: 100% !important;
+            margin: 24px auto !important;
+            padding: 6px !important;
+            box-sizing: border-box !important;
+        }
+        .advanced-container .advanced-element,
+        .advanced-container [data-mdc] {
+            display: flex !important;
+            flex-direction: column !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            overflow: hidden !important;
+            transition: transform .15s, box-shadow .15s, background .15s !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .advanced-container .advanced-element:hover,
+        .advanced-container [data-mdc]:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: var(--sh-hover) !important;
+            background: var(--cream) !important;
+        }
+        .advanced-container .advanced-element a {
+            display: flex !important;
+            flex-direction: column !important;
+            height: 100% !important;
+            text-decoration: none !important;
+            color: var(--ink) !important;
+        }
+        .advanced-container .advanced-element img {
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 2 / 3 !important;
+            object-fit: cover !important;
+            border: none !important;
+            border-bottom: var(--bw) solid var(--bd) !important;
+            border-radius: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+        }
+        .advanced-container .advanced-element h1 {
+            font: 800 13px/1.3 'DM Sans', sans-serif !important;
+            color: var(--ink) !important;
+            padding: 8px 10px !important;
+            margin: 0 !important;
+            text-align: left !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            flex: 1 1 auto !important;
+        }
+        .advanced-container .advanced-element h1 div {
+            font: 700 11px/1 'JetBrains Mono', monospace !important;
+            color: var(--muted) !important;
+            margin-top: 6px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+        }
+        .advanced-container .advanced-element h1 div svg {
+            stroke: var(--ink) !important;
+        }
+
+        /* ---------- Pagination ---------- */
+        .pagination {
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
+            margin: 32px auto !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: var(--col) !important;
+        }
+        .pagination ul {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            align-items: center !important;
+            gap: 8px !important;
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .pagination li,
+        .pagination ul > a {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 38px !important;
+            height: 38px !important;
+            padding: 0 12px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 13px/1 'JetBrains Mono', monospace !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            box-sizing: border-box !important;
+            transition: transform .1s, box-shadow .1s, background .1s !important;
+        }
+        .pagination ul > a > li {
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            min-width: 0 !important;
+            height: auto !important;
+            color: inherit !important;
+            font: inherit !important;
+        }
+        .pagination li a {
+            color: inherit !important;
+            text-decoration: none !important;
+            font: inherit !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: transparent !important;
+        }
+        .pagination li:hover:not(:empty),
+        .pagination ul > a:hover {
+            background: var(--cream) !important;
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0 var(--bd) !important;
+        }
+        .pagination li[style*="ff6740" i],
+        .pagination li.active,
+        .pagination a.active {
+            background: var(--yellow) !important;
+            color: var(--ink) !important;
+            border-color: var(--bd) !important;
+            box-shadow: inset 1px 1px 0 var(--bd), 1px 1px 0 var(--bd) !important;
+            pointer-events: none !important;
+        }
+        .pagination li:not(:has(a)):not([style*="ff6740" i]) {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            cursor: default !important;
+            min-width: 20px !important;
+            padding: 0 4px !important;
+        }
+
+        /* ---------- Static Info & Policy Pages ---------- */
+        #login-container {
+            max-width: var(--col) !important;
+            margin: 32px auto !important;
+            padding: 28px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            box-sizing: border-box !important;
+        }
+        #login-container h1,
+        #login-container h2,
+        #login-container h3,
+        #login-container p,
+        #login-container span,
+        #login-container div,
+        #login-container li {
+            color: var(--ink) !important;
+        }
+        #login-container h1 {
+            font: 900 24px 'DM Sans', sans-serif !important;
+            margin-bottom: 16px !important;
+            border-bottom: var(--bw) solid var(--bd) !important;
+            padding-bottom: 12px !important;
+        }
+        #login-container p {
+            font: 500 15px/1.6 'DM Sans', sans-serif !important;
+            margin: 12px 0 !important;
         }
 
         /* ---------- Footer ---------- */
@@ -2125,8 +2459,8 @@
     const DATE = /^\d{4}-\d{2}-\d{2}$/;
     const SKIP_TAGS = /^(STYLE|SCRIPT|LINK|TEMPLATE|NOSCRIPT)$/;
     // Things we must never treat as a content track or collapse as an "empty block"
-    const UI_ZONES = 'header, nav, footer, #md-hero, #md-top, #md-dock, #menu, #forced-Search, #resultbox, #footer-container, #cw-comments, #manga-info-container, .chapter-info';
-    const VOID_SAFE = `${UI_ZONES}, [data-mdc], [data-md="rail"], [data-md="grid"], .shadowimg, .owl-nav, .owl-dots`;
+    const UI_ZONES = 'header, nav, footer, #md-hero, [data-md-hero-source], #md-top, #md-dock, #menu, #forced-Search, #resultbox, #footer-container, #cw-comments, #manga-info-container, .chapter-info';
+    const VOID_SAFE = `${UI_ZONES}, [data-mdc], [data-md="rail"], [data-md="grid"], .shadowimg, .owl-nav, .owl-dots, .owl-stage-outer, .owl-stage`;
 
     const pad = n => String(n).padStart(2, '0');
     const NF = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
@@ -2163,6 +2497,7 @@
             let node = img, depth = 0;
             while (node.parentElement && node.parentElement !== document.body && depth < 8) {
                 const parent = node.parentElement;
+                if (parent.closest(UI_ZONES)) break;
                 if (parent.children.length >= 3) {
                     const withImg = [...parent.children].filter(c => c.tagName === 'IMG' || c.querySelector('img')).length;
                     if (withImg >= 3 && withImg / parent.children.length >= 0.7) { set.add(parent); break; }
@@ -2224,7 +2559,7 @@
     }
 
     function tagCell(cell, kind) {
-        if (cell.nodeType !== 1 || SKIP_TAGS.test(cell.tagName) || cell.closest('#md-hero')) return;
+        if (cell.nodeType !== 1 || SKIP_TAGS.test(cell.tagName) || cell.closest('#md-hero') || cell.closest('[data-md-hero-source]') || cell.hasAttribute('data-md-hero-source')) return;
         cell.dataset.mdc = kind;
         if (cell.dataset.mdDone) return;
 
@@ -2379,7 +2714,7 @@
     }
 
     function buildHead(sec) {
-        if (sec.closest('#md-hero') || sec.dataset.mdHead) return;
+        if (sec.closest('#md-hero') || sec.closest('[data-md-hero-source]') || sec.hasAttribute('data-md-hero-source') || sec.dataset.mdHead) return;
         const heading = findHeading(sec);
         if (!heading && document.readyState !== 'complete') return;   // retry later
         sec.dataset.mdHead = '1';
@@ -2430,11 +2765,37 @@
 
     /* ---------- main pass ---------- */
 
+    function flattenOwlCarousels() {
+        document.querySelectorAll('.owl-carousel').forEach(carousel => {
+            if (carousel.hasAttribute('data-md-hero-source') || carousel.closest('[data-md-hero-source]')) return;
+            const stage = carousel.querySelector('.owl-stage');
+            if (stage) {
+                const items = [...stage.querySelectorAll('.owl-item:not(.cloned) > *')];
+                items.forEach(item => {
+                    item.style.width = '';
+                    item.style.margin = '';
+                    item.style.transform = '';
+                    carousel.appendChild(item);
+                });
+                carousel.querySelectorAll('.owl-stage-outer, .owl-nav, .owl-dots, .cloned').forEach(el => el.remove());
+            }
+            carousel.classList.remove('owl-loaded', 'owl-drag', 'owl-refresh');
+            carousel.style.display = '';
+            carousel.style.width = '';
+        });
+    }
+
     let lastSummary = '';
     function organize() {
+        flattenOwlCarousels();
+
         // 1. classify tracks
         for (const t of findTracks()) {
-            if (t.closest('#md-hero') || t.dataset.md) continue;
+            if (t.closest('#md-hero') || t.closest('[data-md-hero-source]') || t.hasAttribute('data-md-hero-source') || t.dataset.md) continue;
+            if (t.classList.contains('advanced-container') || t.querySelector('.advanced-element')) {
+                t.dataset.md = 'grid';
+                continue;
+            }
             const wide = t.scrollWidth > t.clientWidth + 40 ||
                 (t.parentElement && t.parentElement.scrollWidth > t.parentElement.clientWidth + 40);
             t.dataset.md = (t.querySelector(CH) && !wide) ? 'grid' : 'rail';
@@ -2442,7 +2803,7 @@
 
         // 2. grids made of several row-containers -> parent is the grid, rows dissolve
         document.querySelectorAll('[data-md="grid"],[data-md="gridrow"]').forEach(t => {
-            if (t.closest('#md-hero')) return;
+            if (t.closest('#md-hero') || t.closest('[data-md-hero-source]') || t.hasAttribute('data-md-hero-source')) return;
             const p = t.parentElement;
             if (!p || p === document.body) return;
             const sibs = [...p.children].filter(c => c.dataset.md === 'grid' || c.dataset.md === 'gridrow');
@@ -2454,7 +2815,7 @@
 
         // 3. tag cells, wrappers, headings
         document.querySelectorAll('[data-md="rail"],[data-md="grid"]').forEach(sec => {
-            if (sec.closest('#md-hero')) return;
+            if (sec.closest('#md-hero') || sec.closest('[data-md-hero-source]') || sec.hasAttribute('data-md-hero-source')) return;
             for (let p = sec.parentElement; p && p !== document.body && p !== document.documentElement; p = p.parentElement)
                 p.dataset.mdw = '1';
             const kind = sec.dataset.md;
@@ -2489,6 +2850,9 @@
 
     /* ---------- Netflix-style hero banner: timed carousel for "Most Viewed Today" ---------- */
     function buildHero() {
+        const isHome = location.pathname === '/' || /^\/(index\.php)?$/i.test(location.pathname);
+        if (!isHome) return;
+
         // Helper: Title Case (first letter of each word capitalized)
         function toTitleCase(str) {
             if (!str) return '';
@@ -2549,7 +2913,7 @@
         }
         if (!carousel) {
             const rails = [...document.querySelectorAll('.owl-carousel, [data-md="rail"]')];
-            carousel = rails.find(r => /most\s*viewed/i.test(r.closest('.main-width, section, div, #wrapperFst')?.textContent || '')) || rails[0];
+            carousel = rails.find(r => /most\s*viewed/i.test(r.closest('.main-width, section, div, #wrapperFst')?.textContent || ''));
         }
         if (!carousel) return;
 
@@ -2867,9 +3231,15 @@
         anchor.before(hero);
 
         // Hide only the duplicate "Most Viewed Today" carousel and its heading
-        carousel.style.display = 'none';
-        if (headBar) headBar.style.display = 'none';
-        else if (heading) heading.style.display = 'none';
+        carousel.setAttribute('data-md-hero-source', '1');
+        carousel.style.setProperty('display', 'none', 'important');
+        if (headBar) {
+            headBar.setAttribute('data-md-hero-source', '1');
+            headBar.style.setProperty('display', 'none', 'important');
+        } else if (heading) {
+            heading.setAttribute('data-md-hero-source', '1');
+            heading.style.setProperty('display', 'none', 'important');
+        }
     }
 
     /* ---------- long series descriptions ---------- */
@@ -4170,7 +4540,7 @@
         try { commentsTweaks(); faviconOnce(); } catch (e) { console.warn('[MD] extras', e); }
         try {
             const page = PAGE();
-            if (page === 'list') { removeNovels(); organize(); repositionSeeMore(); buildHero(); }
+            if (page === 'list') { removeNovels(); buildHero(); organize(); repositionSeeMore(); }
             else if (page === 'overview') setupOverview();
             else if (page === 'chapter') (isNovelChapter() ? setupNovelReader : setupReader)();
             addExtras(); setupModeToggle();

@@ -88,6 +88,12 @@ test('Metadata contains essential Userscript headers in all scripts', () => {
         assert(getMeta(code, 'downloadURL'), 'Missing @downloadURL');
     }
 });
+test('demonicscans.user.js matches MangaDemon mirror domains', () => {
+    const mirrors = ['mangademon.org', 'mangademon.com', 'mangademon.cc', 'mangademon.me', 'mgdemon.org', 'demonreader.org'];
+    for (const d of mirrors) {
+        assert(demonicCode.includes(`@match        *://*.${d}/*`), `Missing @match for ${d} in demonic`);
+    }
+});
 
 // 4. CSS Integrity & Progress Bar Keyframes
 console.log('\n\x1b[36m[Group 4: CSS Rules & Hero Animation Integrity]\x1b[0m');
@@ -145,6 +151,28 @@ test('Mobile navigation header controls (sidebar, logo, search) are defined', ()
     assert(demonicCode.includes(':is(body > nav, #forced-Search) .right-nav-cont'), 'Missing mobile search container reset');
     assert(demonicCode.includes('transform: translateX(24px) !important;'), 'Missing mobile theme switch centered translation');
 });
+test('Owl Carousel flattening CSS defenses and hero source hiding are defined', () => {
+    assert(demonicCode.includes('.owl-carousel .owl-stage-outer, .owl-carousel .owl-stage'), 'Missing owl stage rule');
+    assert(demonicCode.includes('display: contents !important;'), 'Missing display: contents for owl stage');
+    assert(demonicCode.includes('[data-md-hero-source]'), 'Missing [data-md-hero-source] rule');
+});
+test('Pagination Neobrutalist styles are defined', () => {
+    assert(demonicCode.includes('.pagination ul'), 'Missing .pagination ul rule');
+    assert(demonicCode.includes('.pagination li,'), 'Missing .pagination li rule');
+    assert(demonicCode.includes('.pagination li[style*="ff6740" i]'), 'Missing active pagination style');
+});
+test('Advanced search form and grid styles are defined', () => {
+    assert(demonicCode.includes('form[action="advanced.php"]'), 'Missing advanced search form rule');
+    assert(demonicCode.includes('#genres-container li'), 'Missing #genres-container li rule');
+    assert(demonicCode.includes('#genres-container li:has(input:checked)'), 'Missing checked genre chip rule');
+    assert(demonicCode.includes('.advanced-container'), 'Missing .advanced-container grid rule');
+    assert(demonicCode.includes('.advanced-element'), 'Missing .advanced-element rule');
+});
+test('Static info and policy pages styling with light-mode text fix is defined', () => {
+    assert(demonicCode.includes('#login-container'), 'Missing #login-container rule');
+    assert(demonicCode.includes('#login-container p'), 'Missing #login-container p rule');
+    assert(/#login-container\s*\{[^}]*background:\s*var\(--card\)/i.test(demonicCode), 'Missing card background on #login-container');
+});
 
 // 5. DOM Isolation Guards
 console.log('\n\x1b[36m[Group 5: Hero Banner DOM Isolation]\x1b[0m');
@@ -158,6 +186,11 @@ test('tagCell, buildHead, organize, and MutationObserver skip #md-hero', () => {
     assert(demonicCode.includes("sec.closest('#md-hero')"), 'buildHead does not guard against #md-hero in demonic');
     assert(demonicCode.includes("t.closest('#md-hero')"), 'organize does not guard against #md-hero in demonic');
     assert(demonicCode.includes("closest('#md-hero"), 'MutationObserver does not guard against #md-hero in demonic');
+});
+test('[data-md-hero-source] is protected in UI_ZONES and ignored by organize/tagCell/buildHead', () => {
+    const uiMatch = demonicCode.match(/const\s+UI_ZONES\s*=\s*'([^']+)'/);
+    assert(uiMatch && uiMatch[1].includes('[data-md-hero-source]'), '[data-md-hero-source] missing from UI_ZONES');
+    assert(demonicCode.includes("data-md-hero-source"), 'Missing data-md-hero-source checks in organize/tagCell');
 });
 
 // 6. Functional String & Logic Tests
@@ -225,6 +258,12 @@ test('buildHero contains toTitleCase and metadata extraction logic in demonicsca
     assert(demonicCode.includes('md-hero-chapter'), 'Missing md-hero-chapter in buildHero in demonic');
     assert(demonicCode.includes('NF.format('), 'Missing NF.format in views extraction in demonic');
     assert(demonicCode.includes('harvestChapterMap'), 'Missing chapter map harvesting in demonic');
+});
+
+test('flattenOwlCarousels and isHome guard exist in demonicscans.user.js', () => {
+    assert(demonicCode.includes('function flattenOwlCarousels'), 'Missing flattenOwlCarousels in demonic');
+    assert(demonicCode.includes('flattenOwlCarousels();'), 'organize does not call flattenOwlCarousels');
+    assert(demonicCode.includes('const isHome = location.pathname === \'/\''), 'Missing isHome guard in buildHero');
 });
 
 test('asurascans.user.js contains SEL_ASURA, asuraReaderProps, and markLocks logic', () => {
