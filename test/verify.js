@@ -84,12 +84,18 @@ test('asurascans.user.js has a valid @version', () => {
 test('mangaread.user.js has a valid @version', () => {
     assert(mangareadVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(mangareadVersion), `Got ${mangareadVersion}`);
 });
-test('README.md version badge matches script version', () => {
-    const m = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue/);
-    assert(m, 'Version badge not found in README.md');
-    const badgeVersion = m[1].replace(/--/g, '-');
-    assert(badgeVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(badgeVersion), `Invalid badge version format: ${badgeVersion}`);
-    assert.strictEqual(badgeVersion, demonicVersion, `Badge version ${badgeVersion} != script version ${demonicVersion}`);
+test('README.md version badges match each dedicated script version', () => {
+    const demonicMatch = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue\?style=for-the-badge\)]\(https:\/\/raw\.githubusercontent\.com\/17Arigato-jwd\/neobrutal-scans\/main\/demonicscans\.user\.js\)/);
+    assert(demonicMatch, 'DemonicScans version badge not found in README.md');
+    assert.strictEqual(demonicMatch[1].replace(/--/g, '-'), demonicVersion, 'DemonicScans badge version mismatch');
+
+    const asuraMatch = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue\?style=for-the-badge\)]\(https:\/\/raw\.githubusercontent\.com\/17Arigato-jwd\/neobrutal-scans\/main\/asurascans\.user\.js\)/);
+    assert(asuraMatch, 'Asura Scans version badge not found in README.md');
+    assert.strictEqual(asuraMatch[1].replace(/--/g, '-'), asuraVersion, 'Asura Scans badge version mismatch');
+
+    const mangareadMatch = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue\?style=for-the-badge\)]\(https:\/\/raw\.githubusercontent\.com\/17Arigato-jwd\/neobrutal-scans\/main\/mangaread\.user\.js\)/);
+    assert(mangareadMatch, 'MangaRead version badge not found in README.md');
+    assert.strictEqual(mangareadMatch[1].replace(/--/g, '-'), mangareadVersion, 'MangaRead badge version mismatch');
 });
 test('Metadata contains essential Userscript headers in all scripts', () => {
     for (const code of [demonicCode, asuraCode, archiveCode, mangareadCode]) {
