@@ -142,6 +142,8 @@ test('Mobile navigation header controls (sidebar, logo, search) are defined', ()
     assert(demonicCode.includes('button[onclick*="pushMenuRight"]'), 'Missing mobile sidebar menu button styling');
     assert(demonicCode.includes('body > nav a[href="/index.php"]:has(> img[src*="title"])'), 'Missing mobile logo styling');
     assert(demonicCode.includes(':is(body > nav) .right-nav-cont button'), 'Missing mobile search button styling');
+    assert(demonicCode.includes(':is(body > nav, #forced-Search) .right-nav-cont'), 'Missing mobile search container reset');
+    assert(demonicCode.includes('transform: translateX(24px) !important;'), 'Missing mobile theme switch centered translation');
 });
 
 // 5. DOM Isolation Guards

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.15
+// @version      2026-11-02.16
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -1658,10 +1658,10 @@
 
             /* sidebar menu button */
             body > nav button[onclick*="pushMenuRight"] {
-                width: 40px !important;
-                height: 40px !important;
-                min-width: 40px !important;
-                min-height: 40px !important;
+                width: 38px !important;
+                height: 38px !important;
+                min-width: 38px !important;
+                min-height: 38px !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 display: flex !important;
@@ -1682,18 +1682,18 @@
                 padding: 0 !important;
             }
             body > nav button[onclick*="pushMenuRight"] svg {
-                width: 22px !important;
-                height: 22px !important;
+                width: 20px !important;
+                height: 20px !important;
                 display: block !important;
                 margin: 0 !important;
             }
 
             /* logo circular badge on mobile */
             body > nav a[href="/index.php"]:has(> img[src*="title"]) {
-                width: 40px !important;
-                height: 40px !important;
-                min-width: 40px !important;
-                min-height: 40px !important;
+                width: 38px !important;
+                height: 38px !important;
+                min-width: 38px !important;
+                min-height: 38px !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 border-radius: 50% !important;
@@ -1706,8 +1706,8 @@
                 gap: 0 !important;
             }
             body > nav a[href="/index.php"] img[src*="logo"] {
-                width: 32px !important;
-                height: 32px !important;
+                width: 30px !important;
+                height: 30px !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 background: transparent !important;
@@ -1719,28 +1719,35 @@
             }
 
             /* search button on mobile */
+            :is(body > nav, #forced-Search) #header-search-input,
+            :is(body > nav, #forced-Search) .right-nav-cont input,
+            :is(body > nav, #forced-Search) .right-nav-cont #resultbox,
             :is(body > nav) #header-search-input {
                 display: none !important;
             }
+            :is(body > nav, #forced-Search) .right-nav-cont,
             :is(body > nav) .right-nav-cont {
-                width: 40px !important;
-                height: 40px !important;
-                min-width: 40px !important;
-                min-height: 40px !important;
-                background: transparent !important;
-                border: 0 !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-                margin: 0 !important;
+                all: unset !important;
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
+                width: auto !important;
+                height: auto !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                position: relative !important;
             }
+            :is(body > nav, #forced-Search) .right-nav-cont button,
             :is(body > nav) .right-nav-cont button {
-                width: 40px !important;
-                height: 40px !important;
-                min-width: 40px !important;
-                min-height: 40px !important;
+                all: unset !important;
+                box-sizing: border-box !important;
+                width: 38px !important;
+                height: 38px !important;
+                min-width: 38px !important;
+                min-height: 38px !important;
                 border: var(--bw) solid var(--bd) !important;
                 border-radius: 8px !important;
                 box-shadow: var(--sh-sm) !important;
@@ -1750,7 +1757,16 @@
                 justify-content: center !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                cursor: pointer !important;
+                transition: transform .1s, box-shadow .1s !important;
             }
+            :is(body > nav, #forced-Search) .right-nav-cont button:hover,
+            :is(body > nav) .right-nav-cont button:hover {
+                transform: translate(1px, 1px) !important;
+                box-shadow: 1px 1px 0 var(--bd) !important;
+                background: var(--yellow) !important;
+            }
+            :is(body > nav, #forced-Search) .right-nav-cont button span,
             :is(body > nav) .right-nav-cont button span {
                 display: flex !important;
                 align-items: center !important;
@@ -1758,7 +1774,9 @@
                 width: 100% !important;
                 height: 100% !important;
                 margin: 0 !important;
+                pointer-events: none !important;
             }
+            :is(body > nav, #forced-Search) .right-nav-cont button :is(svg, img, i),
             :is(body > nav) .right-nav-cont button :is(svg, img, i) {
                 width: 20px !important;
                 height: 20px !important;
@@ -1768,8 +1786,67 @@
 
             /* theme switch on mobile */
             #md-theme {
+                width: 62px !important;
                 height: 38px !important;
+                min-width: 62px !important;
+                min-height: 38px !important;
+                box-sizing: border-box !important;
+                border: var(--bw) solid var(--bd) !important;
+                border-radius: 999px !important;
+                box-shadow: var(--sh-sm) !important;
+                padding: 0 !important;
                 margin: 0 !important;
+                background: var(--card) !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                position: relative !important;
+                cursor: pointer !important;
+                overflow: hidden !important;
+            }
+            #md-theme:hover {
+                transform: none !important;
+            }
+            #md-theme .md-th-i {
+                display: none !important;
+            }
+            #md-theme .md-th-sw {
+                display: block !important;
+                position: relative !important;
+                width: 100% !important;
+                height: 100% !important;
+                background: var(--cream) !important;
+            }
+            #md-theme .md-th-knob {
+                position: absolute !important;
+                top: 3px !important;
+                left: 3px !important;
+                width: 28px !important;
+                height: 28px !important;
+                box-sizing: border-box !important;
+                border-radius: 50% !important;
+                background: var(--yellow) !important;
+                border: var(--bw) solid var(--bd) !important;
+                display: grid !important;
+                place-items: center !important;
+                transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), background .2s !important;
+            }
+            #md-theme .md-th-knob > span {
+                grid-area: 1 / 1 !important;
+                display: grid !important;
+                place-items: center !important;
+            }
+            #md-theme .md-th-knob svg {
+                width: 14px !important;
+                height: 14px !important;
+                display: block !important;
+            }
+            html[data-md-theme="dark"] #md-theme .md-th-sw {
+                background: #1b1430 !important;
+            }
+            html[data-md-theme="dark"] #md-theme .md-th-knob {
+                transform: translateX(24px) !important;
+                background: var(--blue) !important;
             }
         }
 
