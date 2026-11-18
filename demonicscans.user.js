@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.17
+// @version      2026-11-02.18
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -106,31 +106,29 @@
      *  new tab and sends the current tab to the ad. Pin its global to an inert stub, in the PAGE's
      *  JS world (this script is sandboxed because it uses GM_ grants).
      * ==================================================================== */
-    if (!/(^|\.)asurascans\.com$/i.test(location.hostname)) {
-        try {
-            const s = document.createElement('script');
-            s.textContent = '(' + function () {
-                const noop = function () {};
-                const dummy = {
-                    version: 12, config: {}, methods: {}, open_count: 0,
-                    init: noop, preparePop: noop, addEvent: noop, loadHosted: noop, buildUrl: noop, setAsOpened: noop,
-                    shouldShow: function () { return false; }, venorShouldShow: function () { return false; },
-                };
-                try { Object.defineProperty(window, 'popMagic', { configurable: false, get: function () { return dummy; }, set: noop }); } catch (e) {}
-                try { Object.defineProperty(window, 'msgJsPop101', { configurable: false, get: function () { return undefined; }, set: noop }); } catch (e) {}
-                // backstop: refuse click-type listeners whose code mentions the ad network
-                const BAD = /popMagic|msgJsPop|pemsrv|magsrv|exoclick|exosrv|exdynsrv/i;
-                const EV = /^(click|auxclick|mousedown|mouseup|pointerdown|pointerup|touchstart|touchend)$/;
-                const ael = EventTarget.prototype.addEventListener;
-                EventTarget.prototype.addEventListener = function (type, fn, opts) {
-                    try { if (EV.test(type) && typeof fn === 'function' && BAD.test(Function.prototype.toString.call(fn))) return; } catch (e) {}
-                    return ael.call(this, type, fn, opts);
-                };
-            } + ')();';
-            document.documentElement.appendChild(s);
-            s.remove();
-        } catch (e) { /* ignore */ }
-    }
+    try {
+        const s = document.createElement('script');
+        s.textContent = '(' + function () {
+            const noop = function () {};
+            const dummy = {
+                version: 12, config: {}, methods: {}, open_count: 0,
+                init: noop, preparePop: noop, addEvent: noop, loadHosted: noop, buildUrl: noop, setAsOpened: noop,
+                shouldShow: function () { return false; }, venorShouldShow: function () { return false; },
+            };
+            try { Object.defineProperty(window, 'popMagic', { configurable: false, get: function () { return dummy; }, set: noop }); } catch (e) {}
+            try { Object.defineProperty(window, 'msgJsPop101', { configurable: false, get: function () { return undefined; }, set: noop }); } catch (e) {}
+            // backstop: refuse click-type listeners whose code mentions the ad network
+            const BAD = /popMagic|msgJsPop|pemsrv|magsrv|exoclick|exosrv|exdynsrv/i;
+            const EV = /^(click|auxclick|mousedown|mouseup|pointerdown|pointerup|touchstart|touchend)$/;
+            const ael = EventTarget.prototype.addEventListener;
+            EventTarget.prototype.addEventListener = function (type, fn, opts) {
+                try { if (EV.test(type) && typeof fn === 'function' && BAD.test(Function.prototype.toString.call(fn))) return; } catch (e) {}
+                return ael.call(this, type, fn, opts);
+            };
+        } + ')();';
+        document.documentElement.appendChild(s);
+        s.remove();
+    } catch (e) { /* ignore */ }
 
     const root = document.documentElement;
     const $ = (s, r = document) => r.querySelector(s);
@@ -143,9 +141,6 @@
     /* ====================================================================
      *  PAGE TYPE   (set immediately so the CSS can key off it before the DOM exists)
      * ==================================================================== */
-    const IS_ASURA = false;
-    if (IS_ASURA) root.dataset.mdSite = 'asura';
-
     // theme (dark / light): set before first paint so there is no flash
     root.dataset.mdTheme = (() => {
         const saved = store.get('theme', null);
@@ -157,41 +152,25 @@
 
     function detectMode() {
         const p = location.pathname.toLowerCase();
-        if (IS_ASURA) {
-            if (/^\/(novels|browse\/novels|bookmarks\/novels)(\/|$)/.test(p)) return 'novels';
-            if (/^\/(comics|browse|series-ranking)(\/|$)/.test(p)) return 'comics';
-            return root.dataset.contentMode === 'novels' ? 'novels' : 'comics';     // shared pages (ranking, guilds...) follow the site's own mode
-        }
         if (/^\/novel\//.test(p) || /nvupdates/.test(p) || (/chaptered\.php$/.test(p) && /[?&]novel=/.test(location.search))) return 'novels';
         return 'comics';
     }
-    const isNovelChapter = () => IS_ASURA ? PAGE() === 'nchapter' : /chaptered\.php$/i.test(location.pathname) && /[?&]novel=/.test(location.search);
+    const isNovelChapter = () => /chaptered\.php$/i.test(location.pathname) && /[?&]novel=/.test(location.search);
 
     function detectPage() {
         const p = location.pathname.toLowerCase();
-        if (IS_ASURA) {
-            if (/^\/novels\/[^/]+\/chapter\/[^/]+/.test(p)) return 'nchapter';
-            if (/^\/novels\/[^/]+\/?$/.test(p)) return 'noverview';
-            if (/^\/(novels|browse\/novels)\/?$/.test(p)) return 'nlist';
-            if (/^\/comics\/[^/]+\/chapter\/[^/]+/.test(p)) return 'chapter';
-            if (/^\/comics\/[^/]+\/?$/.test(p)) return 'overview';
-            if (p === '/' || /^\/comics\/?$/.test(p)) return 'list';
-            return 'other';
-        }
         if (/chaptered\.php$/.test(p)) return 'chapter';
-        if (/^\/manga\//.test(p)) return 'overview';
+        if (/^\/(manga|title)\//.test(p)) return 'overview';
         if (/^\/novel\//.test(p) || /nvupdates/.test(p)) return 'other';
         return 'list';
     }
     const PAGE = () => root.dataset.mdPage || 'list';
     root.dataset.mdPage = detectPage();
     root.dataset.mdMode = detectMode();
-    // asurascans.com/ shows whichever side was opened last: the site tags <html data-content-mode>, which can arrive after we start
-    if (IS_ASURA) new MutationObserver(() => { const m = detectMode(); if (root.dataset.mdMode !== m) root.dataset.mdMode = m; }).observe(root, { attributes: true, attributeFilter: ['data-content-mode'] });
 
     function refinePage() {
         let p = PAGE();
-        if (IS_ASURA || /^\/novel\//i.test(location.pathname)) return;
+        if (/^\/novel\//i.test(location.pathname)) return;
         if ($('#manga-info-container')) p = 'overview';
         else if ($('img.imgholder[alt]') || $('.chapter-info .chapters-nav')) p = 'chapter';
         if (p !== PAGE()) root.dataset.mdPage = p;
@@ -220,7 +199,7 @@
                 var(--page-bg) !important;
         }
         html[data-md-mode="novels"] :is(h1, h2, h3, h4, .big-fat-titles, .section-title):not(#md-np *) { font-family: 'Lora', Georgia, 'Times New Roman', serif !important; }
-        html[data-md-mode="novels"] :is(header.asura-site-header, body > nav) {
+        html[data-md-mode="novels"] body > nav {
             background: var(--yellow) !important; border-bottom: 4px double var(--bd) !important; box-shadow: 0 6px 0 var(--lime) !important;
         }
         html[data-md-mode="novels"] :is(main, body) h2:not(#md-np *):not(#cw-comments *):not(#nx) {
@@ -832,7 +811,7 @@
         [id^="ad-" i], [id$="-ad" i], [class~="ad"], [class~="ads"], [class*="advert" i], [class*="banner-ad" i],
         .ds-ad-space, .ad-container, [data-zoneid], ins.eas6a, [class*="ad-box" i],
         div:has(> a[href*="contact" i]:has(img)),
-        [id^="bg-ssp"], #teaser3, #popcont,
+        [id^="bg-ssp"], #teaser3, #popcont, #subpanel, dialog.reader-membership-promo,
         html[data-md-mode="comics"] .main-width:has(> h3.see-more a[href*="nvupdates" i]),
         a[href*="reddit" i], a[href*="toraka" i], a[href*="discord" i], a[href*="announce" i], a[href*="ebook" i],
         a[href*="subscri" i], a[href*="premium" i], a[href*="membership" i], .toraka-badge,
@@ -1695,6 +1674,7 @@
         ${CP} .main-width { max-width: none !important; width: 100% !important; margin: 0 !important; }
         ${CP} .main-width > br { display: none; }
         ${CP} #md-top { display: none !important; }
+        ${CP} :is(img.imgholder:not([alt]), img.imgholder[src*="/img/"]) { display: none !important; }
         ${CP} img.imgholder[alt] {
             display: block !important; margin: 0 auto !important;
             width: min(100%, calc(var(--md-base) * var(--md-zoom))) !important; max-width: 100% !important; height: auto !important;
@@ -1723,7 +1703,7 @@
         ${CP} .chapters-nav select {
             flex: 1 1 150px; max-width: 280px; min-width: 0; height: 40px; margin: 0 !important; font-size: 14px !important;
         }
-        ${CP} .chapters-nav a.nextchap { display: none !important; }
+        ${CP} .chapters-nav :is(a.prevchap, a.nextchap) { display: none !important; }
         ${CP} .md-nav {
             display: inline-flex !important; align-items: center; justify-content: center; gap: 6px; height: 40px; padding: 0 16px;
             background: var(--lime); color: var(--ink) !important; border: var(--bw) solid var(--bd); border-radius: 8px; box-shadow: var(--sh-sm);
@@ -1955,7 +1935,7 @@
      * ==================================================================== */
     const extraCss = `
         /* DemonicScans home ad banner + ad slots */
-        html:not([data-md-site="asura"]) :is(.ds-ad-space, .main-width:has(> .ds-ad-space), ins[class^="eas"], ins[data-zoneid]) { display: none !important; }
+        :is(.ds-ad-space, .main-width:has(> .ds-ad-space), ins[class^="eas"], ins[data-zoneid]) { display: none !important; }
 
         /* header logo lockup: dark pill, round logo badge, white wordmark (DemonicScans) */
         body > nav a[href="/index.php"]:has(> img[src*="title"]) {
@@ -2189,8 +2169,8 @@
         #cw-comments .cw-comment[data-mdx-main] > .comment-main { display: none !important; }
 
         /* reader: header auto-hide */
-        html:is([data-md-page="chapter"], [data-md-page="nchapter"]) :is(body > nav, body > header, header.asura-site-header) { transition: transform .25s ease !important; }
-        html:is([data-md-page="chapter"], [data-md-page="nchapter"])[data-md-navhide] :is(body > nav, body > header, header.asura-site-header) {
+        html:is([data-md-page="chapter"], [data-md-page="nchapter"]) :is(body > nav, body > header) { transition: transform .25s ease !important; }
+        html:is([data-md-page="chapter"], [data-md-page="nchapter"])[data-md-navhide] :is(body > nav, body > header) {
             transform: translateY(calc(-100% - 8px)) !important;
         }
 
@@ -2278,14 +2258,6 @@
         }
         [data-mdc="grid"] a[data-mdd] { flex: none; font-size: 10.5px !important; }
         [data-mdc="grid"] [data-mdd][data-new] { padding: 0 7px !important; border-width: 2px !important; line-height: 1.55 !important; }
-        html[data-md-site="asura"] a[href^="/browse?genres"] {
-            display: inline-block; margin: 0 3px 3px 0; padding: 0 8px !important; line-height: 1.55 !important; font-size: 11px !important;
-        }
-        html[data-md-site="asura"] .pinned-glow { background: var(--cream) !important; background-image: none !important; box-shadow: none !important; }
-        html[data-md-site="asura"] .pinned-glow::before, html[data-md-site="asura"] .pinned-glow::after { display: none !important; }
-        html[data-md-site="asura"] a[class*="aspect-[500/680]"] :is(span, h3) { color: #fff !important; -webkit-text-fill-color: #fff !important; }
-        html[data-md-site="asura"] a[class*="aspect-[500/680]"] b { color: #c4b5fd !important; }
-        html[data-md-site="asura"] header.asura-site-header astro-island[component-url*="SearchBar"] button { height: 40px !important; }
 
         /* ===== dark mode switch (header, top right) ===== */
         #md-theme {
@@ -3633,60 +3605,26 @@
     const reader = { zoom: 1, bg: 'paper', dock: null, dl: null };
     const BGS = ['paper', 'dark', 'black'];
 
-    // Asura is an Astro site: component data (pages, series, neighbours) sits in the island's `props` attribute
-    function astroProps(el) {
-        try {
-            const dec = v => {
-                if (!Array.isArray(v)) return v;
-                const [t, x] = v;
-                if (t === 1) return x.map(dec);
-                if (t === 0 && x && typeof x === 'object' && !Array.isArray(x)) { const o = {}; for (const k in x) o[k] = dec(x[k]); return o; }
-                return x;
-            };
-            const raw = JSON.parse(el.getAttribute('props')), out = {};
-            for (const k in raw) out[k] = dec(raw[k]);
-            return out;
-        } catch (e) { return null; }
-    }
-    const asuraReaderProps = (doc = document) => {
-        const el = doc.querySelector('astro-island[component-url*="ChapterReader"]');
-        return el ? astroProps(el) : null;
-    };
-    function asuraChapterContext(doc = document, url = location.href) {
-        const p = asuraReaderProps(doc);
-        if (!p) return null;
-        const base = '/comics/' + p.seriesSlug + '/chapter/';
-        return {
-            series: String(p.seriesName || document.title), label: 'Chapter ' + p.chapterNumber, num: String(p.chapterNumber),
-            prev: p.prevChapter ? base + p.prevChapter.number : null,
-            next: p.nextChapter ? base + p.nextChapter.number : null,
-            seriesUrl: '/comics/' + p.seriesSlug, url,
-            srcs: (p.pages || []).map(x => x.url).filter(Boolean),
-        };
-    }
-
     function chapterContext() {
-        if (IS_ASURA) {
-            const c = asuraChapterContext();
-            if (c && c.srcs.length) return c;
-            return { series: document.title, label: '', num: '', prev: null, next: null, seriesUrl: '/', srcs: pageImages().map(i => i.currentSrc || i.src) };
-        }
         const sel = $('.chapters-nav select');
         const opts = sel ? [...sel.options] : [];
-        const i = Math.max(0, opts.findIndex(o => o.selected));
-        const series = ($('.chapter-info h1 a') || $('.chapter-info h1') || {}).textContent || document.title;
+        const i = sel ? (sel.selectedIndex >= 0 ? sel.selectedIndex : Math.max(0, opts.findIndex(o => o.selected))) : -1;
+        const seriesA = $('.chapter-info h1 a');
+        const series = (seriesA || $('.chapter-info h1') || {}).textContent || document.title;
         const label = ($('.chapter-info h2') || {}).textContent || (opts[i] ? opts[i].textContent : '');
         const num = ((label.match(/[\d]+(?:\.\d+)?/) || [])[0]) || '';
+        const prevA = $('.chapters-nav a.prevchap, a.prevchap');
+        const nextA = $('.chapters-nav a.nextchap, a.nextchap');
         return {
             series: series.trim(), label: label.trim(), num,
-            prev: opts[i - 1] ? opts[i - 1].value : null,
-            next: opts[i + 1] ? opts[i + 1].value : null,
+            prev: (prevA && prevA.getAttribute('href')) || (opts[i - 1] ? opts[i - 1].value : null),
+            next: (nextA && nextA.getAttribute('href')) || (opts[i + 1] ? opts[i + 1].value : null),
+            seriesUrl: seriesA ? seriesA.href : null,
             mangaId: new URLSearchParams(location.search).get('manga'),
         };
     }
 
     function pageImages() {
-        if (IS_ASURA) return $$('img[data-page-index]');
         return $$('img.imgholder[alt]').filter(img => !/\/img\//.test(img.getAttribute('src') || ''));
     }
 
@@ -3714,8 +3652,8 @@
     // dark mode never shows a bright "paper" page behind the chapter (the stored choice is left alone)
     function paintBg() {
         let eff = reader.bg;
-        if (eff === 'paper' && !IS_ASURA && root.dataset.mdTheme === 'dark') eff = 'dark';
-        if (eff === 'paper' && !IS_ASURA) delete root.dataset.mdBg; else root.dataset.mdBg = eff;
+        if (eff === 'paper' && root.dataset.mdTheme === 'dark') eff = 'dark';
+        if (eff === 'paper') delete root.dataset.mdBg; else root.dataset.mdBg = eff;
     }
     function applyBg(name) {
         reader.bg = BGS.includes(name) ? name : 'paper';
@@ -3723,7 +3661,7 @@
         paintBg();
     }
     function cycleBg() {
-        const dark = !IS_ASURA && root.dataset.mdTheme === 'dark';
+        const dark = root.dataset.mdTheme === 'dark';
         const list = dark ? ['dark', 'black'] : BGS;
         const cur = dark && reader.bg === 'paper' ? 'dark' : reader.bg;
         applyBg(list[(list.indexOf(cur) + 1) % list.length]);
@@ -4011,10 +3949,10 @@
             btn('zoom-in', ICON.plus, 'Zoom in (+)') +
             '<span class="md-sep"></span>' +
             btn('bg', ICON.bg, 'Background colour (B)') +
-            (IS_ASURA ? btn('series', ICON.list, 'Back to the series page') : btn('mirror', ICON.refresh, 'Images not loading? Switch mirror')) +
+            btn('mirror', ICON.refresh, 'Images not loading? Switch mirror') +
             '<button type="button" class="md-dl" data-act="download"></button>' +
             btn('top', ICON.up, 'Back to top');
-        const srcSel = !IS_ASURA && $('.chapters-nav select');
+        const srcSel = $('.chapters-nav select');
         if (srcSel && srcSel.options.length > 1) {
             const cs = document.createElement('select');
             cs.className = 'md-chap'; cs.title = 'Jump to chapter'; cs.setAttribute('aria-label', 'Jump to chapter');
@@ -4051,26 +3989,29 @@
         readerChrome(d, () => !!reader.job);
 
         addEventListener('keydown', e => {
+            const a = document.activeElement || e.target;
+            if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.stopPropagation();
+                return;
+            }
             if (e.ctrlKey || e.metaKey || e.altKey) return;
-            const a = document.activeElement;
-            if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
-            if (e.key === 'ArrowLeft' && ctx.prev) location.href = ctx.prev;       // (DemonicScans already handles →)
-            else if (e.key === 'ArrowRight' && IS_ASURA && ctx.next) location.href = ctx.next;
+            if (e.key === 'ArrowLeft' && ctx.prev) location.href = ctx.prev;
+            else if (e.key === 'ArrowRight' && ctx.next) location.href = ctx.next;
             else if (e.key === '-' || e.key === '_') stepZoom(-1);
             else if (e.key === '+' || e.key === '=') stepZoom(1);
             else if (e.key === '0') applyZoom(1);
             else if (e.key === 'b' || e.key === 'B') cycleBg();
-        });
+        }, true);
     }
 
     function setupReader() {
         const ctx = chapterContext();
         if (!reader.init) {
             reader.init = true;
-            applyBg(store.get('bg', IS_ASURA ? 'black' : 'paper'));
+            applyBg(store.get('bg', 'paper'));
             applyZoom(store.get('zoom', 1));
         }
-        if (!IS_ASURA) navButtons(ctx);
+        navButtons(ctx);
         buildDock(ctx);
     }
 
@@ -4093,7 +4034,7 @@
         }
         if (b.dataset.to === (toN ? 'novels' : 'comics')) return;
         b.dataset.to = toN ? 'novels' : 'comics';
-        b.href = toN ? (IS_ASURA ? '/novels' : '/lastnvupdates.php') : (IS_ASURA ? '/comics' : '/');
+        b.href = toN ? '/lastnvupdates.php' : '/';
         b.title = toN ? 'Switch to the novel site' : 'Back to the comic site';
         b.setAttribute('aria-label', b.title);
         b.innerHTML = (toN ? ICON.book : ICON.comic) +
@@ -4164,19 +4105,6 @@
     }
 
     function novelContext() {
-        if (IS_ASURA) {
-            const el = $('astro-island[component-url*="NovelReader"]'), p = el && astroProps(el);
-            if (p && p.novelSlug) {
-                const nums = (p.chapters || []).map(c => +c.number).sort((a, b) => a - b), i = nums.indexOf(+p.chapterNumber);
-                const base = '/novels/' + p.novelSlug + '/chapter/';
-                return {
-                    series: String(p.novelTitle || document.title), label: 'Chapter ' + p.chapterNumber, title: p.chapterTitle || '',
-                    prev: i > 0 ? base + nums[i - 1] : null, next: i >= 0 && i < nums.length - 1 ? base + nums[i + 1] : null,
-                    seriesUrl: '/novels/' + p.novelSlug,
-                };
-            }
-            return { series: document.title, label: '', title: '', prev: null, next: null, seriesUrl: '/novels' };
-        }
         const c = chapterContext(), a = $('.chapter-info h1 a');
         return { series: c.series, label: c.label, title: c.label, prev: c.prev, next: c.next, seriesUrl: a ? a.href : '/lastnvupdates.php' };
     }
@@ -4319,9 +4247,12 @@
         readerChrome(d, () => nr.auto || nr.panel.classList.contains('open'));
         ['wheel', 'touchstart'].forEach(t => addEventListener(t, () => { if (nr.auto) nrToggleAuto(false); }, { passive: true }));
         addEventListener('keydown', e => {
+            const a = document.activeElement || e.target;
+            if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) {
+                if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') e.stopPropagation();
+                return;
+            }
             if (e.ctrlKey || e.metaKey || e.altKey) return;
-            const a = document.activeElement;
-            if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
             if (nr.auto && /^(ArrowUp|ArrowDown|PageUp|PageDown|Home|End| )$/.test(e.key)) nrToggleAuto(false);
             if (e.key === 'ArrowLeft' && ctx.prev) location.href = ctx.prev;
             else if (e.key === 'ArrowRight' && ctx.next) location.href = ctx.next;
@@ -4329,7 +4260,7 @@
             else if (e.key === ']') nrSet({ size: Math.min(36, nr.s.size + 1) });
             else if (e.key === 't' || e.key === 'T') nrCycleTheme();
             else if (e.key === 'Escape') nr.panel.classList.remove('open');
-        });
+        }, true);
         nrToggleAuto(false);
         nrSyncPanel();
     }
@@ -4406,7 +4337,7 @@
             const y = scrollY, dy = y - last;
             if (Math.abs(dy) < 6) return;
             last = y;
-            const nav = $('body > nav, body > header, header.asura-site-header');
+            const nav = $('body > nav, body > header');
             const busy = (nav && nav.contains(document.activeElement)) || menuOpen();
             if (busy || y < 80 || dy < 0) delete root.dataset.mdNavhide; else root.dataset.mdNavhide = '1';
         }, { passive: true });
@@ -4466,16 +4397,8 @@
         try { if (reader.init) paintBg(); } catch (e) { /* no reader on this page */ }
     }
 
-    // where the switch lives: far right of the header (DemonicScans: next to the search box, Asura: next to its search button)
+    // where the switch lives: far right of the header (DemonicScans: next to the search box)
     function themeSlot() {
-        if (IS_ASURA) {
-            const d = $('header.asura-site-header .asura-desktop-block');       // right cluster: [search][switch][bookmarks]...
-            if (d && d.parentElement) return { parent: d.parentElement, before: d.nextSibling };
-            const s = $('header.asura-site-header astro-island[component-url*="SearchBar"]');
-            if (s && s.parentElement) return { parent: s.parentElement, before: s.nextSibling };
-            const h = $('header.asura-site-header');
-            return h ? { parent: h, before: null } : null;
-        }
         const right = $('body > nav .innav > .flex:last-child');
         return right ? { parent: right, before: null } : null;
     }
