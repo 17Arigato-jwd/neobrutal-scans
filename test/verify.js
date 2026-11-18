@@ -14,6 +14,7 @@ const assert = require('assert');
 const ROOT = path.resolve(__dirname, '..');
 const DEMONIC_PATH = path.join(ROOT, 'demonicscans.user.js');
 const ASURA_PATH = path.join(ROOT, 'asurascans.user.js');
+const MANGAREAD_PATH = path.join(ROOT, 'mangaread.user.js');
 const ARCHIVE_PATH = path.join(ROOT, 'archive', 'neobrutal-scans.user.js');
 const README_PATH = path.join(ROOT, 'README.md');
 
@@ -38,11 +39,13 @@ console.log('\n\x1b[1m=== Neobrutal Scans Automated Test Suite ===\x1b[0m\n');
 console.log('\x1b[36m[Group 1: File Existence & Readability]\x1b[0m');
 test('demonicscans.user.js exists', () => assert(fs.existsSync(DEMONIC_PATH)));
 test('asurascans.user.js exists', () => assert(fs.existsSync(ASURA_PATH)));
+test('mangaread.user.js exists', () => assert(fs.existsSync(MANGAREAD_PATH)));
 test('archive/neobrutal-scans.user.js exists', () => assert(fs.existsSync(ARCHIVE_PATH)));
 test('README.md exists', () => assert(fs.existsSync(README_PATH)));
 
 const demonicCode = fs.readFileSync(DEMONIC_PATH, 'utf8');
 const asuraCode = fs.readFileSync(ASURA_PATH, 'utf8');
+const mangareadCode = fs.readFileSync(MANGAREAD_PATH, 'utf8');
 const archiveCode = fs.readFileSync(ARCHIVE_PATH, 'utf8');
 const readmeCode = fs.readFileSync(README_PATH, 'utf8');
 
@@ -53,6 +56,9 @@ test('demonicscans.user.js compiles cleanly without syntax errors', () => {
 });
 test('asurascans.user.js compiles cleanly without syntax errors', () => {
     new vm.Script(asuraCode, { filename: 'asurascans.user.js' });
+});
+test('mangaread.user.js compiles cleanly without syntax errors', () => {
+    new vm.Script(mangareadCode, { filename: 'mangaread.user.js' });
 });
 test('archive/neobrutal-scans.user.js compiles cleanly without syntax errors', () => {
     new vm.Script(archiveCode, { filename: 'archive/neobrutal-scans.user.js' });
@@ -67,12 +73,16 @@ function getMeta(code, key) {
 
 const demonicVersion = getMeta(demonicCode, 'version');
 const asuraVersion = getMeta(asuraCode, 'version');
+const mangareadVersion = getMeta(mangareadCode, 'version');
 
 test('demonicscans.user.js has a valid @version', () => {
     assert(demonicVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(demonicVersion), `Got ${demonicVersion}`);
 });
 test('asurascans.user.js has matching @version', () => {
     assert.strictEqual(asuraVersion, demonicVersion, `Version mismatch: ${asuraVersion} vs ${demonicVersion}`);
+});
+test('mangaread.user.js has matching @version', () => {
+    assert.strictEqual(mangareadVersion, demonicVersion, `Version mismatch: ${mangareadVersion} vs ${demonicVersion}`);
 });
 test('README.md version badge matches script version', () => {
     const m = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue/);
@@ -81,7 +91,7 @@ test('README.md version badge matches script version', () => {
     assert.strictEqual(badgeVersion, demonicVersion, `Badge version ${badgeVersion} != script version ${demonicVersion}`);
 });
 test('Metadata contains essential Userscript headers in all scripts', () => {
-    for (const code of [demonicCode, asuraCode, archiveCode]) {
+    for (const code of [demonicCode, asuraCode, archiveCode, mangareadCode]) {
         assert(getMeta(code, 'name'), 'Missing @name');
         assert(getMeta(code, 'match'), 'Missing @match');
         assert(getMeta(code, 'run-at'), 'Missing @run-at');
@@ -93,6 +103,13 @@ test('demonicscans.user.js matches MangaDemon mirror domains', () => {
     for (const d of mirrors) {
         assert(demonicCode.includes(`@match        *://*.${d}/*`), `Missing @match for ${d} in demonic`);
     }
+});
+test('mangaread.user.js matches MangaRead domains', () => {
+    assert(mangareadCode.includes('@match        *://mangaread.org/*'), 'Missing @match for mangaread.org');
+    assert(mangareadCode.includes('@match        *://*.mangaread.org/*'), 'Missing @match for *.mangaread.org');
+});
+test('mangaread.user.js declares @grant unsafeWindow for sandbox bypass', () => {
+    assert(mangareadCode.includes('// @grant        unsafeWindow'), 'Missing @grant unsafeWindow in mangaread.user.js');
 });
 
 // 4. CSS Integrity & Progress Bar Keyframes
@@ -287,6 +304,236 @@ test('asurascans.user.js contains SEL_ASURA, asuraReaderProps, and markLocks log
     assert(asuraCode.includes('asuraReaderProps'), 'Missing asuraReaderProps in asuraCode');
     assert(asuraCode.includes('markLocks'), 'Missing markLocks in asuraCode');
     assert(asuraCode.includes('setupReader'), 'Missing setupReader in asuraCode');
+});
+
+test('mangaread.user.js contains SEL_MANGAREAD, setupReader, and setupSelect logic', () => {
+    assert(mangareadCode.includes('SEL_MANGAREAD'), 'Missing SEL_MANGAREAD in mangareadCode');
+    assert(mangareadCode.includes('setupReader'), 'Missing setupReader in mangareadCode');
+    assert(mangareadCode.includes('setupSelect'), 'Missing setupSelect in mangareadCode');
+    assert(mangareadCode.includes('buildCbz'), 'Missing buildCbz in mangareadCode');
+    assert(mangareadCode.includes('makeZip'), 'Missing makeZip in mangareadCode');
+});
+
+test('mangaread.user.js CSS debloat hides top/bottom ad containers and code-blocks', () => {
+    assert(mangareadCode.includes('.body-top-ads'), 'Missing .body-top-ads in debloat CSS');
+    assert(mangareadCode.includes('.body-bottom-ads'), 'Missing .body-bottom-ads in debloat CSS');
+    assert(mangareadCode.includes('.c-ads'), 'Missing .c-ads in debloat CSS');
+    assert(mangareadCode.includes('.code-block'), 'Missing .code-block in debloat CSS');
+    assert(mangareadCode.includes('ins.pubadx-slot'), 'Missing ins.pubadx-slot in debloat CSS');
+    assert(mangareadCode.includes('[class*="bg-ssp-"]'), 'Missing bg-ssp selector in debloat CSS');
+});
+
+test('mangaread.user.js CSS debloat hides Super Socializer and widget bloat', () => {
+    assert(mangareadCode.includes('.the_champ_sharing_container'), 'Missing .the_champ_sharing_container');
+    assert(mangareadCode.includes('.the_champ_outer_login_container'), 'Missing .the_champ_outer_login_container');
+    assert(mangareadCode.includes('#custom_html-5'), 'Missing #custom_html-5');
+    assert(mangareadCode.includes('#block-3'), 'Missing #block-3');
+    assert(mangareadCode.includes('.cf-turnstile'), 'Missing .cf-turnstile');
+});
+
+test('mangaread.user.js overrides window.open to block popups/popunders', () => {
+    assert(mangareadCode.includes('window.open = function'), 'Missing window.open override');
+});
+
+test('mangaread.user.js neutralizes PubAdX, Yandex, and Google ad globals', () => {
+    assert(mangareadCode.includes('__pubadxTagInit'), 'Missing __pubadxTagInit stub');
+    assert(mangareadCode.includes('yaContextCb'), 'Missing yaContextCb stub');
+    assert(mangareadCode.includes('googletag'), 'Missing googletag stub');
+    assert(mangareadCode.includes('aclib'), 'Missing aclib stub');
+    assert(mangareadCode.includes('ai_adb_process_blocks'), 'Missing ai_adb_process_blocks stub');
+});
+
+test('mangaread.user.js targets unsafeWindow and mirrors stubs to sandbox window', () => {
+    assert(mangareadCode.includes('typeof unsafeWindow !== \'undefined\' ? unsafeWindow : window'),
+        'Missing unsafeWindow ternary fallback check');
+    assert(mangareadCode.includes('win.__pubadxTagInit = true'), 'Missing win.__pubadxTagInit assignment');
+    assert(mangareadCode.includes('win.aclib ='), 'Missing win.aclib assignment');
+    assert(mangareadCode.includes('win.open = blockOpen'), 'Missing win.open assignment');
+    assert(mangareadCode.includes('window.open = function'), 'Missing window.open assignment');
+});
+
+test('mangaread.user.js functional test: ad globals attach to unsafeWindow in userscript sandbox', () => {
+    const sandboxWindow = { open: () => {} };
+    const pageWindow = { open: () => {} };
+    const mockContext = {
+        window: sandboxWindow,
+        unsafeWindow: pageWindow,
+        console: { warn: () => {} }
+    };
+
+    const match = mangareadCode.match(/function neutralizeGlobals\(\)\s*\{[\s\S]*?\n    \}\n    neutralizeGlobals\(\);/);
+    assert(match, 'Could not extract neutralizeGlobals block');
+
+    const script = new vm.Script(match[0]);
+    vm.createContext(mockContext);
+    script.runInContext(mockContext);
+
+    assert.strictEqual(pageWindow.__pubadxTagInit, true, 'unsafeWindow.__pubadxTagInit must be true');
+    assert(typeof pageWindow.aclib === 'object' && typeof pageWindow.aclib.runPop === 'function', 'unsafeWindow.aclib not stubbed');
+    assert.strictEqual(pageWindow.open('https://ad.com', '_blank'), null, 'unsafeWindow.open must block popups');
+    assert.strictEqual(sandboxWindow.__pubadxTagInit, true, 'sandbox window.__pubadxTagInit must be mirrored');
+    assert.strictEqual(sandboxWindow.open('https://ad.com', '_blank'), null, 'sandbox window.open must block popups');
+});
+
+test('mangaread.user.js persists theme preference and deserializes JSON cleanly', () => {
+    assert(mangareadCode.includes("store.get('theme'"), 'savedTheme must use store.get("theme")');
+    assert(!/localStorage\.getItem\(['"]md-theme['"]\)\s*===\s*['"]light['"]/.test(mangareadCode),
+        'Raw unparsed localStorage check must not be used');
+});
+
+test('mangaread.user.js functional test: theme deserialization preserves light mode across reloads', () => {
+    const storeMatch = mangareadCode.match(/const store = \{[\s\S]*?\n    \};\n\n    const savedTheme = \(\(\) => \{[\s\S]*?\n    \}\)\(\);/);
+    assert(storeMatch, 'Could not extract store and savedTheme definitions');
+
+    const storage = {};
+    const mockLocalStorage = {
+        getItem: (k) => storage[k] !== undefined ? storage[k] : null,
+        setItem: (k, v) => { storage[k] = String(v); }
+    };
+
+    function runThemeEvaluation(storedValue) {
+        if (storedValue === undefined) {
+            delete storage['md-theme'];
+        } else {
+            storage['md-theme'] = storedValue;
+        }
+        const ctx = {
+            localStorage: mockLocalStorage,
+            CONFIG: { themeDefault: 'dark' }
+        };
+        const script = new vm.Script(storeMatch[0] + '\n; savedThemeResult = savedTheme;');
+        vm.createContext(ctx);
+        script.runInContext(ctx);
+        return ctx.savedThemeResult;
+    }
+
+    // 1. First visit (empty localStorage) -> defaults to dark
+    assert.strictEqual(runThemeEvaluation(undefined), 'dark', 'Default theme must be dark');
+
+    // 2. User set light mode: store.set('theme', 'light') writes JSON.stringify('light') = '"light"'
+    assert.strictEqual(runThemeEvaluation(JSON.stringify('light')), 'light', 'Light mode must deserialize to "light"');
+
+    // 3. User set dark mode: store.set('theme', 'dark') writes JSON.stringify('dark') = '"dark"'
+    assert.strictEqual(runThemeEvaluation(JSON.stringify('dark')), 'dark', 'Dark mode must deserialize to "dark"');
+
+    // 4. Raw unquoted string "light" fallback
+    assert.strictEqual(runThemeEvaluation('light'), 'light', 'Raw unquoted "light" must fallback to "light"');
+});
+
+test('mangaread.user.js implements MutationObserver and purgeAdContainers', () => {
+    assert(mangareadCode.includes('function purgeAdContainers'), 'Missing purgeAdContainers');
+    assert(mangareadCode.includes('new MutationObserver'), 'Missing MutationObserver');
+});
+
+test('mangaread.user.js reader sanitization protects chapter images', () => {
+    assert(mangareadCode.includes('wp-manga-chapter-img'), 'Missing wp-manga-chapter-img check');
+    assert(mangareadCode.includes('reading-content'), 'Missing reading-content reader sanitization');
+});
+
+test('SEL_MANGAREAD adapter functions and selectors are defined', () => {
+    assert(mangareadCode.includes('ul.main.version-chap'), 'Missing ul.main.version-chap in SEL_MANGAREAD');
+    assert(mangareadCode.includes('wp-manga-chapter'), 'Missing wp-manga-chapter in SEL_MANGAREAD');
+    assert(mangareadCode.includes('host:'), 'Missing host in SEL_MANGAREAD');
+    assert(mangareadCode.includes('links:'), 'Missing links in SEL_MANGAREAD');
+    assert(mangareadCode.includes('label:'), 'Missing label in SEL_MANGAREAD');
+    assert(mangareadCode.includes('series:'), 'Missing series in SEL_MANGAREAD');
+    assert(mangareadCode.includes('pages:'), 'Missing pages in SEL_MANGAREAD');
+    assert(mangareadCode.includes('framePages:'), 'Missing framePages in SEL_MANGAREAD');
+});
+
+// 7. Reader Discord, Black Comments, GIF Support & Card Layouts
+console.log('\n\x1b[36m[Group 7: Reader Discord, Black Comments, GIF Support & Card Layouts]\x1b[0m');
+test('Discord widgets and banners are purged in reader and site-wide', () => {
+    assert(demonicCode.includes('function purgeDiscord'), 'Missing purgeDiscord function in demonic');
+    assert(demonicCode.includes('iframe[src*="discord" i]'), 'Missing discord iframe CSS rule in demonic');
+    assert(demonicCode.includes('purgeDiscord();'), 'purgeDiscord not invoked in demonic reader/run');
+});
+
+test('Comments widget has black background and high-contrast styling', () => {
+    assert(/#cw-comments\s*\{[^}]*background:\s*#000000\s*!important/i.test(demonicCode), 'Missing #cw-comments black background');
+    assert(/#cw-comments\s+\.cw-comment\s*\{[^}]*background:\s*#000000\s*!important/i.test(demonicCode), 'Missing .cw-comment black background');
+});
+
+test('GIF comments and single link comments are preserved and rendered', () => {
+    assert(demonicCode.includes('keepImageComments: true'), 'keepImageComments is not true in CONFIG');
+    assert(demonicCode.includes('isSingleLink'), 'isSingleLink check missing in commentsTweaks');
+    assert(demonicCode.includes('gifImg.src = url'), 'Missing GIF inline image creation in commentsTweaks');
+});
+
+test('Latest Translations portrait card layout is defined and formatted', () => {
+    assert(demonicCode.includes('function formatTranslationCard'), 'Missing formatTranslationCard in demonic');
+    assert(demonicCode.includes('md-trans-title'), 'Missing md-trans-title in demonic');
+    assert(demonicCode.includes('md-trans-meta'), 'Missing md-trans-meta in demonic');
+    assert(demonicCode.includes('data-md-trans="1"'), 'Missing data-md-trans="1" CSS selectors');
+});
+
+test('Latest Updates card features full 2:3 cover and separated chapter blocks', () => {
+    assert(demonicCode.includes('aspect-ratio: 2 / 3 !important'), 'Missing 2:3 aspect-ratio rule for covers');
+    assert(/\[data-md="row"\]\s*\{[^}]*background:\s*var\(--soft\)\s*!important/i.test(demonicCode), 'Missing card background on chapter row');
+    assert(/\[data-md="row"\]\s*\{[^}]*border:\s*var\(--bw\)\s*solid\s*var\(--bd\)\s*!important/i.test(demonicCode), 'Missing border on chapter row block');
+    assert(/:root\s*\{[^}]*--soft:\s*#efe9d8;/i.test(demonicCode), 'Missing --soft token in demonicscans :root');
+});
+
+test('demonicscans.user.js sliding pill theme toggle has knob sliding animation across viewports', () => {
+    assert(demonicCode.includes('#md-theme .md-th-sw { display: block !important;'), 'Missing .md-th-sw block display for pill toggle');
+    assert(demonicCode.includes('translateX(26px) !important'), 'Missing translateX(26px) for dark mode switch knob');
+    assert(demonicCode.includes('border-radius: 999px !important'), 'Missing 999px pill border-radius on #md-theme');
+});
+
+// 8. MangaRead Audit, Hardening & Interactive Features
+console.log('\n\x1b[36m[Group 8: MangaRead Audit, Hardening & Interactive Features]\x1b[0m');
+test('mangaread.user.js detectPage correctly handles pagination, search, genres and chapter routes', () => {
+    const detectMatch = mangareadCode.match(/function detectPage\(\)\s*\{[\s\S]*?\n    \}/);
+    assert(detectMatch, 'Could not find detectPage in mangaread.user.js');
+
+    function evalPage(pathname, search = '') {
+        const ctx = {
+            location: { pathname, search, href: `https://www.mangaread.org${pathname}${search}` }
+        };
+        const script = new vm.Script(detectMatch[0] + '\n; result = detectPage();');
+        vm.createContext(ctx);
+        script.runInContext(ctx);
+        return ctx.result;
+    }
+
+    assert.strictEqual(evalPage('/manga/page/2/'), 'list', '/manga/page/2/ must be list');
+    assert.strictEqual(evalPage('/manga/page/10/'), 'list', '/manga/page/10/ must be list');
+    assert.strictEqual(evalPage('/page/3/'), 'list', '/page/3/ must be list');
+    assert.strictEqual(evalPage('/genres/action/'), 'list', '/genres/action/ must be list');
+    assert.strictEqual(evalPage('/', '?s=solo'), 'list', '/?s=solo must be list');
+    assert.strictEqual(evalPage('/manga/solo-leveling/'), 'overview', '/manga/solo-leveling/ must be overview');
+    assert.strictEqual(evalPage('/manga/solo-leveling/chapter-1/'), 'chapter', '/manga/solo-leveling/chapter-1/ must be chapter');
+});
+
+test('mangaread.user.js setupReader includes paged-style redirect guard', () => {
+    assert(mangareadCode.includes("style=paged"), 'Missing style=paged check in setupReader');
+    assert(mangareadCode.includes("u.searchParams.delete('style')"), 'Missing searchParams deletion of style');
+    assert(mangareadCode.includes("location.replace(u.href)"), 'Missing location.replace redirect');
+});
+
+test('mangaread.user.js select mode intercepts clicks and highlights selected rows', () => {
+    assert(mangareadCode.includes("list.addEventListener('click'"), 'Missing list click intercept in setupSelect');
+    assert(mangareadCode.includes(".listing-chapters_wrap:not([data-md-select]) .md-ck"), 'Missing .md-ck hidden CSS rule');
+    assert(mangareadCode.includes("ul.main.version-chap li.wp-manga-chapter[data-md-sel]"), 'Missing chapter row selected highlight rule');
+});
+
+test('mangaread.user.js wpDiscuz comments styling has pitch-black background and high contrast', () => {
+    assert(/#respond\.comments-area,\s*#wpdcom\s*\{[^}]*background:\s*#000000\s*!important/i.test(mangareadCode), 'Missing #wpdcom pitch-black background');
+    assert(/#wpdcom\s+\.wpd-comment\s*\{[^}]*background:\s*#0a0a0a\s*!important/i.test(mangareadCode), 'Missing .wpd-comment background');
+    assert(/#wpdcom\s+\.wpd-reply[^{]*\{[^}]*background:\s*#141414\s*!important/i.test(mangareadCode), 'Missing .wpd-reply background');
+});
+
+test('mangaread.user.js sliding pill theme toggle has knob sliding animation and header slotting', () => {
+    assert(mangareadCode.includes('class="md-th-sw"'), 'Missing .md-th-sw switch container in setupThemeToggle');
+    assert(mangareadCode.includes('class="md-th-knob"'), 'Missing .md-th-knob knob container in setupThemeToggle');
+    assert(mangareadCode.includes('translateX(26px) !important'), 'Missing translateX(26px) for dark mode switch knob');
+    assert(mangareadCode.includes('menu-theme'), 'Missing menu-theme slotting in main-menu-search');
+});
+
+test('mangaread.user.js cleans all-caps card titles and un-blanks wpDiscuz comment images', () => {
+    assert(mangareadCode.includes('cleanCardTitles();'), 'cleanCardTitles not called in run');
+    assert(mangareadCode.includes('fixCommentImages();'), 'fixCommentImages not called in run');
+    assert(mangareadCode.includes('wmu-data-src'), 'Missing wmu-data-src un-blanking logic');
 });
 
 // Summary

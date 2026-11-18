@@ -1,10 +1,10 @@
 # Neobrutal Scans
 
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
-[![Version](https://img.shields.io/badge/version-2026--11--02.19-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
+[![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-A high-contrast **Neobrutalist skin and debloater** for **DemonicScans / MangaDemon** and **Asura Scans** (both comic and novel sides). It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.
+A high-contrast **Neobrutalist skin and debloater** for **DemonicScans / MangaDemon**, **Asura Scans** (both comic and novel sides), and **MangaRead**. It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.
 
 ---
 
@@ -23,6 +23,8 @@ Choose the dedicated script for your site:
   *Lightweight, high-performance userscript exclusively tailored for DemonicScans.*
 - **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)**  
   *Dedicated script designed specifically for Asura Scans.*
+- **[Install MangaRead Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)**  
+  *Dedicated userscript designed specifically for MangaRead (mangaread.org).*
 
 *(Note: The previous monolithic combined script has been archived to [`archive/neobrutal-scans.user.js`](archive/neobrutal-scans.user.js)).*
 
@@ -114,6 +116,7 @@ To modify settings, open your userscript manager's dashboard, select **Neobrutal
 |---|---|
 | `asurascans.com` / `*.asurascans.com` | Full Neobrutalism skin, Dark mode, Reader dock, Zoom, Novel reader, Batch downloader |
 | `demonicscans.org` / `*.demonicscans.org` | Popunder killer, Netflix hero, Drag carousel, Chapter dock selector, Neobrutalism skin, Dark mode, Reader dock, .cbz export, Comment filter |
+| `mangaread.org` / `*.mangaread.org` | 4-layer ad & popunder debloater, Neobrutalism skin, Dark mode, Reader dock, Zoom controls, Background switcher, .cbz export, Multi-chapter batch ZIP downloader |
 
 ---
 
@@ -121,14 +124,14 @@ To modify settings, open your userscript manager's dashboard, select **Neobrutal
 
 - `@run-at document-start`: Injected early to neutralize ad listeners and apply theme datasets before initial paint, eliminating white flashes.
 - `GM_xmlhttpRequest`: Required to fetch raw comic panel image data across CDNs without CORS restrictions for assembling `.cbz` / `.zip` archives.
-- `@connect`: Grants explicit permissions to access comic image domains (such as `cdn.asurascans.com`, `demoniclibs.com`, `librarydm.com`, `readermc.org`, `mangafirst.org`).
+- `@connect`: Grants explicit permissions to access comic image domains (such as `cdn.asurascans.com`, `demoniclibs.com`, `librarydm.com`, `readermc.org`, `mangafirst.org`, `mangaread.org`).
 
 ---
 
 ## Roadmap & Planned Features
 
-- [ ] **Multi-Site Expansion**
-  - [ ] Add support for `mangaread.org` (ad debloating, layout cleanup, and reader integration).
+- [x] **Multi-Site Expansion**
+  - [x] Add support for `mangaread.org` (ad debloating, layout cleanup, and reader integration).
 - [x] **Browse & Homepage Overhaul**
   - [x] **Netflix-style Layout**: Transform standard home/browse catalogs into a Netflix-inspired streaming UI with prominent featured hero banners, backdrop previews, and clean categorical shelves.
   - [x] **Horizontal Carousel Scrolling**: Add horizontal mouse-wheel scrolling and drag-to-scroll interaction for carousel rails.

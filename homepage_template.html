@@ -1,0 +1,1791 @@
+<!DOCTYPE html>
+<html lang="en" data-md-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DemonicScans Neobrutalist Homescreen Template</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500..900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* ====================================================================
+         *  NEOBRUTALIST THEME TOKENS
+         * ==================================================================== */
+        :root {
+            --bw: 2px;
+            --r: 12px;
+            --col: min(1280px, calc(100% - 40px));
+        }
+
+        html[data-md-theme="light"] {
+            --bg: #fffae0;
+            --page-bg: #fffae0;
+            --card: #ffffff;
+            --card-a: rgba(255, 255, 255, 0.95);
+            --cream: #fff4bf;
+            --yellow: #ffd54f;
+            --amber: #ffb300;
+            --ink: #111111;
+            --muted: #555555;
+            --bd: #000000;
+            --sh: 4px 4px 0 #000000;
+            --sh-sm: 2px 2px 0 #000000;
+            --sh-lg: 6px 6px 0 #000000;
+            --sh-hover: 5px 5px 0 #000000;
+            --lime: #a3e635;
+            --coral: #ff6b6b;
+            --pink: #f472b6;
+            --blue: #60a5fa;
+            --violet: #c084fc;
+            --grid: rgba(0, 0, 0, 0.05);
+            --mode-novel-bg: #8b5cf6;
+        }
+
+        html[data-md-theme="dark"] {
+            --bg: #150f26;
+            --page-bg: #150f26;
+            --card: #241b3d;
+            --card-a: rgba(36, 27, 61, 0.97);
+            --cream: #322554;
+            --yellow: #ffd54f;
+            --amber: #ffb300;
+            --ink: #ece8ff;
+            --muted: #a9a0d0;
+            --bd: #000000;
+            --sh: 4px 4px 0 #000000;
+            --sh-sm: 2px 2px 0 #000000;
+            --sh-lg: 6px 6px 0 #000000;
+            --sh-hover: 5px 5px 0 #000000;
+            --lime: #a3e635;
+            --coral: #ff6b6b;
+            --pink: #f472b6;
+            --blue: #818cf8;
+            --violet: #c084fc;
+            --grid: rgba(255, 255, 255, 0.035);
+            --mode-novel-bg: #7c3aed;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background-color: var(--page-bg);
+            background-image:
+                linear-gradient(to right, var(--grid) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+            background-size: 28px 28px;
+            color: var(--ink);
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .container {
+            width: var(--col);
+            margin: 0 auto;
+        }
+
+        /* ====================================================================
+         *  STICKY NAVIGATION BAR
+         * ==================================================================== */
+        .site-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--yellow);
+            border-bottom: var(--bw) solid var(--bd);
+            box-shadow: 0 3px 0 var(--bd);
+            padding: 8px 16px;
+        }
+
+        .nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-btn-sidebar {
+            width: 38px;
+            height: 38px;
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            background: var(--card);
+            box-shadow: var(--sh-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .nav-btn-sidebar:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--bd);
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 14px 4px 4px;
+            background: #161616;
+            border: var(--bw) solid var(--bd);
+            border-radius: 999px;
+            box-shadow: var(--sh-sm);
+            color: #ffffff;
+            font-weight: 900;
+            font-size: 15px;
+            letter-spacing: 0.5px;
+        }
+        .nav-logo img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #fff;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-search {
+            display: flex;
+            align-items: stretch;
+            height: 38px;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+        .nav-search input {
+            border: none;
+            outline: none;
+            background: transparent;
+            padding: 0 12px;
+            font-family: inherit;
+            font-size: 13.5px;
+            color: var(--ink);
+            width: 220px;
+        }
+        .nav-search button {
+            border: none;
+            border-left: var(--bw) solid var(--bd);
+            background: var(--lime);
+            width: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .nav-search button:hover {
+            background: var(--amber);
+        }
+
+        /* Theme toggle switch */
+        .theme-toggle {
+            width: 62px;
+            height: 36px;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: 999px;
+            box-shadow: var(--sh-sm);
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .theme-toggle:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--bd);
+        }
+        .toggle-knob {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--yellow);
+            border: var(--bw) solid var(--bd);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.25s cubic-bezier(0.3, 1.4, 0.5, 1), background 0.2s;
+            transform: translateX(0);
+        }
+        html[data-md-theme="dark"] .toggle-knob {
+            transform: translateX(26px);
+            background: var(--blue);
+        }
+        .toggle-icon-sun, .toggle-icon-moon {
+            width: 16px;
+            height: 16px;
+        }
+        html[data-md-theme="light"] .toggle-icon-moon { display: none; }
+        html[data-md-theme="dark"] .toggle-icon-sun { display: none; }
+
+        /* ====================================================================
+         *  SECTION HEADERS WITH SLANTED INDEX TAG
+         * ==================================================================== */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 44px 0 16px;
+            gap: 16px;
+        }
+
+        .section-title-lockup {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .section-index-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            background: var(--yellow);
+            color: #000;
+            border: var(--bw) solid var(--bd);
+            border-radius: 4px;
+            box-shadow: 2px 2px 0 var(--bd);
+            transform: rotate(-2deg);
+            display: inline-block;
+        }
+
+        .section-title {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 900;
+            font-size: clamp(20px, 3vw, 26px);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+            position: relative;
+            display: inline-block;
+        }
+        .section-title::after {
+            content: "";
+            display: block;
+            width: 50%;
+            height: 4px;
+            background: var(--yellow);
+            border: 1px solid var(--bd);
+            margin-top: 2px;
+            border-radius: 2px;
+        }
+
+        .section-arrows {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rail-arrow-btn {
+            width: 36px;
+            height: 36px;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            box-shadow: var(--sh-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 900;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+        }
+        .rail-arrow-btn:hover {
+            background: var(--yellow);
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--bd);
+        }
+        .rail-arrow-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0 var(--bd);
+        }
+
+        /* ====================================================================
+         *  FEATURED HERO BANNER (#md-hero)
+         * ==================================================================== */
+        #md-hero {
+            position: relative;
+            margin: 24px auto 36px;
+            border-radius: var(--r);
+            overflow: visible;
+        }
+
+        .md-hero-card {
+            position: relative;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: var(--r);
+            box-shadow: var(--sh);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 400px;
+        }
+
+        /* Dynamic blurred backdrop */
+        .md-hero-backdrop {
+            position: absolute;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(32px) saturate(180%);
+            opacity: 0.28;
+            transform: scale(1.1);
+            pointer-events: none;
+            transition: background-image 0.4s ease;
+        }
+        html[data-md-theme="dark"] .md-hero-backdrop {
+            opacity: 0.18;
+            filter: blur(36px) saturate(200%) brightness(0.6);
+        }
+
+        .md-hero-body {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 28px 32px;
+            flex: 1;
+            gap: 32px;
+        }
+
+        .md-hero-content {
+            flex: 1 1 auto;
+            max-width: 600px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .md-hero-badge {
+            align-self: flex-start;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            background: var(--yellow);
+            color: #000;
+            border: var(--bw) solid var(--bd);
+            border-radius: 999px;
+            box-shadow: var(--sh-sm);
+        }
+
+        .md-hero-title {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 900;
+            font-size: clamp(26px, 3.8vw, 38px);
+            line-height: 1.15;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .md-hero-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .md-hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 4px 10px;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: 6px;
+            box-shadow: var(--sh-sm);
+            color: var(--ink);
+        }
+        .md-hero-pill.pill-latest {
+            background: var(--yellow);
+            color: #000;
+        }
+
+        .md-hero-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .btn-read-now {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 22px;
+            background: var(--yellow);
+            color: #000;
+            font-weight: 800;
+            font-size: 13.5px;
+            text-transform: uppercase;
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            box-shadow: var(--sh-sm);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-read-now:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--bd);
+            background: var(--lime);
+        }
+
+        .btn-more-info {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--card);
+            color: var(--ink);
+            font-weight: 800;
+            font-size: 13.5px;
+            text-transform: uppercase;
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            box-shadow: var(--sh-sm);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .btn-more-info:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--bd);
+            background: var(--cream);
+        }
+
+        /* Series Preview Card Clipping Bottom */
+        .md-hero-preview {
+            position: relative;
+            flex: 0 0 210px;
+            height: 290px;
+            border: var(--bw) solid var(--bd);
+            border-radius: var(--r);
+            box-shadow: var(--sh-lg);
+            overflow: hidden;
+            margin-bottom: -32px;
+            transform: rotate(2deg);
+            background: var(--card);
+            transition: transform 0.25s ease;
+        }
+        .md-hero-preview:hover {
+            transform: rotate(0deg) scale(1.02);
+        }
+        .md-hero-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Hero Carousel Rail */
+        .md-hero-carousel {
+            position: relative;
+            z-index: 3;
+            padding: 16px 24px;
+            background: rgba(0, 0, 0, 0.04);
+            border-top: var(--bw) solid var(--bd);
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 24px, black calc(100% - 24px), transparent);
+        }
+        .md-hero-carousel::-webkit-scrollbar { display: none; }
+
+        .md-hero-thumb {
+            position: relative;
+            flex: 0 0 68px;
+            height: 94px;
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: var(--sh-sm);
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+            opacity: 0.75;
+        }
+        .md-hero-thumb:hover {
+            opacity: 1;
+            transform: translateY(-3px);
+            box-shadow: 3px 3px 0 var(--bd);
+        }
+        .md-hero-thumb.is-active {
+            opacity: 1;
+            transform: translateY(-4px) scale(1.05);
+            border-color: var(--yellow);
+            box-shadow: 0 0 0 2px #000, 3px 3px 0 var(--bd);
+        }
+        .md-hero-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Falling Progress Bar Indicator */
+        .md-thumb-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 0%;
+            background: rgba(255, 213, 79, 0.45);
+            border-bottom: 2px solid var(--yellow);
+            pointer-events: none;
+        }
+        .md-hero-thumb.is-active .md-thumb-fill {
+            animation: mdProgressFall 5.5s linear infinite;
+        }
+        @keyframes mdProgressFall {
+            0% { height: 0%; }
+            100% { height: 100%; }
+        }
+
+        /* ====================================================================
+         *  SECTION 1: "OUR LATEST TRANSLATIONS" (Concept 1A - Polaroid Ticker)
+         * ==================================================================== */
+        .polaroid-rail-wrapper {
+            position: relative;
+            margin: 0 -4px;
+        }
+
+        .polaroid-rail {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 12px 6px 20px;
+            mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+        }
+        .polaroid-rail::-webkit-scrollbar { display: none; }
+
+        .polaroid-card {
+            flex: 0 0 170px;
+            background: var(--card);
+            border: 2.5px solid var(--bd);
+            border-radius: 8px;
+            box-shadow: var(--sh);
+            padding: 6px 6px 12px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.18s;
+        }
+        .polaroid-card:hover {
+            transform: translate(-3px, -3px) rotate(-1.2deg);
+            box-shadow: var(--sh-lg);
+            background: var(--cream);
+        }
+
+        /* Slanted top-left tape sticker */
+        .tape-badge {
+            position: absolute;
+            top: -6px;
+            left: -4px;
+            z-index: 4;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 9.5px;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            background: var(--yellow);
+            color: #000;
+            border: 1.5px solid var(--bd);
+            border-radius: 3px;
+            box-shadow: 1.5px 1.5px 0 var(--bd);
+            transform: rotate(-6deg);
+        }
+
+        /* Multi-chapter tag */
+        .more-tag {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            z-index: 4;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 9.5px;
+            padding: 2px 5px;
+            background: var(--pink);
+            color: #000;
+            border: 1.5px solid var(--bd);
+            border-radius: 4px;
+            box-shadow: 1.5px 1.5px 0 var(--bd);
+        }
+
+        .polaroid-img-box {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 2 / 3;
+            border: 1.5px solid var(--bd);
+            border-radius: 5px;
+            overflow: hidden;
+            background: var(--muted);
+        }
+        .polaroid-img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Floating neon lime chapter pill */
+        .polaroid-ch-pill {
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 11px;
+            background: var(--lime);
+            color: #000;
+            border: 1.5px solid var(--bd);
+            border-radius: 999px;
+            padding: 2px 8px;
+            box-shadow: 1.5px 1.5px 0 var(--bd);
+            white-space: nowrap;
+        }
+
+        .polaroid-title {
+            margin-top: 10px;
+            font-size: 13.5px;
+            font-weight: 800;
+            line-height: 1.25;
+            color: var(--ink);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        /* ====================================================================
+         *  SECTION 2: "LATEST UPDATES" (Concept 2A - Neobrutalist Ledger)
+         * ==================================================================== */
+        .ledger-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+        @media (max-width: 860px) {
+            .ledger-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ledger-card {
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: var(--r);
+            box-shadow: var(--sh);
+            padding: 14px;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+        }
+        .ledger-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--sh-hover);
+            background: var(--cream);
+        }
+
+        .ledger-spine {
+            flex: 0 0 84px;
+            width: 84px;
+            height: 118px;
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: var(--sh-sm);
+            background: var(--muted);
+        }
+        .ledger-spine img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .ledger-deck {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ledger-title {
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 900;
+            font-size: 15.5px;
+            line-height: 1.25;
+            color: var(--ink);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            position: relative;
+        }
+        .ledger-card:hover .ledger-title {
+            color: var(--ink);
+            text-decoration: underline;
+            text-decoration-color: var(--yellow);
+            text-decoration-thickness: 3px;
+            text-underline-offset: 2px;
+        }
+
+        .ledger-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .ledger-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 8px;
+            background: var(--card);
+            border: 1.5px solid var(--bd);
+            border-radius: 6px;
+            box-shadow: 1.5px 1.5px 0 var(--bd);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11.5px;
+            color: var(--ink);
+            cursor: pointer;
+            transition: transform 0.1s, background 0.1s;
+        }
+        .ledger-row:hover {
+            transform: translateX(4px);
+            background: var(--yellow);
+        }
+
+        .ledger-row-left {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 800;
+        }
+
+        .ledger-row-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--muted);
+            font-size: 10.5px;
+        }
+
+        /* Read state differentiation */
+        .ledger-row.is-read {
+            opacity: 0.55;
+            background: transparent;
+        }
+        .badge-read {
+            font-size: 9.5px;
+            padding: 1px 4px;
+            background: var(--muted);
+            color: #fff;
+            border-radius: 3px;
+        }
+        .badge-fresh {
+            font-size: 9.5px;
+            padding: 1px 4px;
+            background: var(--lime);
+            color: #000;
+            border-radius: 3px;
+            font-weight: 900;
+        }
+
+        /* ====================================================================
+         *  SECTION 3: "NEW TITLES" (Concept 3A - Vinyl Crate Square Sleeves)
+         * ==================================================================== */
+        .vinyl-rail {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 12px 6px 24px;
+            mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+            -webkit-mask-image: linear-gradient(to right, transparent, black 16px, black calc(100% - 16px), transparent);
+        }
+        .vinyl-rail::-webkit-scrollbar { display: none; }
+
+        .vinyl-sleeve {
+            flex: 0 0 195px;
+            height: 195px;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: var(--r);
+            box-shadow: var(--sh);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.4, 1), box-shadow 0.2s;
+        }
+        .vinyl-sleeve:nth-child(even) {
+            transform: rotate(1deg);
+        }
+        .vinyl-sleeve:nth-child(odd) {
+            transform: rotate(-1deg);
+        }
+        .vinyl-sleeve:hover {
+            transform: translateY(-4px) rotate(0deg) scale(1.02);
+            box-shadow: var(--sh-lg);
+        }
+
+        /* Top hazard caution stripe */
+        .caution-tape {
+            height: 10px;
+            background: repeating-linear-gradient(
+                -45deg,
+                var(--yellow),
+                var(--yellow) 6px,
+                #000 6px,
+                #000 12px
+            );
+            border-bottom: var(--bw) solid var(--bd);
+        }
+
+        .vinyl-stamp {
+            position: absolute;
+            top: 14px;
+            right: 8px;
+            z-index: 4;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 900;
+            font-size: 9px;
+            padding: 2px 6px;
+            background: var(--pink);
+            color: #000;
+            border: 1.5px solid var(--bd);
+            border-radius: 4px;
+            box-shadow: 1.5px 1.5px 0 var(--bd);
+            transform: rotate(6deg);
+        }
+
+        .vinyl-art {
+            width: 100%;
+            height: calc(100% - 10px);
+            object-fit: cover;
+            display: block;
+        }
+
+        .vinyl-vignette {
+            position: absolute;
+            inset: 10px 0 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.2) 60%, transparent 100%);
+            display: flex;
+            align-items: flex-end;
+            padding: 10px;
+        }
+
+        .vinyl-title {
+            font-weight: 800;
+            font-size: 13.5px;
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Slide-up interactive synopsis drawer */
+        .vinyl-drawer {
+            position: absolute;
+            inset: 10px 0 0;
+            background: var(--card);
+            border-top: var(--bw) solid var(--bd);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transform: translateY(100%);
+            transition: transform 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+            z-index: 5;
+        }
+        .vinyl-sleeve:hover .vinyl-drawer {
+            transform: translateY(0);
+        }
+
+        .drawer-desc {
+            font-size: 11px;
+            line-height: 1.35;
+            color: var(--muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 4;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .drawer-btn {
+            padding: 6px 10px;
+            background: var(--yellow);
+            color: #000;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            border: var(--bw) solid var(--bd);
+            border-radius: 6px;
+            box-shadow: var(--sh-sm);
+            text-align: center;
+        }
+
+        /* ====================================================================
+         *  FULL-WIDTH TACTILE SMASHER PAGINATION BUTTON
+         * ==================================================================== */
+        .pagination-smasher-wrapper {
+            margin: 40px auto 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .btn-smasher {
+            width: min(440px, 100%);
+            height: 52px;
+            background: var(--yellow);
+            color: #000;
+            border: 3px solid var(--bd);
+            border-radius: var(--r);
+            box-shadow: var(--sh-lg);
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 900;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+        }
+        .btn-smasher:hover {
+            background: var(--lime);
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0 var(--bd);
+        }
+        .btn-smasher:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 var(--bd);
+        }
+
+        /* ====================================================================
+         *  FLOATING "NOVELS" ARCADE ROCKER SWITCH
+         * ==================================================================== */
+        .rocker-switch-fab {
+            position: fixed;
+            left: 24px;
+            bottom: 24px;
+            z-index: 120;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: 999px;
+            box-shadow: var(--sh-lg);
+            display: flex;
+            padding: 4px;
+            gap: 4px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .rocker-switch-fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 8px 8px 0 var(--bd);
+        }
+
+        .rocker-segment {
+            padding: 8px 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 800;
+            font-size: 12px;
+            border-radius: 999px;
+            border: var(--bw) solid transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+        .rocker-segment.is-active {
+            background: var(--yellow);
+            color: #000;
+            border-color: var(--bd);
+            box-shadow: var(--sh-sm);
+        }
+        .rocker-segment.segment-novels.is-active {
+            background: var(--mode-novel-bg);
+            color: #fff;
+        }
+
+        /* ====================================================================
+         *  FOOTER
+         * ==================================================================== */
+        .site-footer {
+            margin-top: 64px;
+            background: var(--yellow);
+            border-top: var(--bw) solid var(--bd);
+            box-shadow: 0 -3px 0 var(--bd);
+            padding: 32px 16px;
+            text-align: center;
+        }
+        .footer-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            font-weight: 800;
+            font-size: 13.5px;
+            margin-bottom: 12px;
+        }
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        .footer-copy {
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sticky Navigation Bar -->
+    <nav class="site-nav">
+        <div class="container nav-inner">
+            <div class="nav-left">
+                <button type="button" class="nav-btn-sidebar" title="Open sidebar">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12h12M3 6h18M3 18h6"/>
+                    </svg>
+                </button>
+                <a href="#" class="nav-logo">
+                    <img src="https://demonicscans.org/img/demon-logo-sm.png" alt="Logo" onerror="this.style.background='var(--yellow)'">
+                    <span>DEMONIC SCANS</span>
+                </a>
+            </div>
+
+            <div class="nav-right">
+                <div class="nav-search">
+                    <input type="text" placeholder="Search series...">
+                    <button type="button" title="Search">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                            <circle cx="11" cy="11" r="7"/>
+                            <path stroke-linecap="round" d="m20 20-3.5-3.5"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Theme switch -->
+                <div class="theme-toggle" id="themeToggle" title="Toggle Dark/Light Mode">
+                    <div class="toggle-knob">
+                        <svg class="toggle-icon-sun" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                        </svg>
+                        <svg class="toggle-icon-moon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+
+        <!-- ====================================================================
+             FEATURED HERO BANNER (#md-hero)
+             ==================================================================== -->
+        <section id="md-hero">
+            <div class="md-hero-card">
+                <div class="md-hero-backdrop" id="heroBackdrop" style="background-image: url('https://readermc.org/images/thumbnails/Eleceed.webp');"></div>
+                
+                <div class="md-hero-body">
+                    <div class="md-hero-content">
+                        <span class="md-hero-badge">MOST VIEWED TODAY</span>
+                        <h1 class="md-hero-title" id="heroTitle">Eleceed</h1>
+                        
+                        <div class="md-hero-meta">
+                            <span class="md-hero-pill">
+                                <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8"/><circle cx="12" cy="12" r="3"/></svg>
+                                <span id="heroViews">14.7M views</span>
+                            </span>
+                            <span class="md-hero-pill pill-latest" id="heroChapter">Latest: Ch. 427</span>
+                        </div>
+
+                        <div class="md-hero-actions">
+                            <a href="#" class="btn-read-now" id="heroReadBtn">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                                READ NOW
+                            </a>
+                            <a href="#" class="btn-more-info" id="heroInfoBtn">MORE INFO</a>
+                        </div>
+                    </div>
+
+                    <div class="md-hero-preview">
+                        <img id="heroCoverImg" src="https://readermc.org/images/thumbnails/Eleceed.webp" alt="Eleceed Cover">
+                    </div>
+                </div>
+
+                <!-- Bottom interactive carousel -->
+                <div class="md-hero-carousel" id="heroCarousel">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             SECTION 1: "OUR LATEST TRANSLATIONS" (Concept 1A - Polaroid Ticker)
+             ==================================================================== -->
+        <section>
+            <div class="section-header">
+                <div class="section-title-lockup">
+                    <span class="section-index-tag">// 01. SCANLATIONS</span>
+                    <h2 class="section-title">Our Latest Translations</h2>
+                </div>
+                <div class="section-arrows">
+                    <button class="rail-arrow-btn" onclick="scrollRail('transRail', -360)" title="Scroll Left">‹</button>
+                    <button class="rail-arrow-btn" onclick="scrollRail('transRail', 360)" title="Scroll Right">›</button>
+                </div>
+            </div>
+
+            <div class="polaroid-rail-wrapper">
+                <div class="polaroid-rail" id="transRail">
+                    <!-- Item 1 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">EXCLUSIVE</span>
+                        <span class="more-tag">+2 MORE</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/Castle 2  Pinnacle.webp" alt="Castle 2: Pinnacle">
+                            <span class="polaroid-ch-pill">⚡ CH. 134.5</span>
+                        </div>
+                        <div class="polaroid-title">Castle 2: Pinnacle</div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">RELEASE</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/Return of the Mount Hua Sect.webp" alt="Return of the Mount Hua Sect">
+                            <span class="polaroid-ch-pill">⚡ CH. 156</span>
+                        </div>
+                        <div class="polaroid-title">Return of the Mount Hua Sect</div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">EXCLUSIVE</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/Damn Reincarnation.webp" alt="Damn Reincarnation">
+                            <span class="polaroid-ch-pill">⚡ CH. 92</span>
+                        </div>
+                        <div class="polaroid-title">Damn Reincarnation</div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">RELEASE</span>
+                        <span class="more-tag">+1 MORE</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/Talent-Swallowing Magician [ALL CHAPTERS].webp" alt="Talent-Swallowing Magician">
+                            <span class="polaroid-ch-pill">⚡ CH. 151</span>
+                        </div>
+                        <div class="polaroid-title">Talent-Swallowing Magician</div>
+                    </div>
+
+                    <!-- Item 5 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">HOT</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/Sword-Devouring Swordmaster.webp" alt="Sword-Devouring Swordmaster">
+                            <span class="polaroid-ch-pill">⚡ CH. 55</span>
+                        </div>
+                        <div class="polaroid-title">Sword-Devouring Swordmaster</div>
+                    </div>
+
+                    <!-- Item 6 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">EXCLUSIVE</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/The Regressed Mercenary 's Machinations.webp" alt="The Regressed Mercenary">
+                            <span class="polaroid-ch-pill">⚡ CH. 48</span>
+                        </div>
+                        <div class="polaroid-title">The Regressed Mercenary</div>
+                    </div>
+
+                    <!-- Item 7 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">RELEASE</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/Infinite Mage.webp" alt="Infinite Mage">
+                            <span class="polaroid-ch-pill">⚡ CH. 112</span>
+                        </div>
+                        <div class="polaroid-title">Infinite Mage</div>
+                    </div>
+
+                    <!-- Item 8 -->
+                    <div class="polaroid-card">
+                        <span class="tape-badge">EXCLUSIVE</span>
+                        <div class="polaroid-img-box">
+                            <img src="https://readermc.org/images/thumbnails/Overgeared.webp" alt="Overgeared">
+                            <span class="polaroid-ch-pill">⚡ CH. 248</span>
+                        </div>
+                        <div class="polaroid-title">Overgeared</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             SECTION 2: "LATEST UPDATES" (Concept 2A - Neobrutalist Ledger)
+             ==================================================================== -->
+        <section>
+            <div class="section-header">
+                <div class="section-title-lockup">
+                    <span class="section-index-tag">// 02. LIVE FEED</span>
+                    <h2 class="section-title">Latest Updates</h2>
+                </div>
+            </div>
+
+            <div class="ledger-grid">
+                <!-- Card 1 -->
+                <div class="ledger-card">
+                    <div class="ledger-spine">
+                        <img src="https://readermc.org/images/thumbnails/Castle 2  Pinnacle.webp" alt="Castle 2: Pinnacle">
+                    </div>
+                    <div class="ledger-deck">
+                        <a href="#" class="ledger-title">Castle 2: Pinnacle</a>
+                        <div class="ledger-rows">
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span class="badge-fresh">⚡ NEW</span>
+                                    <span>Chapter 134.5</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>Today</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                            <div class="ledger-row is-read">
+                                <div class="ledger-row-left">
+                                    <span class="badge-read">✓ READ</span>
+                                    <span>Chapter 134</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>Yesterday</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="ledger-card">
+                    <div class="ledger-spine">
+                        <img src="https://readermc.org/images/thumbnails/mgeko-recent-dc9b82441fb12fc3b66d7d835c4a3e85.webp" alt="Golden Martial God">
+                    </div>
+                    <div class="ledger-deck">
+                        <a href="#" class="ledger-title">Golden Martial God</a>
+                        <div class="ledger-rows">
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span class="badge-fresh">⚡ NEW</span>
+                                    <span>Chapter 40</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>Today</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span>Chapter 39</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>2026-11-17</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="ledger-card">
+                    <div class="ledger-spine">
+                        <img src="https://readermc.org/images/thumbnails/mgeko-recent-2c945da5c896398243d676501c77f5ad.webp" alt="Nation-Class Dungeon Architect">
+                    </div>
+                    <div class="ledger-deck">
+                        <a href="#" class="ledger-title">Nation-Class Dungeon Architect</a>
+                        <div class="ledger-rows">
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span class="badge-fresh">⚡ NEW</span>
+                                    <span>Chapter 44</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>Today</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span>Chapter 43</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>2026-11-16</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="ledger-card">
+                    <div class="ledger-spine">
+                        <img src="https://readermc.org/images/thumbnails/WARRIOR GRANDPA AND SUPREME GRANDDAUGHTER.webp" alt="Warrior Grandpa And Supreme Granddaughter">
+                    </div>
+                    <div class="ledger-deck">
+                        <a href="#" class="ledger-title">Warrior Grandpa And Supreme Granddaughter</a>
+                        <div class="ledger-rows">
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span class="badge-fresh">⚡ NEW</span>
+                                    <span>Chapter 127</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>Today</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span>Chapter 126</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>2026-11-15</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 5 -->
+                <div class="ledger-card">
+                    <div class="ledger-spine">
+                        <img src="https://readermc.org/images/thumbnails/Star Martial God Technique.webp" alt="Star Martial God Technique">
+                    </div>
+                    <div class="ledger-deck">
+                        <a href="#" class="ledger-title">Star Martial God Technique</a>
+                        <div class="ledger-rows">
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span class="badge-fresh">⚡ NEW</span>
+                                    <span>Chapter 897</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>Today</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span>Chapter 896</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>2026-11-14</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 6 -->
+                <div class="ledger-card">
+                    <div class="ledger-spine">
+                        <img src="https://readermc.org/images/thumbnails/The Regressed Sword Saint 's Magic Theory.webp" alt="The Regressed Sword Saint's Magic Theory">
+                    </div>
+                    <div class="ledger-deck">
+                        <a href="#" class="ledger-title">The Regressed Sword Saint's Magic Theory</a>
+                        <div class="ledger-rows">
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span class="badge-fresh">⚡ NEW</span>
+                                    <span>Chapter 32</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>Today</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                            <div class="ledger-row">
+                                <div class="ledger-row-left">
+                                    <span>Chapter 31</span>
+                                </div>
+                                <div class="ledger-row-right">
+                                    <span>2026-11-12</span>
+                                    <span>➔</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Full-width Tactile Smasher Pagination Button -->
+            <div class="pagination-smasher-wrapper">
+                <button type="button" class="btn-smasher">
+                    <span>LOAD MORE CHAPTERS</span>
+                    <span style="font-family:'JetBrains Mono', monospace; font-size:14px; background:var(--card); padding:3px 8px; border:var(--bw) solid var(--bd); border-radius:6px;">PAGE 2 ➔</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- ====================================================================
+             SECTION 3: "NEW TITLES" (Concept 3A - Vinyl Crate Square Sleeves)
+             ==================================================================== -->
+        <section>
+            <div class="section-header">
+                <div class="section-title-lockup">
+                    <span class="section-index-tag">// 03. FRESH DROPS</span>
+                    <h2 class="section-title">New Titles</h2>
+                </div>
+                <div class="section-arrows">
+                    <button class="rail-arrow-btn" onclick="scrollRail('vinylRail', -400)" title="Scroll Left">‹</button>
+                    <button class="rail-arrow-btn" onclick="scrollRail('vinylRail', 400)" title="Scroll Right">›</button>
+                </div>
+            </div>
+
+            <div class="vinyl-rail" id="vinylRail">
+                <!-- Sleeve 1 -->
+                <div class="vinyl-sleeve">
+                    <div class="caution-tape"></div>
+                    <span class="vinyl-stamp">NEW DROP</span>
+                    <img class="vinyl-art" src="https://readermc.org/images/thumbnails/The Heavenly Demon Can't Live a Normal Life.webp" alt="The Heavenly Demon">
+                    <div class="vinyl-vignette">
+                        <div class="vinyl-title">The Heavenly Demon Can't Live a Normal Life</div>
+                    </div>
+                    <!-- Slide-up drawer -->
+                    <div class="vinyl-drawer">
+                        <div style="font-weight:900; font-size:12px; text-transform:uppercase;">SYNOPSIS</div>
+                        <div class="drawer-desc">Junghyeok Baek, the supreme ruler of the Murim world, wakes up in the body of Roman Dimitri, a disgraced noble son...</div>
+                        <a href="#" class="drawer-btn">START CH. 1 ➔</a>
+                    </div>
+                </div>
+
+                <!-- Sleeve 2 -->
+                <div class="vinyl-sleeve">
+                    <div class="caution-tape"></div>
+                    <span class="vinyl-stamp">NEW DROP</span>
+                    <img class="vinyl-art" src="https://readermc.org/images/thumbnails/Regressing As The Reincarnated Bastard Of The Sword Clan.webp" alt="Bastard Of The Sword Clan">
+                    <div class="vinyl-vignette">
+                        <div class="vinyl-title">Bastard Of The Sword Clan</div>
+                    </div>
+                    <div class="vinyl-drawer">
+                        <div style="font-weight:900; font-size:12px; text-transform:uppercase;">SYNOPSIS</div>
+                        <div class="drawer-desc">Betrayed and murdered by his own bloodline, he awakens ten years in the past with the ancestral sword technique intact.</div>
+                        <a href="#" class="drawer-btn">START CH. 1 ➔</a>
+                    </div>
+                </div>
+
+                <!-- Sleeve 3 -->
+                <div class="vinyl-sleeve">
+                    <div class="caution-tape"></div>
+                    <span class="vinyl-stamp">HOT</span>
+                    <img class="vinyl-art" src="https://readermc.org/images/thumbnails/The Sword Saint Reincarnated Into a Noble Mage Family.webp" alt="Sword Saint Reincarnated">
+                    <div class="vinyl-vignette">
+                        <div class="vinyl-title">Sword Saint In Noble Mage Family</div>
+                    </div>
+                    <div class="vinyl-drawer">
+                        <div style="font-weight:900; font-size:12px; text-transform:uppercase;">SYNOPSIS</div>
+                        <div class="drawer-desc">The strongest swordsman who reached the apex is reborn as the lowest failure of a renowned magical dynasty.</div>
+                        <a href="#" class="drawer-btn">START CH. 1 ➔</a>
+                    </div>
+                </div>
+
+                <!-- Sleeve 4 -->
+                <div class="vinyl-sleeve">
+                    <div class="caution-tape"></div>
+                    <span class="vinyl-stamp">NEW DROP</span>
+                    <img class="vinyl-art" src="https://readermc.org/images/thumbnails/S-Class Hunter Heals with Monsters.webp" alt="S-Class Hunter Heals">
+                    <div class="vinyl-vignette">
+                        <div class="vinyl-title">S-Class Hunter Heals With Monsters</div>
+                    </div>
+                    <div class="vinyl-drawer">
+                        <div style="font-weight:900; font-size:12px; text-transform:uppercase;">SYNOPSIS</div>
+                        <div class="drawer-desc">Awakening a mysterious healing ability that purifies demonic dungeon monsters into peaceful farm companions.</div>
+                        <a href="#" class="drawer-btn">START CH. 1 ➔</a>
+                    </div>
+                </div>
+
+                <!-- Sleeve 5 -->
+                <div class="vinyl-sleeve">
+                    <div class="caution-tape"></div>
+                    <span class="vinyl-stamp">NEW DROP</span>
+                    <img class="vinyl-art" src="https://readermc.org/images/thumbnails/Talent-Swallowing Magician [ALL CHAPTERS].webp" alt="Talent Swallowing">
+                    <div class="vinyl-vignette">
+                        <div class="vinyl-title">Talent-Swallowing Magician</div>
+                    </div>
+                    <div class="vinyl-drawer">
+                        <div style="font-weight:900; font-size:12px; text-transform:uppercase;">SYNOPSIS</div>
+                        <div class="drawer-desc">Born with zero magical affinity, Elric discovers an ancient grimoire that allows him to consume the innate talents of monsters.</div>
+                        <a href="#" class="drawer-btn">START CH. 1 ➔</a>
+                    </div>
+                </div>
+
+                <!-- Sleeve 6 -->
+                <div class="vinyl-sleeve">
+                    <div class="caution-tape"></div>
+                    <span class="vinyl-stamp">NEW DROP</span>
+                    <img class="vinyl-art" src="https://readermc.org/images/thumbnails/Return of the Mount Hua Sect.webp" alt="Mount Hua">
+                    <div class="vinyl-vignette">
+                        <div class="vinyl-title">Return of the Mount Hua Sect</div>
+                    </div>
+                    <div class="vinyl-drawer">
+                        <div style="font-weight:900; font-size:12px; text-transform:uppercase;">SYNOPSIS</div>
+                        <div class="drawer-desc">Cheongmyeong, the 13th disciple of the Great Mount Hua Sect, slays the Heavenly Demon and awakens a century later.</div>
+                        <a href="#" class="drawer-btn">START CH. 1 ➔</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Floating "NOVELS" Arcade Rocker Switch (Concept 4A) -->
+    <div class="rocker-switch-fab" id="rockerSwitch">
+        <button type="button" class="rocker-segment is-active" id="btnComics" onclick="setMode('comics')">
+            <span>💬</span>
+            <span>COMICS</span>
+        </button>
+        <button type="button" class="rocker-segment segment-novels" id="btnNovels" onclick="setMode('novels')">
+            <span>📖</span>
+            <span>NOVELS</span>
+        </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-logo">
+                <a href="#" class="nav-logo" style="margin: 0 auto;">
+                    <img src="https://demonicscans.org/img/demon-logo-sm.png" alt="Logo" onerror="this.style.background='var(--yellow)'">
+                    <span>DEMONIC SCANS</span>
+                </a>
+            </div>
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms & Conditions</a>
+                <a href="#">DMCA</a>
+                <a href="#">Contact</a>
+            </div>
+            <div class="footer-copy">
+                &copy; 2026 DemonicScans &bull; Neobrutalism Skin Prototype v2026-11-18.1
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Script -->
+    <script>
+        // Hero Carousel Data
+        const HERO_ITEMS = [
+            {
+                title: "Eleceed",
+                views: "14.7M views",
+                chapter: "Latest: Ch. 427",
+                cover: "https://readermc.org/images/thumbnails/Eleceed.webp",
+                readUrl: "#",
+                infoUrl: "#"
+            },
+            {
+                title: "I Became The Rogue First Prince",
+                views: "3.2M views",
+                chapter: "Latest: Ch. 62",
+                cover: "https://readermc.org/images/thumbnails/I Became The Rogue First Prince.webp",
+                readUrl: "#",
+                infoUrl: "#"
+            },
+            {
+                title: "Sword-Devouring Swordmaster",
+                views: "2.7M views",
+                chapter: "Latest: Ch. 55",
+                cover: "https://readermc.org/images/thumbnails/Sword-Devouring Swordmaster.webp",
+                readUrl: "#",
+                infoUrl: "#"
+            },
+            {
+                title: "Talent-Swallowing Magician",
+                views: "5.6M views",
+                chapter: "Latest: Ch. 151",
+                cover: "https://readermc.org/images/thumbnails/Talent-Swallowing Magician [ALL CHAPTERS].webp",
+                readUrl: "#",
+                infoUrl: "#"
+            },
+            {
+                title: "S-Class Hunter Heals with Monsters",
+                views: "2.7M views",
+                chapter: "Latest: Ch. 61",
+                cover: "https://readermc.org/images/thumbnails/S-Class Hunter Heals with Monsters.webp",
+                readUrl: "#",
+                infoUrl: "#"
+            },
+            {
+                title: "The Sword Saint Reincarnated",
+                views: "1.2M views",
+                chapter: "Latest: Ch. 32",
+                cover: "https://readermc.org/images/thumbnails/The Sword Saint Reincarnated Into a Noble Mage Family.webp",
+                readUrl: "#",
+                infoUrl: "#"
+            },
+            {
+                title: "Damn Reincarnation",
+                views: "8.4M views",
+                chapter: "Latest: Ch. 92",
+                cover: "https://readermc.org/images/thumbnails/Damn Reincarnation.webp",
+                readUrl: "#",
+                infoUrl: "#"
+            },
+            {
+                title: "Overgeared",
+                views: "11.1M views",
+                chapter: "Latest: Ch. 248",
+                cover: "https://readermc.org/images/thumbnails/Overgeared.webp",
+                readUrl: "#",
+                infoUrl: "#"
+            }
+        ];
+
+        let activeHeroIdx = 0;
+        let heroTimer = null;
+
+        function renderHeroCarousel() {
+            const container = document.getElementById('heroCarousel');
+            container.innerHTML = '';
+            HERO_ITEMS.forEach((item, idx) => {
+                const thumb = document.createElement('div');
+                thumb.className = 'md-hero-thumb' + (idx === activeHeroIdx ? ' is-active' : '');
+                thumb.innerHTML = `
+                    <img src="${item.cover}" alt="${item.title}">
+                    <div class="md-thumb-fill"></div>
+                `;
+                thumb.addEventListener('click', () => {
+                    selectHero(idx);
+                });
+                container.appendChild(thumb);
+            });
+        }
+
+        function selectHero(idx) {
+            activeHeroIdx = idx;
+            const item = HERO_ITEMS[idx];
+            document.getElementById('heroTitle').textContent = item.title;
+            document.getElementById('heroViews').textContent = item.views;
+            document.getElementById('heroChapter').textContent = item.chapter;
+            document.getElementById('heroCoverImg').src = item.cover;
+            document.getElementById('heroBackdrop').style.backgroundImage = `url('${item.cover}')`;
+
+            const thumbs = document.querySelectorAll('.md-hero-thumb');
+            thumbs.forEach((t, i) => {
+                t.classList.toggle('is-active', i === idx);
+            });
+
+            // Auto-scroll thumb into view if needed
+            if (thumbs[idx]) {
+                thumbs[idx].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+
+            resetHeroTimer();
+        }
+
+        function resetHeroTimer() {
+            clearInterval(heroTimer);
+            heroTimer = setInterval(() => {
+                const nextIdx = (activeHeroIdx + 1) % HERO_ITEMS.length;
+                selectHero(nextIdx);
+            }, 5500);
+        }
+
+        // Horizontal rail scrolling helper
+        function scrollRail(id, delta) {
+            const el = document.getElementById(id);
+            if (el) el.scrollBy({ left: delta, behavior: 'smooth' });
+        }
+
+        // Theme toggle logic
+        const root = document.documentElement;
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            const nextTheme = root.getAttribute('data-md-theme') === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-md-theme', nextTheme);
+        });
+
+        // Mode switch logic (Comics <-> Novels)
+        function setMode(mode) {
+            const btnComics = document.getElementById('btnComics');
+            const btnNovels = document.getElementById('btnNovels');
+            if (mode === 'comics') {
+                btnComics.classList.add('is-active');
+                btnNovels.classList.remove('is-active');
+                root.style.removeProperty('--mode-novel-bg');
+            } else {
+                btnNovels.classList.add('is-active');
+                btnComics.classList.remove('is-active');
+            }
+        }
+
+        // Initialize hero
+        renderHeroCarousel();
+        selectHero(0);
+    </script>
+</body>
+</html>

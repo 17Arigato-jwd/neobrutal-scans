@@ -1,7 +1,7 @@
 {
   "name": "neobrutal-scans",
   "version": "2026.11.2",
-  "description": "Neobrutalist skin and debloater for DemonicScans and Asura Scans",
+  "description": "Neobrutalist skin and debloater for DemonicScans, Asura Scans, and MangaRead",
   "scripts": {
     "test": "node test/verify.js",
     "verify": "node test/verify.js"
