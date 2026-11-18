@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.9
+// @version      2026-11-02.10
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -347,7 +347,7 @@
             border: var(--bw) solid var(--bd);
             border-radius: var(--r);
             box-shadow: var(--sh);
-            background: #0b0813;
+            background: #ffffff;
             box-sizing: border-box;
             padding: clamp(24px, 4vw, 44px);
             gap: 24px;
@@ -357,7 +357,8 @@
             inset: -20px;
             background-size: cover;
             background-position: center 25%;
-            filter: blur(16px) brightness(0.32) saturate(1.2);
+            filter: blur(18px) brightness(1.04) saturate(1.2);
+            opacity: 0.38;
             transform: scale(1.08);
             pointer-events: none;
             transition: opacity .35s ease;
@@ -366,15 +367,15 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.2) 60%, transparent 100%),
-                        linear-gradient(to right, rgba(0,0,0,.85) 0%, rgba(0,0,0,.4) 55%, transparent 100%);
+            background: linear-gradient(to top, rgba(255,255,255,.9) 0%, rgba(255,255,255,.32) 60%, transparent 100%),
+                        linear-gradient(to right, rgba(255,255,255,.92) 0%, rgba(255,255,255,.45) 55%, transparent 100%);
             pointer-events: none;
         }
         #md-hero .md-hero-body {
             position: relative !important;
             z-index: 2 !important;
             max-width: min(580px, calc(100% - 470px)) !important;
-            color: #fff !important;
+            color: var(--ink, #111) !important;
             flex: 1 1 auto !important;
             display: flex !important;
             flex-direction: column !important;
@@ -401,10 +402,9 @@
             background: none !important;
             border: 0 !important;
             box-shadow: none !important;
-            color: #fff !important;
+            color: var(--ink, #111) !important;
             font: 900 clamp(20px, 3.2vw, 36px)/1.2 'DM Sans', sans-serif !important;
             text-transform: none !important;
-            text-shadow: 2px 2px 0 #000 !important;
             display: -webkit-box !important;
             -webkit-line-clamp: 2 !important;
             -webkit-box-orient: vertical !important;
@@ -420,19 +420,20 @@
             margin: 0 0 16px !important;
             min-height: 26px !important;
             font: 700 12px/1 'JetBrains Mono', monospace !important;
-            color: #fff !important;
+            color: var(--ink, #111) !important;
         }
         #md-hero .md-hero-views {
             display: inline-flex !important;
             align-items: center !important;
             gap: 5px !important;
             padding: 4px 10px !important;
-            background: rgba(0, 0, 0, 0.55) !important;
-            border: 1.5px solid rgba(255, 255, 255, 0.35) !important;
+            background: rgba(255, 255, 255, 0.85) !important;
+            border: 1.5px solid rgba(0, 0, 0, 0.25) !important;
             border-radius: 999px !important;
-            color: #fff !important;
+            color: #000 !important;
             font-size: 11.5px !important;
-            backdrop-filter: blur(4px) !important;
+            box-shadow: 1.5px 1.5px 0 rgba(0,0,0,0.12) !important;
+            backdrop-filter: blur(6px) !important;
         }
         #md-hero .md-hero-views svg {
             flex-shrink: 0 !important;
@@ -499,7 +500,7 @@
             align-items: center !important;
             gap: 10px !important;
             margin: 0 !important;
-            padding: 4px 2px 8px !important;
+            padding: 4px 6px 8px !important;
             overflow-x: auto !important;
             overflow-y: hidden !important;
             scrollbar-width: none !important;
@@ -507,6 +508,8 @@
             max-width: 100% !important;
             position: relative !important;
             z-index: 4 !important;
+            mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 18px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 18px), transparent 100%);
         }
         #md-hero .md-hero-thumbs::-webkit-scrollbar { display: none !important; }
         #md-hero .md-hero-thumb {
@@ -624,39 +627,40 @@
             #md-hero {
                 width: calc(100% - 20px) !important;
                 margin: 12px auto 16px !important;
-                padding: 16px !important;
-                min-height: 270px !important;
+                padding: 18px 16px !important;
+                min-height: clamp(330px, 86vw, 395px) !important;
                 flex-direction: column !important;
                 align-items: stretch !important;
                 justify-content: flex-start !important;
-                gap: 12px !important;
+                gap: 10px !important;
             }
             #md-hero .md-hero-body {
-                max-width: 100% !important;
+                max-width: calc(100% - clamp(140px, 42vw, 200px)) !important;
                 min-height: 0 !important;
                 justify-content: flex-start !important;
             }
             #md-hero .md-hero-card {
                 display: block !important;
                 position: absolute !important;
-                right: 14px !important;
-                top: 14px !important;
-                bottom: auto !important;
-                width: clamp(96px, 27vw, 130px) !important;
+                right: 10px !important;
+                top: 16px !important;
+                bottom: -40px !important;
+                width: clamp(140px, 42vw, 200px) !important;
                 aspect-ratio: 2 / 3 !important;
-                border-radius: 8px !important;
-                border-width: 2px !important;
-                box-shadow: 4px 4px 0 #000 !important;
-                transform: rotate(4deg) !important;
-                z-index: 1 !important;
+                border-radius: 12px !important;
+                border: var(--bw) solid #000 !important;
+                box-shadow: 6px 6px 0 #000 !important;
+                transform: rotate(5.5deg) !important;
+                transform-origin: bottom center !important;
+                z-index: 3 !important;
                 pointer-events: auto !important;
             }
             #md-hero .md-hero-title {
-                font-size: clamp(17px, 5vw, 22px) !important;
-                line-height: 1.25 !important;
-                max-width: calc(100% - clamp(106px, 29vw, 142px)) !important;
-                min-height: 2.5em !important;
-                max-height: 2.5em !important;
+                font-size: clamp(16px, 5.2vw, 22px) !important;
+                line-height: 1.22 !important;
+                max-width: 100% !important;
+                min-height: 2.45em !important;
+                max-height: 2.45em !important;
                 margin-bottom: 8px !important;
             }
             #md-hero .md-hero-tag {
@@ -667,7 +671,7 @@
             #md-hero .md-hero-meta {
                 gap: 6px !important;
                 margin-bottom: 12px !important;
-                max-width: calc(100% - clamp(106px, 29vw, 142px)) !important;
+                max-width: 100% !important;
                 flex-wrap: wrap !important;
             }
             #md-hero .md-hero-views, #md-hero .md-hero-chapter {
@@ -676,26 +680,30 @@
             }
             #md-hero .md-hero-cta {
                 gap: 8px !important;
-                margin-bottom: 12px !important;
+                margin-bottom: 14px !important;
             }
             #md-hero .md-hero-btn {
-                padding: 8px 14px !important;
-                min-height: 36px !important;
-                font-size: 12px !important;
+                padding: 7px 14px !important;
+                min-height: 35px !important;
+                font-size: 11.5px !important;
                 box-shadow: 2px 2px 0 #000 !important;
             }
             #md-hero .md-hero-thumbs {
+                max-width: calc(100% - clamp(135px, 41vw, 195px)) !important;
+                width: calc(100% - clamp(135px, 41vw, 195px)) !important;
                 gap: 7px !important;
-                padding: 2px 0 4px !important;
+                padding: 2px 4px 4px !important;
+                mask-image: linear-gradient(to right, transparent 0%, black 12px, black calc(100% - 16px), transparent 100%) !important;
+                -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12px, black calc(100% - 16px), transparent 100%) !important;
             }
             #md-hero .md-hero-thumb {
-                flex: 0 0 40px !important;
-                width: 40px !important;
-                min-width: 40px !important;
-                max-width: 40px !important;
-                height: 60px !important;
-                min-height: 60px !important;
-                max-height: 60px !important;
+                flex: 0 0 38px !important;
+                width: 38px !important;
+                min-width: 38px !important;
+                max-width: 38px !important;
+                height: 56px !important;
+                min-height: 56px !important;
+                max-height: 56px !important;
                 border-radius: 4px !important;
             }
         }
@@ -1635,6 +1643,33 @@
         }
         /* the wordmark PNG is white: only flip it black on light surfaces */
         html[data-md-theme="dark"] :is(nav, #menu, #footer-container) img[src*="title"] { filter: none !important; }
+        html[data-md-theme="dark"] #md-hero {
+            background: #0b0813 !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-bg {
+            filter: blur(16px) brightness(0.32) saturate(1.2) !important;
+            opacity: 1 !important;
+        }
+        html[data-md-theme="dark"] #md-hero::after {
+            background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.2) 60%, transparent 100%),
+                        linear-gradient(to right, rgba(0,0,0,.85) 0%, rgba(0,0,0,.4) 55%, transparent 100%) !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-body {
+            color: #fff !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-title {
+            color: #fff !important;
+            text-shadow: 2px 2px 0 #000 !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-meta {
+            color: #fff !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-views {
+            background: rgba(0, 0, 0, 0.55) !important;
+            border-color: rgba(255, 255, 255, 0.35) !important;
+            color: #fff !important;
+            box-shadow: none !important;
+        }
         html[data-md-theme="dark"] #md-hero .md-thumb-fill {
             background: linear-gradient(to bottom, rgba(193, 176, 255, 0.5) 0%, rgba(124, 92, 255, 0.2) 100%) !important;
             border-bottom-color: var(--violet) !important;
@@ -2462,10 +2497,10 @@
             // Background crossfade
             const bg = hero.querySelector('.md-hero-bg');
             if (bg) {
-                bg.style.opacity = '0.35';
+                bg.style.opacity = '0.15';
                 setTimeout(() => {
                     bg.style.backgroundImage = 'url("' + cur.src.replace(/"/g, '%22') + '")';
-                    bg.style.opacity = '1';
+                    bg.style.opacity = '';
                 }, 140);
             }
 
