@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.10
+// @version      2026-11-02.11
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -357,8 +357,8 @@
             inset: -20px;
             background-size: cover;
             background-position: center 25%;
-            filter: blur(18px) brightness(1.04) saturate(1.2);
-            opacity: 0.38;
+            filter: blur(20px) saturate(1.4) brightness(0.96);
+            opacity: 0.65;
             transform: scale(1.08);
             pointer-events: none;
             transition: opacity .35s ease;
@@ -367,8 +367,8 @@
             content: "";
             position: absolute;
             inset: 0;
-            background: linear-gradient(to top, rgba(255,255,255,.9) 0%, rgba(255,255,255,.32) 60%, transparent 100%),
-                        linear-gradient(to right, rgba(255,255,255,.92) 0%, rgba(255,255,255,.45) 55%, transparent 100%);
+            background: linear-gradient(to top, rgba(255,255,255,.82) 0%, rgba(255,255,255,.2) 60%, transparent 100%),
+                        linear-gradient(to right, rgba(255,255,255,.86) 0%, rgba(255,255,255,.35) 60%, transparent 100%);
             pointer-events: none;
         }
         #md-hero .md-hero-body {
@@ -508,8 +508,8 @@
             max-width: 100% !important;
             position: relative !important;
             z-index: 4 !important;
-            mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 18px), transparent 100%);
-            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 14px, black calc(100% - 18px), transparent 100%);
+            mask-image: linear-gradient(to right, black 0%, black calc(100% - 18px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 18px), transparent 100%);
         }
         #md-hero .md-hero-thumbs::-webkit-scrollbar { display: none !important; }
         #md-hero .md-hero-thumb {
@@ -627,15 +627,15 @@
             #md-hero {
                 width: calc(100% - 20px) !important;
                 margin: 12px auto 16px !important;
-                padding: 18px 16px !important;
-                min-height: clamp(330px, 86vw, 395px) !important;
+                padding: 16px 14px !important;
+                min-height: clamp(330px, 86vw, 390px) !important;
                 flex-direction: column !important;
                 align-items: stretch !important;
                 justify-content: flex-start !important;
                 gap: 10px !important;
             }
             #md-hero .md-hero-body {
-                max-width: calc(100% - clamp(140px, 42vw, 200px)) !important;
+                max-width: calc(100% - clamp(125px, 38vw, 175px)) !important;
                 min-height: 0 !important;
                 justify-content: flex-start !important;
             }
@@ -643,20 +643,20 @@
                 display: block !important;
                 position: absolute !important;
                 right: 10px !important;
-                top: 16px !important;
-                bottom: -40px !important;
-                width: clamp(140px, 42vw, 200px) !important;
+                top: 20px !important;
+                bottom: -35px !important;
+                width: clamp(130px, 39vw, 180px) !important;
                 aspect-ratio: 2 / 3 !important;
                 border-radius: 12px !important;
                 border: var(--bw) solid #000 !important;
                 box-shadow: 6px 6px 0 #000 !important;
-                transform: rotate(5.5deg) !important;
+                transform: rotate(5deg) !important;
                 transform-origin: bottom center !important;
                 z-index: 3 !important;
                 pointer-events: auto !important;
             }
             #md-hero .md-hero-title {
-                font-size: clamp(16px, 5.2vw, 22px) !important;
+                font-size: clamp(16px, 5vw, 22px) !important;
                 line-height: 1.22 !important;
                 max-width: 100% !important;
                 min-height: 2.45em !important;
@@ -669,32 +669,37 @@
                 margin-bottom: 8px !important;
             }
             #md-hero .md-hero-meta {
+                display: flex !important;
+                flex-wrap: nowrap !important;
                 gap: 6px !important;
                 margin-bottom: 12px !important;
                 max-width: 100% !important;
-                flex-wrap: wrap !important;
             }
             #md-hero .md-hero-views, #md-hero .md-hero-chapter {
-                font-size: 10.5px !important;
+                white-space: nowrap !important;
+                font-size: 10px !important;
                 padding: 3px 8px !important;
             }
             #md-hero .md-hero-cta {
+                display: flex !important;
+                flex-wrap: nowrap !important;
                 gap: 8px !important;
                 margin-bottom: 14px !important;
             }
             #md-hero .md-hero-btn {
-                padding: 7px 14px !important;
-                min-height: 35px !important;
-                font-size: 11.5px !important;
+                white-space: nowrap !important;
+                padding: 7px 12px !important;
+                min-height: 34px !important;
+                font-size: 11px !important;
                 box-shadow: 2px 2px 0 #000 !important;
             }
             #md-hero .md-hero-thumbs {
-                max-width: calc(100% - clamp(135px, 41vw, 195px)) !important;
-                width: calc(100% - clamp(135px, 41vw, 195px)) !important;
+                width: 100% !important;
+                max-width: 100% !important;
                 gap: 7px !important;
                 padding: 2px 4px 4px !important;
-                mask-image: linear-gradient(to right, transparent 0%, black 12px, black calc(100% - 16px), transparent 100%) !important;
-                -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12px, black calc(100% - 16px), transparent 100%) !important;
+                mask-image: linear-gradient(to right, black 0%, black calc(100% - 16px), transparent 100%) !important;
+                -webkit-mask-image: linear-gradient(to right, black 0%, black calc(100% - 16px), transparent 100%) !important;
             }
             #md-hero .md-hero-thumb {
                 flex: 0 0 38px !important;
