@@ -208,6 +208,10 @@
     function detectPage() {
         const p = location.pathname;
         const s = location.search;
+        if (p.includes('/chat-mangaread') || p.includes('/chat/')) {
+            try { window.location.replace('/'); } catch (_) {}
+            return 'redirect';
+        }
         const b = typeof document !== 'undefined' ? document.body : null;
         if (b) {
             if (b.classList.contains('reading-manga')) return 'chapter';
@@ -280,6 +284,7 @@
             --yellow: linear-gradient(to right, #bf5959 20%, #d39d6d);
             --primary: #bf5959;
             --primary-gradient: linear-gradient(to right, #bf5959 20%, #d39d6d);
+            --header-gradient: linear-gradient(135deg, #ff5252 0%, #fed053 100%);
             --lime: #a3e635;
             --pink: #ff6b6b;
             --blue: #88aaee;
@@ -308,6 +313,7 @@
             --yellow: #5a3fc2;
             --primary: #5a3fc2;
             --primary-gradient: linear-gradient(to right, #5a3fc2, #33295a);
+            --header-gradient: linear-gradient(135deg, #7c3aed 0%, #ec4899 50%, #f97316 100%);
             --pink: #a3315f;
             --blue: #33479f;
             --lime: #1b7f68;
@@ -345,10 +351,15 @@
         #TB_overlay, #TB_window, #TB_load,
         dialog.reader-membership-promo, #popcont, #teaser3,
         #wpd-bubble-wrapper,
+        #menu-item-107397, #nav-menu-item-107397,
+        li:has(> a[href*="chat-mangaread"]), li:has(> a[href*="/chat"]),
+        a[href*="chat-mangaread"], a[href*="/chat/"],
+        .chat-container, #chat, #cbox,
+        iframe[src*="chat"], iframe[src*="minnit"], iframe[src*="cbox"], iframe[src*="rumbletalk"],
         .c-modal_item, .c-modal_sign-in, .c-modal_sign-up,
         #form-login, #form-sign-up,
         #wpdcom .wpd-form-wrap, #wpdcom .wpd-auth, #wpdcom .wpd-reply-button,
-        .go-to-top, .add-bookmark, .post-status .manga-action .add-bookmark,
+        .go-to-top,
         [data-md-hero-source="1"], #manga-popular-slider-8[data-md-hero-source="1"], .popular-slider[data-md-hero-source="1"],
         [data-md="void"] {
             display: none !important;
@@ -377,12 +388,24 @@
 
         /* ===== SITE HEADER & NAVIGATION RESTYLE ===== */
         header.site-header {
-            background: var(--yellow) !important;
+            background: var(--header-gradient) !important;
             border-bottom: var(--bw) solid var(--bd) !important;
             box-shadow: var(--sh) !important;
             position: sticky;
             top: 0;
             z-index: 100;
+        }
+        /* Neutralize Leaking Madara Blue Gradients in Navigation & Header Bars */
+        .site-header .main-navigation.style-1,
+        .site-header .main-navigation,
+        .site-header .c-header__top,
+        .site-header .c-header__top .main-navigation,
+        .site-header-inner,
+        .site-header .c-sub-nav {
+            background: transparent !important;
+            background-image: none !important;
+            box-shadow: none !important;
+            border: none !important;
         }
         header.site-header .c-header__top {
             padding: 8px 0;
@@ -609,26 +632,90 @@
         }
         div.post-total-rating span.score,
         span.post-on.font-meta,
-        span.chapter.font-meta a.btn-link,
         li.wp-manga-chapter a {
             display: inline-block;
             font-family: 'JetBrains Mono', monospace !important;
             font-size: 12px !important;
             font-weight: 700 !important;
         }
-        span.chapter.font-meta a.btn-link {
-            background: var(--yellow) !important;
-            color: #ffffff !important;
+
+        /* Strip Ugly Grey/White Background on Parent Chapter Container */
+        .popular-slider .slider__container .slider__item .slider__content .slider__content_item .chapter-item .chapter,
+        body.page .c-page-content .c-page .c-page__content .page-content-listing .page-listing-item .page-item-detail .item-summary .list-chapter .chapter-item .chapter,
+        .chapter-item .chapter,
+        span.chapter,
+        span.chapter.font-meta {
+            background: transparent !important;
+            background-color: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+
+        /* Style Chapter Anchor Tags Across All Views (Home, Listing, Search, Detail) */
+        .chapter-item .chapter a,
+        span.chapter a,
+        span.chapter.font-meta a,
+        span.chapter a.btn-link,
+        .list-chapter .chapter-item a {
+            display: inline-block !important;
             padding: 3px 8px !important;
-            border: 1.5px solid var(--bd) !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
             border-radius: 6px !important;
+            box-shadow: var(--sh-sm, 2px 2px 0 var(--bd)) !important;
+            text-decoration: none !important;
+            transition: all 0.15s ease !important;
             margin: 2px 0 !important;
         }
-        html[data-md-theme="dark"] span.chapter.font-meta a.btn-link {
-            color: #000000 !important;
+        .chapter-item .chapter a:hover,
+        span.chapter a:hover,
+        span.chapter.font-meta a:hover,
+        span.chapter a.btn-link:hover,
+        .list-chapter .chapter-item a:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border-color: var(--bd) !important;
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh, 3px 3px 0 var(--bd)) !important;
         }
 
         /* ===== OVERVIEW & DETAIL PAGE ===== */
+        /* Clean Neobrutalist Breadcrumbs - Asura Parity */
+        .c-breadcrumb-wrapper,
+        .c-breadcrumb-wrapper .c-breadcrumb {
+            background: transparent !important;
+            background-image: none !important;
+            border: none !important;
+            box-shadow: none !important;
+        }
+        ol.breadcrumb {
+            background: var(--card) !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 8px 16px !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 12px !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+            align-items: center !important;
+        }
+        ol.breadcrumb li a {
+            color: var(--ink) !important;
+            font-weight: 700 !important;
+        }
+        ol.breadcrumb li.active {
+            color: var(--muted) !important;
+        }
+
         div.tab-summary {
             display: flex !important;
             flex-wrap: wrap !important;
@@ -683,40 +770,243 @@
             text-transform: uppercase !important;
             font-size: 11px !important;
         }
-        div.summary_content .post-content_item .summary-content a {
-            background: var(--blue) !important;
+        /* Metadata Tag High Contrast in Light & Dark Modes */
+        div.summary_content .post-content_item .summary-content a,
+        .genres-content a,
+        .author-content a,
+        .artist-content a {
+            background: var(--yellow) !important;
             color: #000000 !important;
-            padding: 2px 8px !important;
-            border: 1.5px solid var(--bd) !important;
-            border-radius: 999px !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            border-radius: 6px !important;
+            padding: 3px 8px !important;
+            font-family: 'JetBrains Mono', monospace !important;
             font-size: 11px !important;
             font-weight: 700 !important;
-            margin-right: 4px !important;
+            box-shadow: var(--sh-sm) !important;
+            display: inline-block !important;
+            margin: 2px 3px 2px 0 !important;
+            text-decoration: none !important;
         }
+        html[data-md-theme="dark"] div.summary_content .post-content_item .summary-content a,
+        html[data-md-theme="dark"] .genres-content a,
+        html[data-md-theme="dark"] .author-content a,
+        html[data-md-theme="dark"] .artist-content a {
+            background: var(--violet, #a855f7) !important;
+            color: #ffffff !important;
+        }
+        /* Action buttons: Read First / Read Last */
+        #btn-read-first,
+        #btn-read-last,
         #init-links a.c-btn {
             display: inline-flex !important;
             align-items: center !important;
             justify-content: center !important;
             padding: 10px 22px !important;
-            background: var(--yellow) !important;
-            color: #000 !important;
+            background: var(--primary) !important;
+            color: #ffffff !important;
             border: var(--bw) solid var(--bd) !important;
             border-radius: var(--r) !important;
             box-shadow: var(--sh) !important;
-            font-weight: 900 !important;
-            font-family: 'DM Sans', sans-serif !important;
+            font-weight: 800 !important;
+            font-family: 'Space Grotesk', 'DM Sans', sans-serif !important;
             font-size: 13.5px !important;
             text-transform: uppercase !important;
             margin-right: 12px !important;
             margin-top: 10px !important;
+            cursor: pointer !important;
             transition: transform .12s ease, box-shadow .12s ease !important;
         }
+        #btn-read-first:hover,
+        #btn-read-last:hover,
         #init-links a.c-btn:hover {
             transform: translate(-2px, -2px) !important;
             box-shadow: var(--sh-hover) !important;
         }
+        /* Section Heading Icon Fix (Remove Leaking Blue) */
+        .c-blog__heading.style-2 i,
+        .c-blog__heading.style-2 i::before,
         .c-blog__heading.style-2 i:after {
-            display: none !important;
+            background: var(--primary) !important;
+            background-image: none !important;
+            color: #ffffff !important;
+            border-radius: 4px !important;
+        }
+
+        /* Monospace Chapter Release Dates */
+        span.chapter-release-date,
+        span.chapter-release-date i {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 11px !important;
+            font-style: normal !important;
+            color: var(--muted) !important;
+            font-variant-numeric: tabular-nums !important;
+        }
+
+        /* Reverse Order Button */
+        a.btn-reverse-order {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 4px 10px !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            cursor: pointer !important;
+        }
+        a.btn-reverse-order:hover {
+            background: var(--yellow) !important;
+            color: #000000 !important;
+        }
+
+        /* Neobrutalist Bookmark Button */
+        .add-bookmark,
+        .action_detail .btn-bookmark,
+        .btn-bookmark {
+            background: var(--pink, #ff6b6b) !important;
+            color: #ffffff !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            box-shadow: var(--sh-sm) !important;
+            border-radius: 8px !important;
+            padding: 6px 14px !important;
+            font-weight: 700 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            cursor: pointer !important;
+            margin-top: 8px !important;
+            text-decoration: none !important;
+        }
+        .add-bookmark a,
+        .btn-bookmark a {
+            color: #ffffff !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+        }
+        .add-bookmark .action_detail {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 11px !important;
+            color: #ffffff !important;
+        }
+        .add-bookmark:hover,
+        .btn-bookmark:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+        }
+
+        /* Order By Tabs (.c-nav-tabs, ul.c-tabs-content) */
+        .c-nav-tabs,
+        ul.c-tabs-content {
+            background: var(--card) !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 6px !important;
+            display: flex !important;
+            gap: 8px !important;
+            list-style: none !important;
+        }
+        .c-tabs-item a {
+            color: var(--muted) !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            padding: 6px 12px !important;
+            border-radius: 6px !important;
+            display: inline-block !important;
+            transition: all 0.15s ease !important;
+        }
+        .c-tabs-item.active a,
+        .c-tabs-item a:hover {
+            background: var(--yellow) !important;
+            color: #000000 !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+        }
+        html[data-md-theme="dark"] .c-tabs-item.active a {
+            background: var(--violet, #a855f7) !important;
+            color: #ffffff !important;
+        }
+
+        /* Archive Page Title Fix (Dark Mode #333 fix) */
+        .entry-title h1,
+        .entry-header .entry-title,
+        .c-page__content h1 {
+            color: var(--ink) !important;
+        }
+
+        /* Sidebar Widget Headings & View More Buttons */
+        .widget .widget-heading,
+        .widget .c-blog__heading {
+            background: var(--card) !important;
+            background-image: none !important;
+            border-bottom: var(--bw, 2px) solid var(--bd) !important;
+            color: var(--ink) !important;
+        }
+        .widget-heading h5,
+        .c-blog__heading h5 {
+            color: var(--ink) !important;
+        }
+        .widget-view-more,
+        .widget-view-more a,
+        .widget.c-popular .widget-view-more {
+            background: var(--primary) !important;
+            background-image: none !important;
+            color: #ffffff !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 4px 12px !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 11px !important;
+            font-weight: 700 !important;
+        }
+
+        /* Badges (Hot, New, Complete) */
+        .manga-title-badges.hot,
+        .manga-title-badges.new,
+        .manga-title-badges.custom {
+            border: var(--bw, 1.5px) solid var(--bd) !important;
+            box-shadow: 2px 2px 0 var(--bd) !important;
+            border-radius: 4px !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-weight: 800 !important;
+            text-transform: uppercase !important;
+            font-size: 10px !important;
+        }
+
+        /* Advanced Search Toggle & Inputs */
+        .btn-search-adv {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 6px 14px !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+        }
+        .search-advanced-form {
+            background: var(--card) !important;
+            border: var(--bw, 2px) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh) !important;
+            padding: 16px !important;
+        }
+
+        /* Footer Neobrutalist Styling */
+        .site-footer,
+        .bottom-footer {
+            background: var(--card) !important;
+            border-top: var(--bw, 3px) solid var(--bd) !important;
+            color: var(--muted) !important;
+            box-shadow: 0 -4px 0 var(--bd) !important;
         }
         div.description-summary div.summary__content {
             color: var(--ink) !important;
@@ -1568,17 +1858,25 @@
             border: var(--bw) solid #000;
             border-radius: 14px;
             box-shadow: 10px 10px 0 #000;
-            overflow: hidden;
+            overflow: visible !important;
             transform: rotate(6.5deg);
             transform-origin: bottom center;
-            transition: transform .25s cubic-bezier(.2, 1.2, .4, 1), box-shadow .25s ease;
+            transition: transform .22s ease-out, box-shadow .22s ease;
             background: #111;
             display: block;
             text-decoration: none !important;
         }
         #md-hero .md-hero-card:hover {
-            transform: rotate(3deg) translateY(-8px) scale(1.02);
+            transform: rotate(5deg) translateY(-6px) scale(1.01);
             box-shadow: 14px 14px 0 #000;
+        }
+        #md-hero .md-hero-card:hover::after,
+        #md-hero .md-hero-card::after {
+            content: "";
+            position: absolute;
+            inset: -16px -36px -16px -16px;
+            z-index: 10;
+            pointer-events: auto;
         }
         #md-hero .md-hero-card img {
             display: block;
@@ -1804,13 +2102,23 @@
         '.c-modal_item', '.c-modal_sign-in', '.c-modal_sign-up',
         '#form-login', '#form-sign-up',
         '#wpdcom .wpd-form-wrap', '#wpdcom .wpd-auth', '#wpdcom .wpd-reply-button',
-        '.go-to-top', '.add-bookmark', '.post-status .manga-action .add-bookmark'
+        '#menu-item-107397', '#nav-menu-item-107397',
+        'li:has(> a[href*="chat-mangaread"])', 'li:has(> a[href*="/chat"])',
+        'a[href*="chat-mangaread"]', 'a[href*="/chat/"]',
+        '.chat-container', '#chat', '#cbox',
+        'iframe[src*="chat"]', 'iframe[src*="minnit"]', 'iframe[src*="cbox"]', 'iframe[src*="rumbletalk"]',
+        '.go-to-top'
     ].join(', ');
 
     function purgeAdContainers(rootEl = document) {
         if (!rootEl || !rootEl.querySelectorAll) return;
         try {
             rootEl.querySelectorAll(PURGE_SELECTORS).forEach(el => el.remove());
+            rootEl.querySelectorAll('a[href*="chat-mangaread"], a[href*="/chat/"]').forEach(a => {
+                const li = a.closest('li');
+                if (li) li.remove();
+                else a.remove();
+            });
             if (document.body) {
                 // Kill native auto-scroll on reading content click
                 if (document.body.classList.contains('click-to-scroll')) {

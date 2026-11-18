@@ -630,17 +630,25 @@
             border: var(--bw) solid #000;
             border-radius: 14px;
             box-shadow: 10px 10px 0 #000;
-            overflow: hidden;
+            overflow: visible !important;
             transform: rotate(6.5deg);
             transform-origin: bottom center;
-            transition: transform .25s cubic-bezier(.2, 1.2, .4, 1), box-shadow .25s ease;
+            transition: transform .22s ease-out, box-shadow .22s ease;
             background: #111;
             display: block;
             text-decoration: none !important;
         }
         #md-hero .md-hero-card:hover {
-            transform: rotate(3deg) translateY(-8px) scale(1.02);
+            transform: rotate(5deg) translateY(-6px) scale(1.01);
             box-shadow: 14px 14px 0 #000;
+        }
+        #md-hero .md-hero-card:hover::after,
+        #md-hero .md-hero-card::after {
+            content: "";
+            position: absolute;
+            inset: -16px -36px -16px -16px;
+            z-index: 10;
+            pointer-events: auto;
         }
         #md-hero .md-hero-card img {
             display: block;
@@ -1188,7 +1196,6 @@
            ================================================================= */
         [data-md-section="translations"] [data-mdc],
         [data-mdc="rail"][data-md-trans="1"],
-        [data-md-page="translations"] [data-mdc="grid"],
         .owl-element[data-md-trans="1"] {
             display: flex !important;
             flex-direction: column !important;
@@ -1327,8 +1334,28 @@
 
         /* ---------- Translationlist page grid styling ---------- */
         html[data-md-page="translations"] [data-md="grid"] {
+            display: grid !important;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
             gap: 16px !important;
+        }
+        [data-md-page="translations"] [data-mdc="grid"] {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            padding: 10px !important;
+            overflow: visible !important;
+            transition: transform .15s, box-shadow .15s, background .15s !important;
+        }
+        [data-md-page="translations"] [data-mdc="grid"]:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: var(--sh-hover) !important;
         }
         html[data-md-page="translations"] [data-mdc="grid"] [data-mdf] {
             flex-direction: column !important;
@@ -1340,6 +1367,19 @@
             width: 100% !important;
             height: auto !important;
             display: block !important;
+        }
+        html[data-md-page="translations"] .big-fat-titles::after {
+            content: "";
+            display: block;
+            width: 64px;
+            height: 6px;
+            margin: 10px auto 0;
+            background: var(--yellow);
+            border: var(--bw) solid var(--bd);
+            border-radius: 4px;
+        }
+        html[data-md-page="translations"] .main-width > .pagination:first-of-type {
+            margin: 12px auto 20px !important;
         }
 
         /* =================================================================
@@ -1714,67 +1754,188 @@
             width: 100% !important;
             box-sizing: border-box !important;
         }
+        /* ---------- Advanced Search Poster Overlay Cards ---------- */
         :is(.advanced-container, #advanced-content) .advanced-element,
         .advanced-container [data-mdc] {
-            display: flex !important;
-            flex-direction: column !important;
-            background: var(--card) !important;
+            position: relative !important;
+            display: block !important;
+            aspect-ratio: 2 / 3 !important;
+            background: #000000 !important;
             border: var(--bw) solid var(--bd) !important;
             border-radius: var(--r) !important;
             box-shadow: var(--sh) !important;
             overflow: hidden !important;
-            transition: transform .15s, box-shadow .15s, background .15s !important;
+            transition: transform .15s, box-shadow .15s !important;
             padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
-            height: 100% !important;
             box-sizing: border-box !important;
         }
         :is(.advanced-container, #advanced-content) .advanced-element:hover,
         .advanced-container [data-mdc]:hover {
             transform: translate(-2px, -2px) !important;
             box-shadow: var(--sh-hover) !important;
-            background: var(--cream) !important;
         }
         :is(.advanced-container, #advanced-content) .advanced-element a {
-            display: flex !important;
-            flex-direction: column !important;
+            position: relative !important;
+            display: block !important;
+            width: 100% !important;
             height: 100% !important;
             text-decoration: none !important;
-            color: var(--ink) !important;
+            overflow: hidden !important;
         }
         :is(.advanced-container, #advanced-content) .advanced-element img {
+            position: absolute !important;
+            inset: 0 !important;
             width: 100% !important;
-            height: auto !important;
+            height: 100% !important;
             aspect-ratio: 2 / 3 !important;
             object-fit: cover !important;
             border: none !important;
-            border-bottom: var(--bw) solid var(--bd) !important;
-            border-radius: 0 !important;
             margin: 0 !important;
             display: block !important;
+            z-index: 1 !important;
+        }
+        /* Black -> transparent gradient lying between text and cover image */
+        :is(.advanced-container, #advanced-content) .advanced-element .shadowimg,
+        :is(.advanced-container, #advanced-content) .advanced-element a::after {
+            content: "" !important;
+            position: absolute !important;
+            inset: auto 0 0 0 !important;
+            width: 100% !important;
+            height: 55% !important; /* Bottom to mid-half */
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.65) 40%, rgba(0, 0, 0, 0.15) 75%, transparent 100%) !important;
+            z-index: 2 !important;
+            pointer-events: none !important;
         }
         :is(.advanced-container, #advanced-content) .advanced-element h1 {
-            font: 800 13px/1.3 'DM Sans', sans-serif !important;
-            color: var(--ink) !important;
-            padding: 8px 10px !important;
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 3 !important;
+            padding: 10px 10px 8px !important;
             margin: 0 !important;
-            text-align: left !important;
+            color: #ffffff !important;
+            font: 800 13.5px/1.25 'DM Sans', sans-serif !important;
+            text-shadow: 1px 1px 0 #000000 !important;
             display: flex !important;
             flex-direction: column !important;
-            justify-content: space-between !important;
-            flex: 1 1 auto !important;
+            gap: 3px !important;
+            pointer-events: none !important;
         }
-        .advanced-container .advanced-element h1 div {
+        :is(.advanced-container, #advanced-content) .advanced-element h1 div {
             font: 700 11px/1 'JetBrains Mono', monospace !important;
-            color: var(--muted) !important;
-            margin-top: 6px !important;
+            color: rgba(255, 255, 255, 0.85) !important;
             display: inline-flex !important;
             align-items: center !important;
             gap: 4px !important;
+            margin: 0 !important;
+            text-shadow: 1px 1px 0 #000000 !important;
         }
-        .advanced-container .advanced-element h1 div svg {
-            stroke: var(--ink) !important;
+        :is(.advanced-container, #advanced-content) .advanced-element h1 div svg {
+            stroke: #ffffff !important;
+            filter: drop-shadow(1px 1px 0 #000);
+        }
+
+        /* ---------- Superior Neobrutalist Leaderboard Architecture ---------- */
+        .leaderboard-container, .leaderboard-wrap {
+            max-width: var(--col, 1200px);
+            margin: 28px auto;
+            padding: 0 16px;
+            box-sizing: border-box;
+        }
+        /* 1. Podium Section (Top 3 Ranks) */
+        .podium-section, [data-md-podium] {
+            display: flex !important;
+            align-items: flex-end !important;
+            justify-content: center !important;
+            gap: 16px !important;
+            margin-bottom: 32px !important;
+        }
+        .podium-card {
+            flex: 1 1 0 !important;
+            max-width: 320px !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            padding: 20px 16px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 10px !important;
+            position: relative !important;
+        }
+        .podium-card.rank-1, .podium-card:nth-child(2) {
+            min-height: 280px !important;
+            border: 3px solid #000 !important;
+            box-shadow: 6px 6px 0 #000 !important;
+            transform: translateY(-12px) !important;
+        }
+        .podium-card.rank-2, .podium-card:first-child { min-height: 240px !important; }
+        .podium-card.rank-3, .podium-card:last-child { min-height: 220px !important; }
+
+        /* Rank Badges */
+        .podium-badge {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 4px 14px !important;
+            border: 2px solid #000 !important;
+            border-radius: 999px !important;
+            box-shadow: 2px 2px 0 #000 !important;
+            font: 900 13px 'JetBrains Mono', monospace !important;
+        }
+        .podium-card.rank-1 .podium-badge, .podium-card:nth-child(2) .podium-badge { background: var(--yellow) !important; color: #000 !important; }
+        .podium-card.rank-2 .podium-badge, .podium-card:first-child .podium-badge { background: var(--pink) !important; color: #000 !important; }
+        .podium-card.rank-3 .podium-badge, .podium-card:last-child .podium-badge { background: var(--lime) !important; color: #000 !important; }
+
+        /* 2. Leaderboard List (Ranks 4 - 100) */
+        .leaderboard-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+        }
+        .leaderboard-row, .leaderboard-list > div, .leaderboard-list > a {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 14px !important;
+            padding: 10px 18px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            text-decoration: none !important;
+            transition: transform .1s, box-shadow .1s, background .1s !important;
+        }
+        .leaderboard-row:hover, .leaderboard-list > :is(div, a):hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0 var(--bd) !important;
+            background: var(--cream) !important;
+        }
+        .leaderboard-rank {
+            flex: 0 0 38px !important;
+            height: 38px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: var(--soft) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 6px !important;
+            font: 900 13px 'JetBrains Mono', monospace !important;
+        }
+        .leaderboard-score {
+            padding: 4px 12px !important;
+            background: var(--yellow) !important;
+            color: #000 !important;
+            border: 1.5px solid #000 !important;
+            border-radius: 999px !important;
+            box-shadow: 1.5px 1.5px 0 #000 !important;
+            font: 800 12px 'JetBrains Mono', monospace !important;
         }
 
         /* ---------- Pagination ---------- */
@@ -2668,6 +2829,7 @@
             :is(body > nav, #forced-Search) .right-nav-cont button,
             :is(body > nav) .right-nav-cont button {
                 all: unset !important;
+                font-family: inherit !important;
                 box-sizing: border-box !important;
                 width: 38px !important;
                 height: 38px !important;
@@ -2780,7 +2942,7 @@
         #cw-comments .cw-comment[data-mdx-main] > .comment-main { display: none !important; }
 
         /* reader: header auto-hide */
-        html:is([data-md-page="chapter"], [data-md-page="nchapter"]) :is(body > nav, body > header) { transition: transform .25s ease !important; }
+        html:is([data-md-page="chapter"], [data-md-page="nchapter"]) :is(body > nav, body > header) { transition: transform .22s ease, opacity .22s ease !important; }
         html:is([data-md-page="chapter"], [data-md-page="nchapter"])[data-md-navhide] :is(body > nav, body > header) {
             transform: translateY(calc(-100% - 8px)) !important;
         }
@@ -3157,6 +3319,19 @@
         const img = cell.querySelector('img');
         const shadow = cell.querySelector('.shadowimg');
         if (shadow) shadow.remove();
+
+        // Handle .updates-element on translationlist.php
+        const existingH2 = cell.querySelector('h2');
+        if (existingH2) {
+            const h2a = existingH2.querySelector('a') || existingH2;
+            const fullTitle = (existingH2.querySelector('a[title]') || {}).title ||
+                              h2a.getAttribute('title') ||
+                              a.getAttribute('title') ||
+                              (img && (img.getAttribute('title') || img.getAttribute('alt'))) || '';
+            if (fullTitle) h2a.textContent = fullTitle;
+            existingH2.dataset.md = 'title';
+            return;
+        }
 
         // Retrieve full title if available
         let fullTitle = a.getAttribute('title') || (img && img.getAttribute('title')) || (img && img.getAttribute('alt')) || '';
@@ -3902,8 +4077,12 @@
                 const anims = activeFill.getAnimations();
                 const a = anims.find(an => an.animationName === 'mdProgressFall') || anims[0];
                 if (a && typeof a.currentTime === 'number') {
-                    const rem = 5500 - a.currentTime;
-                    if (rem > 0 && rem <= 5500) delay = rem + 300;
+                    if (a.currentTime >= 5500) {
+                        delay = 50;
+                    } else {
+                        const rem = 5500 - a.currentTime;
+                        if (rem > 0 && rem <= 5500) delay = rem + 300;
+                    }
                 }
             }
             slideTimer = setTimeout(() => {

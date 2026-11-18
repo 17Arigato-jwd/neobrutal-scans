@@ -541,6 +541,83 @@ test('mangaread.user.js cleans all-caps card titles and un-blanks wpDiscuz comme
     assert(mangareadCode.includes('wmu-data-src'), 'Missing wmu-data-src un-blanking logic');
 });
 
+// 9. Neobrutalism Polish & Regression Assertions
+console.log('\n\x1b[36m[Group 9: Neobrutalism Polish & Regression Assertions]\x1b[0m');
+test('mangaread.user.js defines --header-gradient in light and dark modes and neutralizes blue leak', () => {
+    assert(/:root\s*\{[^}]*--header-gradient:\s*linear-gradient\(135deg,\s*#ff5252/i.test(mangareadCode), 'Missing --header-gradient in :root');
+    assert(/html\[data-md-theme="dark"\]\s*\{[^}]*--header-gradient:\s*linear-gradient\(135deg,\s*#7c3aed/i.test(mangareadCode), 'Missing --header-gradient in dark mode');
+    assert(/header\.site-header\s*\{[^}]*background:\s*var\(--header-gradient\)\s*!important/i.test(mangareadCode), 'header.site-header not using var(--header-gradient)');
+    assert(mangareadCode.includes('.site-header .main-navigation.style-1'), 'Missing .site-header .main-navigation.style-1 rule');
+    assert(mangareadCode.includes('background: transparent !important;'), 'Missing transparent background override for navigation');
+    assert(mangareadCode.includes('background-image: none !important;'), 'Missing background-image: none override for navigation');
+});
+
+test('mangaread.user.js strips #ebebeb borders on chapter buttons and styles with JetBrains Mono', () => {
+    assert(/span\.chapter\s*\{[^}]*background:\s*transparent\s*!important/i.test(mangareadCode) ||
+           /\.chapter-item\s+\.chapter[^{]*\{[^}]*background:\s*transparent\s*!important/i.test(mangareadCode), 'Missing chapter wrapper transparent background rule');
+    assert(/\.chapter-item\s+\.chapter\s+a[^{]*\{[^}]*font-family:\s*'JetBrains Mono'/i.test(mangareadCode) ||
+           /span\.chapter\s+a[^{]*\{[^}]*font-family:\s*'JetBrains Mono'/i.test(mangareadCode), 'Missing JetBrains Mono on chapter anchors');
+    assert(mangareadCode.includes('border: var(--bw, 2px) solid var(--bd) !important;'), 'Missing neobrutalist border on chapter button');
+});
+
+test('mangaread.user.js purges chat completely from PURGE_SELECTORS, Layer 1 CSS, and detectPage()', () => {
+    assert(mangareadCode.includes("'#menu-item-107397'"), 'Missing #menu-item-107397 in PURGE_SELECTORS');
+    assert(mangareadCode.includes("'#nav-menu-item-107397'"), 'Missing #nav-menu-item-107397 in PURGE_SELECTORS');
+    assert(mangareadCode.includes('#menu-item-107397, #nav-menu-item-107397'), 'Missing chat selector in Layer 1 CSS');
+    assert(mangareadCode.includes("pathname.includes('/chat-mangaread')") ||
+           mangareadCode.includes("p.includes('/chat-mangaread')"), 'Missing chat redirect guard in detectPage');
+});
+
+test('mangaread.user.js and demonicscans.user.js hero carousel includes hit-test buffer to eliminate hover jitter', () => {
+    assert(mangareadCode.includes('#md-hero .md-hero-card:hover::after'), 'Missing :hover::after buffer in mangaread');
+    assert(demonicCode.includes('#md-hero .md-hero-card:hover::after'), 'Missing :hover::after buffer in demonicscans');
+    assert(/inset:\s*-16px\s+-36px\s+-16px\s+-16px/.test(mangareadCode), 'Incorrect inset hit-test buffer in mangaread');
+    assert(/inset:\s*-16px\s+-36px\s+-16px\s+-16px/.test(demonicCode), 'Incorrect inset hit-test buffer in demonicscans');
+    assert(mangareadCode.includes('rotate(5deg) translateY(-6px) scale(1.01)'), 'Missing dampened rotation in mangaread');
+    assert(demonicCode.includes('rotate(5deg) translateY(-6px) scale(1.01)'), 'Missing dampened rotation in demonicscans');
+});
+
+test('mangaread.user.js manga detail page matches Asura neobrutalist style', () => {
+    assert(mangareadCode.includes('ol.breadcrumb'), 'Missing ol.breadcrumb styling in mangaread');
+    assert(mangareadCode.includes('#btn-read-first'), 'Missing #btn-read-first styling in mangaread');
+    assert(mangareadCode.includes('#btn-read-last'), 'Missing #btn-read-last styling in mangaread');
+    assert(mangareadCode.includes('span.chapter-release-date'), 'Missing chapter-release-date styling');
+    assert(mangareadCode.includes('a.btn-reverse-order'), 'Missing a.btn-reverse-order styling');
+    assert(mangareadCode.includes('.add-bookmark') && mangareadCode.includes('var(--pink'), 'Missing neobrutalist bookmark button styling');
+    assert(/html\[data-md-theme="dark"\][^{]*\.summary-content\s+a[^{]*\{[^}]*color:\s*#ffffff\s*!important/i.test(mangareadCode) ||
+           /html\[data-md-theme="dark"\][^{]*summary-content\s+a[^{]*\{[^}]*background:\s*var\(--violet/i.test(mangareadCode), 'Missing dark mode metadata link contrast fix');
+});
+
+test('demonicscans.user.js formatTranslationCard handles .updates-element without duplicate titles and restores full title', () => {
+    assert(demonicCode.includes('existingH2'), 'Missing existingH2 check in formatTranslationCard');
+    assert(demonicCode.includes('h2a.textContent = fullTitle'), 'Missing full title restoration in h2a');
+    assert(demonicCode.includes('[data-md-page="translations"] [data-mdc="grid"]'), 'Missing translation page grid card styling');
+    assert(/width:\s*100%\s*!important;\s*max-width:\s*100%\s*!important/i.test(demonicCode), 'Missing 100% width on translation grid card');
+    assert(demonicCode.includes('.big-fat-titles::after'), 'Missing .big-fat-titles::after accent bar rule');
+});
+
+test('demonicscans.user.js restartTimer eliminates hover resume lag and consolidates header auto-hide transitions', () => {
+    assert(demonicCode.includes('if (a.currentTime >= 5500)'), 'Missing currentTime >= 5500 check in restartTimer');
+    assert(demonicCode.includes('delay = 50;'), 'Missing delay = 50 immediate advance in restartTimer');
+    assert(/transition:\s*transform\s+\.22s\s+ease,\s*opacity\s+\.22s\s+ease\s*!important/i.test(demonicCode), 'Missing consolidated .22s auto-hide transition');
+});
+
+test('demonicscans.user.js advanced search features black-to-transparent overlay gradient between text and cover', () => {
+    assert(demonicCode.includes('linear-gradient(to top, rgba(0, 0, 0, 0.95)'), 'Missing bottom-to-mid black gradient in advanced search');
+    assert(demonicCode.includes('z-index: 2 !important;'), 'Missing z-index: 2 on gradient overlay');
+    assert(demonicCode.includes('height: 55% !important;'), 'Missing height: 55% on gradient overlay');
+});
+
+test('demonicscans.user.js defines elevated 3-tier podium leaderboard and monospaced list rows', () => {
+    assert(demonicCode.includes('.podium-card.rank-1'), 'Missing rank-1 podium elevation rule');
+    assert(demonicCode.includes('transform: translateY(-12px) !important;'), 'Missing -12px elevation on rank 1 podium card');
+    assert(demonicCode.includes('.podium-badge'), 'Missing .podium-badge styling');
+    assert(demonicCode.includes('.leaderboard-list'), 'Missing .leaderboard-list rule');
+    assert(demonicCode.includes('.leaderboard-row'), 'Missing .leaderboard-row rule');
+    assert(demonicCode.includes('.leaderboard-rank'), 'Missing .leaderboard-rank rule');
+    assert(demonicCode.includes('.leaderboard-score'), 'Missing .leaderboard-score rule');
+});
+
 // Summary
 console.log('\n----------------------------------------');
 if (failed === 0) {

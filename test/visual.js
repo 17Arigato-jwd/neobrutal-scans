@@ -66,6 +66,54 @@ const CONTINUE_READING_PAYLOAD = [
     }
 ];
 
+const LEADERBOARD_HTML = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>DemonicScans Leaderboard</title>
+    <link rel="stylesheet" href="/css/mainstyle.css">
+</head>
+<body data-md-page="leaderboard">
+    <div class="leaderboard-container">
+        <h1 class="big-fat-titles" style="text-align: center; margin: 24px 0;">Top Readers Leaderboard</h1>
+        <div class="podium-section" data-md-podium="1">
+            <div class="podium-card rank-2">
+                <span class="podium-badge">RANK #2</span>
+                <div style="font: 800 16px 'DM Sans', sans-serif;">ShadowMonarch</div>
+                <div class="leaderboard-score">18,420 EXP</div>
+            </div>
+            <div class="podium-card rank-1">
+                <span class="podium-badge">RANK #1</span>
+                <div style="font: 900 18px 'DM Sans', sans-serif;">DemonicEmperor</div>
+                <div class="leaderboard-score">25,890 EXP</div>
+            </div>
+            <div class="podium-card rank-3">
+                <span class="podium-badge">RANK #3</span>
+                <div style="font: 800 16px 'DM Sans', sans-serif;">AzureDragon</div>
+                <div class="leaderboard-score">14,210 EXP</div>
+            </div>
+        </div>
+        <div class="leaderboard-list">
+            <div class="leaderboard-row">
+                <span class="leaderboard-rank">#4</span>
+                <span style="font-weight: 700;">SwordSaint_99</span>
+                <span class="leaderboard-score">12,450 EXP</span>
+            </div>
+            <div class="leaderboard-row">
+                <span class="leaderboard-rank">#5</span>
+                <span style="font-weight: 700;">ChaosBringer</span>
+                <span class="leaderboard-score">11,120 EXP</span>
+            </div>
+            <div class="leaderboard-row">
+                <span class="leaderboard-rank">#6</span>
+                <span style="font-weight: 700;">GhostBlade</span>
+                <span class="leaderboard-score">9,870 EXP</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`;
+
 /**
  * Creates and starts local HTTP fixture server
  */
@@ -108,16 +156,27 @@ function startFixtureServer(port) {
                 filePath = path.join(TEMP_DIR, 'lastnvupdates.html');
             } else if (pathname === '/newmangalist.php') {
                 filePath = path.join(TEMP_DIR, 'newmangalist.html');
+            } else if (pathname === '/advanced.php' || pathname === '/advanced.html') {
+                filePath = path.join(TEMP_DIR, 'advanced.html');
+            } else if (pathname === '/bookmarks.php' || pathname === '/bookmarks.html') {
+                filePath = path.join(TEMP_DIR, 'bookmarks.html');
+            } else if (pathname === '/leaderboard.php' || pathname === '/leaderboard.html') {
+                res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+                return res.end(LEADERBOARD_HTML);
             } else if (/^\/(manga|title|novel)\//.test(pathname) || pathname === '/manga_overview.html') {
                 filePath = path.join(TEMP_DIR, 'manga_overview.html');
             }
             // 4. MangaRead routes
             else if (pathname === '/mangaread' || pathname === '/mangaread/' || pathname === '/mangaread/index.html' || pathname === '/mangaread/homepage.html') {
                 filePath = path.join(MANGAREAD_TEMP_DIR, 'homepage.html');
-            } else if (pathname.includes('/god-level-assassin')) {
+            } else if (pathname.includes('/god-level-assassin') || pathname.includes('/eternal-youth')) {
                 filePath = path.join(MANGAREAD_TEMP_DIR, 'god-level-assassin.html');
             } else if (pathname.startsWith('/mangaread/manga/')) {
-                filePath = path.join(MANGAREAD_TEMP_DIR, 'god-level-assassin.html');
+                if (req.url.includes('m_orderby') || req.url.includes('m_status')) {
+                    filePath = path.join(MANGAREAD_TEMP_DIR, 'listing.html');
+                } else {
+                    filePath = path.join(MANGAREAD_TEMP_DIR, 'god-level-assassin.html');
+                }
             } else if (pathname === '/mangaread/manga_detail.html') {
                 filePath = path.join(MANGAREAD_TEMP_DIR, 'manga_detail.html');
             } else if (pathname.startsWith('/mangaread/chapter/') || pathname === '/mangaread/chapter_reader.html') {
@@ -244,9 +303,10 @@ async function createTestingPage(browser, userscriptContent, preInitFn = null) {
         window.unsafeWindow = window;
         if (typeof window.GM_xmlhttpRequest === 'undefined') window.GM_xmlhttpRequest = () => {};
         if (typeof window.GM === 'undefined') window.GM = { xmlHttpRequest: () => {} };
-        // If loaded on local mock server at /mangaread/ or /mangaread, alias pathname to '/' so isHome checks evaluate cleanly
-        if (location.pathname === '/mangaread/' || location.pathname === '/mangaread') {
-            try { history.replaceState(null, '', '/'); } catch (_) {}
+        // Alias local mock /mangaread path to live MangaRead pathname
+        if (location.pathname.startsWith('/mangaread')) {
+            const rel = location.pathname.replace(/^\/mangaread/, '') || '/';
+            try { history.replaceState(null, '', rel + location.search); } catch (_) {}
         }
     });
 
@@ -294,25 +354,34 @@ async function runVisualTests() {
 
         const results = [];
 
+        const recordScreenshot = (filename, outPath) => {
+            results.push({ name: filename, path: outPath });
+        };
+
         // -----------------------------------------------------------------
-        // SCENARIO 1: mangaread-home-hero-carousel.png
+        // SCENARIO 1: mangaread_home_dark.png & mangaread-home-hero-carousel.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 1/12] MangaRead Homepage Hero Carousel...');
+        console.log('[Scenario 1] MangaRead Homepage Dark Mode & Hero Carousel...');
         {
-            const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
+            const page = await createTestingPage(browser, MANGAREAD_SCRIPT, () => {
+                localStorage.setItem('md-theme', JSON.stringify('dark'));
+            });
             await page.goto(`${BASE_URL}/mangaread/`, { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('#md-hero', { timeout: 8000 });
             await new Promise(r => setTimeout(r, 400));
-            const outPath = path.join(SCREENSHOT_DIR, 'mangaread-home-hero-carousel.png');
-            await page.screenshot({ path: outPath });
-            results.push({ name: 'mangaread-home-hero-carousel.png', path: outPath });
+            const outPath1 = path.join(SCREENSHOT_DIR, 'mangaread_home_dark.png');
+            const outPath2 = path.join(SCREENSHOT_DIR, 'mangaread-home-hero-carousel.png');
+            await page.screenshot({ path: outPath1 });
+            fs.copyFileSync(outPath1, outPath2);
+            recordScreenshot('mangaread_home_dark.png', outPath1);
+            recordScreenshot('mangaread-home-hero-carousel.png', outPath2);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 2: mangaread-light-mode-theme.png
+        // SCENARIO 2: mangaread_home_light.png & mangaread-light-mode-theme.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 2/12] MangaRead Light Mode Linear Gradient Theme...');
+        console.log('[Scenario 2] MangaRead Homepage Light Mode Theme...');
         {
             const page = await createTestingPage(browser, MANGAREAD_SCRIPT, () => {
                 localStorage.setItem('md-theme', JSON.stringify('light'));
@@ -320,41 +389,103 @@ async function runVisualTests() {
             await page.goto(`${BASE_URL}/mangaread/`, { waitUntil: 'domcontentloaded' });
             await page.waitForSelector('html[data-md-theme="light"]', { timeout: 8000 });
             await new Promise(r => setTimeout(r, 400));
-            const outPath = path.join(SCREENSHOT_DIR, 'mangaread-light-mode-theme.png');
-            await page.screenshot({ path: outPath });
-            results.push({ name: 'mangaread-light-mode-theme.png', path: outPath });
+            const outPath1 = path.join(SCREENSHOT_DIR, 'mangaread_home_light.png');
+            const outPath2 = path.join(SCREENSHOT_DIR, 'mangaread-light-mode-theme.png');
+            await page.screenshot({ path: outPath1 });
+            fs.copyFileSync(outPath1, outPath2);
+            recordScreenshot('mangaread_home_light.png', outPath1);
+            recordScreenshot('mangaread-light-mode-theme.png', outPath2);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 3: mangaread-account-and-bookmark-removed.png
+        // SCENARIO 3: mangaread_top.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 3/12] MangaRead Account Elements & Bookmark Button Debloating...');
+        console.log('[Scenario 3] MangaRead Top Page (/manga/?m_orderby=views)...');
+        {
+            const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
+            await page.goto(`${BASE_URL}/mangaread/manga/?m_orderby=views`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.c-page-content, .page-listing-item', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+            const outPath = path.join(SCREENSHOT_DIR, 'mangaread_top.png');
+            await page.screenshot({ path: outPath });
+            recordScreenshot('mangaread_top.png', outPath);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 4: mangaread_completed.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 4] MangaRead Completed Page (/manga/?m_status=completed)...');
+        {
+            const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
+            await page.goto(`${BASE_URL}/mangaread/manga/?m_status=completed`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.c-page-content, .page-listing-item', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+            const outPath = path.join(SCREENSHOT_DIR, 'mangaread_completed.png');
+            await page.screenshot({ path: outPath });
+            recordScreenshot('mangaread_completed.png', outPath);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 5: mangaread_detail.png & mangaread-series-page-ui.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 5] MangaRead Series Detail Page (/manga/eternal-youth/)...');
+        {
+            const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
+            await page.goto(`${BASE_URL}/mangaread/manga/eternal-youth/`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.c-breadcrumb-wrapper, .profile-manga', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+            const outPath1 = path.join(SCREENSHOT_DIR, 'mangaread_detail.png');
+            const outPath2 = path.join(SCREENSHOT_DIR, 'mangaread-series-page-ui.png');
+            await page.screenshot({ path: outPath1 });
+            fs.copyFileSync(outPath1, outPath2);
+            recordScreenshot('mangaread_detail.png', outPath1);
+            recordScreenshot('mangaread-series-page-ui.png', outPath2);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 6: mangaread_reader.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 6] MangaRead Chapter Reader Page...');
+        {
+            const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
+            await page.goto(`${BASE_URL}/mangaread/chapter/chapter-1/`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.reading-content, #md-dock', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+            const outPath = path.join(SCREENSHOT_DIR, 'mangaread_reader.png');
+            await page.screenshot({ path: outPath });
+            recordScreenshot('mangaread_reader.png', outPath);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 7: mangaread-account-and-bookmark-removed.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 7] MangaRead Account Elements Debloating & Bookmark Styling...');
         {
             const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
             await page.goto(`${BASE_URL}/mangaread/manga/god-level-assassin-im-the-shadow/`, { waitUntil: 'domcontentloaded' });
             await new Promise(r => setTimeout(r, 500));
 
-            // Verify debloated elements are absent or hidden
-            const elementsHidden = await page.evaluate(() => {
-                const bm = document.querySelector('.add-bookmark');
+            const modalHidden = await page.evaluate(() => {
                 const modal = document.querySelector('.c-modal_item');
-                const bmHidden = !bm || getComputedStyle(bm).display === 'none' || getComputedStyle(bm).visibility === 'hidden';
-                const modalHidden = !modal || getComputedStyle(modal).display === 'none' || getComputedStyle(modal).visibility === 'hidden';
-                return bmHidden && modalHidden;
+                return !modal || getComputedStyle(modal).display === 'none' || getComputedStyle(modal).visibility === 'hidden';
             });
-            console.log(`  - Account/Bookmark debloat verified: ${elementsHidden}`);
+            console.log(`  - Account modal debloat verified: ${modalHidden}`);
 
             const outPath = path.join(SCREENSHOT_DIR, 'mangaread-account-and-bookmark-removed.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'mangaread-account-and-bookmark-removed.png', path: outPath });
+            recordScreenshot('mangaread-account-and-bookmark-removed.png', outPath);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 4: mangaread-comments-theme-light.png
+        // SCENARIO 8: mangaread-comments-theme-light.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 4/12] MangaRead Comments Dynamic Theme (Light Mode)...');
+        console.log('[Scenario 8] MangaRead Comments Dynamic Theme (Light Mode)...');
         {
             const page = await createTestingPage(browser, MANGAREAD_SCRIPT, () => {
                 localStorage.setItem('md-theme', JSON.stringify('light'));
@@ -368,14 +499,14 @@ async function runVisualTests() {
             await new Promise(r => setTimeout(r, 400));
             const outPath = path.join(SCREENSHOT_DIR, 'mangaread-comments-theme-light.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'mangaread-comments-theme-light.png', path: outPath });
+            recordScreenshot('mangaread-comments-theme-light.png', outPath);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 5: mangaread-comments-theme-dark.png
+        // SCENARIO 9: mangaread-comments-theme-dark.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 5/12] MangaRead Comments Dynamic Theme (Dark Mode)...');
+        console.log('[Scenario 9] MangaRead Comments Dynamic Theme (Dark Mode)...');
         {
             const page = await createTestingPage(browser, MANGAREAD_SCRIPT, () => {
                 localStorage.setItem('md-theme', JSON.stringify('dark'));
@@ -389,14 +520,14 @@ async function runVisualTests() {
             await new Promise(r => setTimeout(r, 400));
             const outPath = path.join(SCREENSHOT_DIR, 'mangaread-comments-theme-dark.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'mangaread-comments-theme-dark.png', path: outPath });
+            recordScreenshot('mangaread-comments-theme-dark.png', outPath);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 6: mangaread-no-duplicate-back-to-top.png
+        // SCENARIO 10: mangaread-no-duplicate-back-to-top.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 6/12] MangaRead Single Back-to-Top Button (#md-top)...');
+        console.log('[Scenario 10] MangaRead Single Back-to-Top Button (#md-top)...');
         {
             const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
             await page.goto(`${BASE_URL}/mangaread/`, { waitUntil: 'domcontentloaded' });
@@ -415,29 +546,99 @@ async function runVisualTests() {
 
             const outPath = path.join(SCREENSHOT_DIR, 'mangaread-no-duplicate-back-to-top.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'mangaread-no-duplicate-back-to-top.png', path: outPath });
+            recordScreenshot('mangaread-no-duplicate-back-to-top.png', outPath);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 7: mangaread-series-page-ui.png
+        // SCENARIO 11: demonicscans_home.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 7/12] MangaRead Series Detail Page Restored UI...');
+        console.log('[Scenario 11] DemonicScans Homepage...');
         {
-            const page = await createTestingPage(browser, MANGAREAD_SCRIPT);
-            await page.goto(`${BASE_URL}/mangaread/manga/god-level-assassin-im-the-shadow/`, { waitUntil: 'domcontentloaded' });
-            await page.waitForSelector('.c-sub-header-nav', { timeout: 8000 });
+            const page = await createTestingPage(browser, DEMONIC_SCRIPT);
+            await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('#md-hero', { timeout: 8000 });
             await new Promise(r => setTimeout(r, 400));
-            const outPath = path.join(SCREENSHOT_DIR, 'mangaread-series-page-ui.png');
+            const outPath = path.join(SCREENSHOT_DIR, 'demonicscans_home.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'mangaread-series-page-ui.png', path: outPath });
+            recordScreenshot('demonicscans_home.png', outPath);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 8: demonicscans-chapter-reader.png
+        // SCENARIO 12: demonicscans_carousel.png & demonicscans-hero-hover-pause.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 8/12] DemonicScans Chapter Reader Images & Comments...');
+        console.log('[Scenario 12] DemonicScans Hero Carousel Hover Pause Behavior...');
+        {
+            const page = await createTestingPage(browser, DEMONIC_SCRIPT);
+            await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('#md-hero', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+
+            await page.hover('#md-hero .md-hero-card, #md-hero .md-hero-thumb, #md-hero');
+            await new Promise(r => setTimeout(r, 200));
+
+            const outPath1 = path.join(SCREENSHOT_DIR, 'demonicscans_carousel.png');
+            const outPath2 = path.join(SCREENSHOT_DIR, 'demonicscans-hero-hover-pause.png');
+            await page.screenshot({ path: outPath1 });
+            fs.copyFileSync(outPath1, outPath2);
+            recordScreenshot('demonicscans_carousel.png', outPath1);
+            recordScreenshot('demonicscans-hero-hover-pause.png', outPath2);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 13: demonicscans_translations.png & demonicscans-latest-translations.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 13] DemonicScans Translations List (No Duplicate Title & Full Un-truncation)...');
+        {
+            const page = await createTestingPage(browser, DEMONIC_SCRIPT);
+            await page.goto(`${BASE_URL}/translationlist.php`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.updates-element, [data-md-trans="1"]', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+            const outPath1 = path.join(SCREENSHOT_DIR, 'demonicscans_translations.png');
+            const outPath2 = path.join(SCREENSHOT_DIR, 'demonicscans-latest-translations.png');
+            await page.screenshot({ path: outPath1 });
+            fs.copyFileSync(outPath1, outPath2);
+            recordScreenshot('demonicscans_translations.png', outPath1);
+            recordScreenshot('demonicscans-latest-translations.png', outPath2);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 14: demonicscans_advanced_search.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 14] DemonicScans Advanced Search Poster Overlay Cards with Gradient...');
+        {
+            const page = await createTestingPage(browser, DEMONIC_SCRIPT);
+            await page.goto(`${BASE_URL}/advanced.php`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.advanced-element', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+            const outPath = path.join(SCREENSHOT_DIR, 'demonicscans_advanced_search.png');
+            await page.screenshot({ path: outPath });
+            recordScreenshot('demonicscans_advanced_search.png', outPath);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 15: demonicscans_leaderboard.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 15] DemonicScans 3-Tier Podium Leaderboard Architecture...');
+        {
+            const page = await createTestingPage(browser, DEMONIC_SCRIPT);
+            await page.goto(`${BASE_URL}/leaderboard.php`, { waitUntil: 'domcontentloaded' });
+            await page.waitForSelector('.podium-section, .podium-card.rank-1', { timeout: 8000 });
+            await new Promise(r => setTimeout(r, 400));
+            const outPath = path.join(SCREENSHOT_DIR, 'demonicscans_leaderboard.png');
+            await page.screenshot({ path: outPath });
+            recordScreenshot('demonicscans_leaderboard.png', outPath);
+            await page.close();
+        }
+
+        // -----------------------------------------------------------------
+        // SCENARIO 16: demonicscans-chapter-reader.png
+        // -----------------------------------------------------------------
+        console.log('[Scenario 16] DemonicScans Chapter Reader Images & Comments...');
         {
             const page = await createTestingPage(browser, DEMONIC_SCRIPT);
             await page.goto(`${BASE_URL}/chaptered.php?manga=11127&chapter=151`, { waitUntil: 'domcontentloaded' });
@@ -455,49 +656,14 @@ async function runVisualTests() {
 
             const outPath = path.join(SCREENSHOT_DIR, 'demonicscans-chapter-reader.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'demonicscans-chapter-reader.png', path: outPath });
+            recordScreenshot('demonicscans-chapter-reader.png', outPath);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 9: demonicscans-hero-hover-pause.png
+        // SCENARIO 17: demonicscans-latest-updates.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 9/12] DemonicScans Hero Carousel Hover Pause Behavior...');
-        {
-            const page = await createTestingPage(browser, DEMONIC_SCRIPT);
-            await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' });
-            await page.waitForSelector('#md-hero', { timeout: 8000 });
-            await new Promise(r => setTimeout(r, 400));
-
-            // Hover over the hero carousel thumbnail
-            await page.hover('#md-hero .md-hero-thumb, #md-hero');
-            await new Promise(r => setTimeout(r, 200));
-
-            const outPath = path.join(SCREENSHOT_DIR, 'demonicscans-hero-hover-pause.png');
-            await page.screenshot({ path: outPath });
-            results.push({ name: 'demonicscans-hero-hover-pause.png', path: outPath });
-            await page.close();
-        }
-
-        // -----------------------------------------------------------------
-        // SCENARIO 10: demonicscans-latest-translations.png
-        // -----------------------------------------------------------------
-        console.log('[Scenario 10/12] DemonicScans Latest Translations Portrait Layout...');
-        {
-            const page = await createTestingPage(browser, DEMONIC_SCRIPT);
-            await page.goto(`${BASE_URL}/translationlist.php`, { waitUntil: 'domcontentloaded' });
-            await page.waitForSelector('.updates-element, [data-md-trans="1"]', { timeout: 8000 });
-            await new Promise(r => setTimeout(r, 400));
-            const outPath = path.join(SCREENSHOT_DIR, 'demonicscans-latest-translations.png');
-            await page.screenshot({ path: outPath });
-            results.push({ name: 'demonicscans-latest-translations.png', path: outPath });
-            await page.close();
-        }
-
-        // -----------------------------------------------------------------
-        // SCENARIO 11: demonicscans-latest-updates.png
-        // -----------------------------------------------------------------
-        console.log('[Scenario 11/12] DemonicScans Latest Updates Horizontal Cards with Timestamps...');
+        console.log('[Scenario 17] DemonicScans Latest Updates Horizontal Cards with Timestamps...');
         {
             const page = await createTestingPage(browser, DEMONIC_SCRIPT);
             await page.goto(`${BASE_URL}/lastupdates.php`, { waitUntil: 'domcontentloaded' });
@@ -505,14 +671,14 @@ async function runVisualTests() {
             await new Promise(r => setTimeout(r, 400));
             const outPath = path.join(SCREENSHOT_DIR, 'demonicscans-latest-updates.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'demonicscans-latest-updates.png', path: outPath });
+            recordScreenshot('demonicscans-latest-updates.png', outPath);
             await page.close();
         }
 
         // -----------------------------------------------------------------
-        // SCENARIO 12: demonicscans-continue-reading.png
+        // SCENARIO 18: demonicscans-continue-reading.png
         // -----------------------------------------------------------------
-        console.log('[Scenario 12/12] DemonicScans Continue Reading Cookie-Persisted Section...');
+        console.log('[Scenario 18] DemonicScans Continue Reading Cookie-Persisted Section...');
         {
             const page = await createTestingPage(browser, DEMONIC_SCRIPT, () => {
                 const payload = [
@@ -567,13 +733,13 @@ async function runVisualTests() {
             await new Promise(r => setTimeout(r, 400));
             const outPath = path.join(SCREENSHOT_DIR, 'demonicscans-continue-reading.png');
             await page.screenshot({ path: outPath });
-            results.push({ name: 'demonicscans-continue-reading.png', path: outPath });
+            recordScreenshot('demonicscans-continue-reading.png', outPath);
             await page.close();
         }
 
         // Summary & Validation
         console.log('\n=== E2E Visual Test Execution Summary ===');
-        console.log(`Total Scenarios: ${results.length}/12 captured`);
+        console.log(`Total Scenarios: ${results.length} captured`);
         let allValid = true;
         for (const item of results) {
             const stats = fs.statSync(item.path);
@@ -586,11 +752,11 @@ async function runVisualTests() {
             }
         }
 
-        if (!allValid || results.length !== 12) {
-            throw new Error(`Visual test suite incomplete: expected 12 non-empty screenshots, got ${results.length}`);
+        if (!allValid || results.length < 18) {
+            throw new Error(`Visual test suite incomplete: expected at least 18 non-empty screenshots, got ${results.length}`);
         }
 
-        console.log('\nALL 12 VISUAL SCREENSHOTS SUCCESSFULLY CAPTURED!\n');
+        console.log(`\nALL ${results.length} VISUAL SCREENSHOTS SUCCESSFULLY CAPTURED!\n`);
     } finally {
         await cleanup();
     }
