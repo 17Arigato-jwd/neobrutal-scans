@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         DemonicScans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-02.14
+// @version      2026-11-02.15
 // @description  Neobrutalist skin for DemonicScans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -639,7 +639,8 @@
                 flex: 1 1 auto !important;
                 display: flex !important;
                 flex-direction: column !important;
-                max-width: calc(100% - clamp(160px, 44vw, 205px)) !important;
+                width: 100% !important;
+                max-width: 100% !important;
                 min-height: 0 !important;
                 height: 100% !important;
                 justify-content: flex-start !important;
@@ -672,17 +673,21 @@
                 font-weight: 900 !important;
                 line-height: 1.2 !important;
                 letter-spacing: -0.01em !important;
-                max-width: 100% !important;
+                width: 100% !important;
+                max-width: calc(100% - 10px) !important;
                 min-height: 2.4em !important;
                 max-height: 2.4em !important;
-                margin-bottom: clamp(12px, 3vw, 18px) !important;
+                margin-bottom: clamp(10px, 2.5vw, 16px) !important;
+                position: relative !important;
+                z-index: 4 !important;
+                text-shadow: 0 1px 3px rgba(255,255,255,0.85);
             }
             #md-hero .md-hero-meta {
                 display: flex !important;
                 flex-wrap: nowrap !important;
                 gap: 7px !important;
-                margin-bottom: clamp(16px, 4vw, 24px) !important;
-                max-width: 100% !important;
+                margin-bottom: clamp(12px, 3vw, 18px) !important;
+                max-width: calc(100% - clamp(155px, 44vw, 200px)) !important;
             }
             #md-hero .md-hero-views, #md-hero .md-hero-chapter {
                 white-space: nowrap !important;
@@ -692,15 +697,23 @@
             }
             #md-hero .md-hero-cta {
                 display: flex !important;
-                flex-wrap: nowrap !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
                 gap: 8px !important;
-                margin-bottom: clamp(20px, 5.5vw, 36px) !important;
+                max-width: calc(100% - clamp(155px, 44vw, 200px)) !important;
+                margin-bottom: clamp(16px, 4vw, 24px) !important;
             }
             #md-hero .md-hero-btn {
                 white-space: nowrap !important;
-                padding: 8px 14px !important;
-                min-height: 38px !important;
-                font-size: 11.5px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 100% !important;
+                min-width: 130px !important;
+                max-width: 175px !important;
+                min-height: 40px !important;
+                padding: 10px 18px !important;
+                font-size: 12.5px !important;
                 font-weight: 900 !important;
                 box-shadow: 2.5px 2.5px 0 #000 !important;
             }
@@ -708,7 +721,7 @@
                 margin-top: auto !important;
                 margin-bottom: 0 !important;
                 width: 100% !important;
-                max-width: 100% !important;
+                max-width: calc(100% - clamp(155px, 44vw, 200px)) !important;
                 gap: 7px !important;
                 padding: 4px 0 2px !important;
                 mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%) !important;
