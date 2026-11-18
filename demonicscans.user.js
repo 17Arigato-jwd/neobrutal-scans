@@ -575,9 +575,6 @@
             opacity: 1 !important;
             animation: mdProgressFall 5.5s linear forwards;
         }
-        #md-hero:hover .md-thumb-fill {
-            animation-duration: 55s !important;
-        }
         @keyframes mdProgressFall {
             0% { height: 0%; }
             100% { height: 100%; }
@@ -624,10 +621,83 @@
             #md-hero .md-hero-body { max-width: min(560px, 56%); }
         }
         @media (max-width: 768px) {
-            #md-hero { flex-direction: column; align-items: flex-start; padding: 22px 18px; min-height: 0; }
-            #md-hero .md-hero-body { max-width: 100%; min-height: 0 !important; }
-            #md-hero .md-hero-card { display: none; }
-            #md-hero .md-hero-thumb { flex: 0 0 38px; width: 38px; height: 56px; }
+            #md-hero {
+                width: calc(100% - 20px) !important;
+                margin: 12px auto 16px !important;
+                padding: 16px !important;
+                min-height: 270px !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                justify-content: flex-start !important;
+                gap: 12px !important;
+            }
+            #md-hero .md-hero-body {
+                max-width: 100% !important;
+                min-height: 0 !important;
+                justify-content: flex-start !important;
+            }
+            #md-hero .md-hero-card {
+                display: block !important;
+                position: absolute !important;
+                right: 14px !important;
+                top: 14px !important;
+                bottom: auto !important;
+                width: clamp(96px, 27vw, 130px) !important;
+                aspect-ratio: 2 / 3 !important;
+                border-radius: 8px !important;
+                border-width: 2px !important;
+                box-shadow: 4px 4px 0 #000 !important;
+                transform: rotate(4deg) !important;
+                z-index: 1 !important;
+                pointer-events: auto !important;
+            }
+            #md-hero .md-hero-title {
+                font-size: clamp(17px, 5vw, 22px) !important;
+                line-height: 1.25 !important;
+                max-width: calc(100% - clamp(106px, 29vw, 142px)) !important;
+                min-height: 2.5em !important;
+                max-height: 2.5em !important;
+                margin-bottom: 8px !important;
+            }
+            #md-hero .md-hero-tag {
+                padding: 3px 10px !important;
+                font-size: 10px !important;
+                margin-bottom: 8px !important;
+            }
+            #md-hero .md-hero-meta {
+                gap: 6px !important;
+                margin-bottom: 12px !important;
+                max-width: calc(100% - clamp(106px, 29vw, 142px)) !important;
+                flex-wrap: wrap !important;
+            }
+            #md-hero .md-hero-views, #md-hero .md-hero-chapter {
+                font-size: 10.5px !important;
+                padding: 3px 8px !important;
+            }
+            #md-hero .md-hero-cta {
+                gap: 8px !important;
+                margin-bottom: 12px !important;
+            }
+            #md-hero .md-hero-btn {
+                padding: 8px 14px !important;
+                min-height: 36px !important;
+                font-size: 12px !important;
+                box-shadow: 2px 2px 0 #000 !important;
+            }
+            #md-hero .md-hero-thumbs {
+                gap: 7px !important;
+                padding: 2px 0 4px !important;
+            }
+            #md-hero .md-hero-thumb {
+                flex: 0 0 40px !important;
+                width: 40px !important;
+                min-width: 40px !important;
+                max-width: 40px !important;
+                height: 60px !important;
+                min-height: 60px !important;
+                max-height: 60px !important;
+                border-radius: 4px !important;
+            }
         }
         html[data-md-page="list"] body > :not(nav) .main-width > h1.section-title a, html[data-md-page="list"] .main-width > .section-title { font-weight: 900; letter-spacing: .02em; }
         /* home carousels: Netflix-style rows */
@@ -686,6 +756,8 @@
         div:has(> a[href*="veyra" i]), div:has(> img[src*="veyra" i]),
         ins.adsbygoogle, iframe[src*="ads" i], iframe[src*="doubleclick" i],
         [id^="ad-" i], [id$="-ad" i], [class~="ad"], [class~="ads"], [class*="advert" i], [class*="banner-ad" i],
+        .ds-ad-space, .ad-container, [data-zoneid], ins.eas6a, [class*="ad-box" i],
+        div:has(> a[href*="contact" i]:has(img)),
         [id^="bg-ssp"], #teaser3, #popcont,
         html[data-md-mode="comics"] .main-width:has(> h3.see-more a[href*="nvupdates" i]),
         a[href*="reddit" i], a[href*="toraka" i], a[href*="discord" i], a[href*="announce" i], a[href*="ebook" i],
@@ -1668,6 +1740,8 @@
         [/veyra/i, 420],
         [/0 ads sub|no-ads (membership|sub)|zero ads/i, 900],
         [/demonicscans@proton\.me|no-ads sub/i, 90],
+        [/your ad could be here/i, 600],
+        [/^advertising$/i, 350],
     ];
 
     function nukeAnnoyances() {
@@ -2310,16 +2384,33 @@
         let currentSlide = 0;
         let slideTimer = null;
 
+        function setProgressRate(rate) {
+            const activeFill = hero.querySelector('.md-hero-thumb.is-active .md-thumb-fill');
+            if (!activeFill || typeof activeFill.getAnimations !== 'function') return;
+            activeFill.getAnimations().forEach(anim => {
+                try { anim.playbackRate = rate; } catch (_) {}
+            });
+        }
+
         function restartTimer() {
             clearTimeout(slideTimer);
             if (items.length <= 1) return;
+            if (hero.matches(':hover')) return;
+            let delay = 5800;
+            const activeFill = hero.querySelector('.md-hero-thumb.is-active .md-thumb-fill');
+            if (activeFill && typeof activeFill.getAnimations === 'function') {
+                const anims = activeFill.getAnimations();
+                const a = anims.find(an => an.animationName === 'mdProgressFall') || anims[0];
+                if (a && typeof a.currentTime === 'number') {
+                    const rem = 5500 - a.currentTime;
+                    if (rem > 0 && rem <= 5500) delay = rem + 300;
+                }
+            }
             slideTimer = setTimeout(() => {
                 if (!hero.matches(':hover')) {
                     showSlide((currentSlide + 1) % items.length);
-                } else {
-                    restartTimer();
                 }
-            }, 5500);
+            }, delay);
         }
 
         items.forEach((item, idx) => {
@@ -2354,17 +2445,15 @@
             }
         }, { passive: false });
 
-        // Hover: animation slows to crawl (CSS handles it), JS timer also stretches
+        // Hover: animation slows to crawl smoothly in place (via Web Animations API, no reset!)
         hero.addEventListener('mouseenter', () => {
             clearTimeout(slideTimer);
-            // Set a very long fallback while hovered so animationend still fires eventually
-            if (items.length > 1) {
-                slideTimer = setTimeout(() => {
-                    if (!hero.matches(':hover')) showSlide((currentSlide + 1) % items.length);
-                }, 60000);
-            }
+            setProgressRate(0.1);
         });
-        hero.addEventListener('mouseleave', restartTimer);
+        hero.addEventListener('mouseleave', () => {
+            setProgressRate(1.0);
+            restartTimer();
+        });
 
         function showSlide(idx) {
             currentSlide = (idx + items.length) % items.length;
@@ -2478,6 +2567,9 @@
                         f.style.animation = 'none';
                         void f.offsetWidth; // force reflow
                         f.style.animation = '';
+                        if (hero.matches(':hover')) {
+                            requestAnimationFrame(() => setProgressRate(0.1));
+                        }
                     }
                     const left = th.offsetLeft - thumbsContainer.offsetLeft - 12;
                     thumbsContainer.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });

@@ -1,10 +1,10 @@
 # Neobrutal Scans
 
-[![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
-[![Version](https://img.shields.io/badge/version-2026--11--02.9-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)
+[![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
+[![Version](https://img.shields.io/badge/version-2026--11--02.9-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-A high-contrast **Neobrutalist skin and debloater** for **Asura Scans** and **DemonicScans** (both comic and novel sides). It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.
+A high-contrast **Neobrutalist skin and debloater** for **DemonicScans** and **Asura Scans** (both comic and novel sides). It strips away popunders, invasive ad slots, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with zoom controls, offline `.cbz` downloads, and multi-chapter batch ZIP downloads.
 
 ---
 
@@ -12,15 +12,19 @@ A high-contrast **Neobrutalist skin and debloater** for **Asura Scans** and **De
 
 ### Prerequisites
 Install a userscript manager extension in your browser:
-- [Tampermonkey](https://www.tampermonkey.net/) (Recommended for Chrome, Firefox, Brave, Edge, Safari)
+- [Tampermonkey](https://www.tampermonkey.net/) (Recommended for Chrome, Firefox, Brave, Edge, Safari, Kiwi, Orion)
 - [Violentmonkey](https://violentmonkey.github.io/) (Open-source alternative for Chrome, Firefox, Edge)
 
 ### One-Click Installation
 
-Choose the version that fits your needs:
+Choose the dedicated script for your site:
 
-- **[Install Neobrutal Scans (Unified - Asura + DemonicScans)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/neobrutal-scans.user.js)**
-- **[Install DemonicScans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** (Standalone, lightweight script specifically for DemonicScans)
+- **[Install DemonicScans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)**  
+  *Lightweight, high-performance userscript exclusively tailored for DemonicScans.*
+- **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)**  
+  *Dedicated script designed specifically for Asura Scans.*
+
+*(Note: The previous monolithic combined script has been archived to [`archive/neobrutal-scans.user.js`](archive/neobrutal-scans.user.js)).*
 
 Your userscript manager will automatically detect the script and prompt you to click **Install**.
 

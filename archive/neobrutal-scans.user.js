@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         DemonicScans/Asurascans Neobrutalism + De-bloat
+// @name         [ARCHIVED] DemonicScans/Asurascans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
 // @version      2026-11-02.9
-// @description  Neobrutalist skin for DemonicScans and Asura Scans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
+// @description  [ARCHIVED - Split into demonicscans.user.js and asurascans.user.js] Neobrutalist skin for DemonicScans and Asura Scans.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
 // @supportURL   https://github.com/17Arigato-jwd/neobrutal-scans/issues
