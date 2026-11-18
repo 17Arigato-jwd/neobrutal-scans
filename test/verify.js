@@ -649,8 +649,8 @@ test('mangaread.user.js dark mode metadata links meet WCAG AA and carousel slide
 test('demonicscans.user.js enforces uniform card dimensions across .updates-element, .owl-element and thumbnails', () => {
     assert(demonicCode.includes('.updates-element,'), 'Missing .updates-element rule in demonicscans');
     assert(demonicCode.includes('.owl-element'), 'Missing .owl-element in demonicscans card rules');
-    assert(/\.updates-element,\s*\.owl-element\s*\{[^}]*display:\s*inline-flex\s*!important/i.test(demonicCode), 'Missing display: inline-flex on .updates-element');
-    assert(/\.updates-element,\s*\.owl-element\s*\{[^}]*min-height:\s*180px\s*!important/i.test(demonicCode), 'Missing min-height: 180px on .updates-element');
+    assert(/\.updates-element,\s*\.owl-element\s*\{[^}]*display:\s*flex\s*!important/i.test(demonicCode), 'Missing display: flex on .updates-element');
+    assert(/\.updates-element,\s*\.owl-element\s*\{[^}]*min-height:\s*201px\s*!important/i.test(demonicCode), 'Missing min-height: 201px on .updates-element');
     assert(/\.updates-element\s+\.thumb\s*\{[^}]*aspect-ratio:\s*2\s*\/\s*3\s*!important/i.test(demonicCode) ||
            /\.thumb[^{]*\{[^}]*aspect-ratio:\s*2\s*\/\s*3\s*!important/i.test(demonicCode), 'Missing 2:3 aspect ratio on .thumb');
     assert(/\.updates-element\s+\.thumb\s*\{[^}]*width:\s*100px\s*!important/i.test(demonicCode), 'Missing fixed 100px width on .updates-element .thumb');
@@ -663,6 +663,8 @@ test('demonicscans.user.js clamps series titles to 2 lines and standardizes .cha
     assert(/\.updates-element\s+h2[^{]*\{[^}]*-webkit-line-clamp:\s*2\s*!important/i.test(demonicCode), 'Missing -webkit-line-clamp: 2 on demonicscans h2');
     assert(/\.updates-element-info\s*\{[^}]*display:\s*flex\s*!important;\s*flex-direction:\s*column\s*!important/i.test(demonicCode), 'Missing flex-col layout on .updates-element-info');
     assert(/\.updates-element-info\s*>\s*div:last-child\s*\{[^}]*margin-top:\s*auto\s*!important/i.test(demonicCode), 'Missing margin-top: auto on .updates-element-info > div:last-child');
+    assert(/\.updates-element-info\s*>\s*div:last-child\s*\{[^}]*min-height:\s*124px\s*!important/i.test(demonicCode), 'Missing min-height: 124px on .updates-element-info > div:last-child');
+    assert(/\.updates-element-info\s*>\s*div:last-child\s*\{[^}]*max-height:\s*124px\s*!important/i.test(demonicCode), 'Missing max-height: 124px on .updates-element-info > div:last-child');
     assert(/\.chap-date\s*\{[^}]*display:\s*flex\s*!important;\s*flex-direction:\s*row\s*!important/i.test(demonicCode), 'Missing flex-row layout on .chap-date');
 });
 

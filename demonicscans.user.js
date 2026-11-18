@@ -1387,11 +1387,11 @@
            ================================================================= */
         .updates-element,
         .owl-element {
-            display: inline-flex !important;
+            display: flex !important;
             flex-direction: column !important;
             vertical-align: top !important;
             box-sizing: border-box !important;
-            min-height: 180px !important;
+            min-height: 201px !important;
             height: 100% !important;
             background: var(--card) !important;
             border: var(--bw) solid var(--bd) !important;
@@ -1434,6 +1434,16 @@
             height: 100% !important;
             border-radius: 8px !important;
         }
+        .updates-element .thumb,
+        .updates-element .thumb img,
+        [data-mdc="grid"]:not([data-md-trans="1"]) .thumb,
+        [data-mdc="grid"]:not([data-md-trans="1"]) .thumb img {
+            width: 100px !important;
+            height: 150px !important;
+            aspect-ratio: 2 / 3 !important;
+            object-fit: cover !important;
+            flex: 0 0 100px !important;
+        }
         .updates-element-info {
             display: flex !important;
             flex-direction: column !important;
@@ -1459,6 +1469,10 @@
         }
         .updates-element-info > div:last-child {
             margin-top: auto !important;
+            min-height: 124px !important;
+            max-height: 124px !important;
+            overflow: hidden !important;
+            justify-content: flex-end !important;
             display: flex !important;
             flex-direction: column !important;
             gap: 4px !important;
@@ -1651,19 +1665,24 @@
         [data-mdc="grid"] [data-mdf] > :last-child { flex: 1 1 0 !important; min-width: 0 !important; }
 
         /* Full 2:3 cover visible in latest updates */
+        .updates-element .thumb,
+        .updates-element .thumb img,
         [data-mdc="grid"]:not([data-md-trans="1"]) .thumb,
-        [data-mdc="grid"]:not([data-md-trans="1"]) .thumb a {
-            flex: 0 0 clamp(96px, 11vw, 115px) !important;
-            width: clamp(96px, 11vw, 115px) !important;
-            height: auto !important;
+        [data-mdc="grid"]:not([data-md-trans="1"]) .thumb a,
+        [data-mdc="grid"]:not([data-md-trans="1"]) .thumb img {
+            width: 100px !important;
+            height: 150px !important;
+            aspect-ratio: 2 / 3 !important;
+            object-fit: cover !important;
+            flex: 0 0 100px !important;
             display: block !important;
         }
         [data-mdc="grid"]:not([data-md-trans="1"]) img {
             display: block !important;
-            flex: 0 0 clamp(96px, 11vw, 115px) !important;
-            width: clamp(96px, 11vw, 115px) !important;
+            flex: 0 0 100px !important;
+            width: 100px !important;
+            height: 150px !important;
             aspect-ratio: 2 / 3 !important;
-            height: auto !important;
             max-width: none !important;
             object-fit: cover !important;
             object-position: top center !important;
