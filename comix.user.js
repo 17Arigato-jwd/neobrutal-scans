@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-20.5
+// @version      2026-11-21.1
 // @description  Neobrutalist skin and debloater for Comix (comix.to): full-site Neobrutalism, sign-in UI removal, synced Settings themes (Main/Dark/Light/Custom), Netflix-style hero carousel, Continue Reading shelf, styled comments & user profiles, deduplicated Select All batch ZIP/PDF downloader, and unified Top + Bottom reader bars.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
