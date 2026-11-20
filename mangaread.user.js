@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-19.2
+// @version      2026-11-20.2
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -289,6 +289,8 @@
         list: SVG('<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>'),
         sun: SVG('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
         moon: SVG('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
+        home: SVG('<path d="M3 11 12 3l9 8M5 9.5V20h5v-6h4v6h5V9.5"/>'),
+        chat: SVG('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/>'),
     };
 
     function toast(msg, ms = 2200) {
@@ -2801,8 +2803,7 @@
             object-fit: cover !important;
             box-shadow: none !important;
         }
-        html[data-md-page="overview"] #wpdcom .wpd-comment-date,
-        html[data-md-page="overview"] #wpdcom .wpd-comment-date i {
+        html[data-md-page="overview"] #wpdcom .wpd-comment-date {
             font-family: 'JetBrains Mono', monospace !important;
             font-size: 11px !important;
             color: var(--muted) !important;
@@ -3474,6 +3475,957 @@
         html[data-md-theme="dark"][data-md-page="overview"] div.profile-manga::before {
             background: linear-gradient(to top, rgba(0,0,0,.7) 0%, rgba(0,0,0,.2) 60%, transparent 100%),
                         linear-gradient(to right, rgba(0,0,0,.8) 0%, rgba(0,0,0,.35) 60%, transparent 100%) !important;
+        }
+
+        /* =====================================================================
+           ROUND 3
+           ===================================================================== */
+
+        /* -- links should never be underlined in cards, buttons and the leaderboard -- */
+        html body div.page-item-detail *,
+        html body .popular-item-wrap *,
+        html body #init-links a,
+        html body a.c-btn,
+        html body .manga-action *,
+        html body ul.main.version-chap li.wp-manga-chapter * {
+            text-decoration: none !important;
+        }
+
+        /* -- READ FIRST / READ LAST: sized, padded, never clipped -- */
+        html[data-md-page="overview"] div.tab-summary,
+        html[data-md-page="overview"] div.summary_content_wrap,
+        html[data-md-page="overview"] div.summary_content {
+            overflow: visible !important;
+        }
+        html[data-md-page="overview"] div.summary_content #init-links {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 14px !important;
+            padding: 2px 8px 8px 2px !important;
+            overflow: visible !important;
+            height: auto !important;
+            max-height: none !important;
+        }
+        html[data-md-page="overview"] div.summary_content #init-links a,
+        html[data-md-page="overview"] #btn-read-first,
+        html[data-md-page="overview"] #btn-read-last {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            box-sizing: border-box !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 44px !important;
+            margin: 0 !important;
+            padding: 11px 22px !important;
+            line-height: 1.2 !important;
+            white-space: nowrap !important;
+            overflow: visible !important;
+            text-decoration: none !important;
+            text-overflow: clip !important;
+        }
+
+        /* -- COMMENTS: no voting, a plain score, tidy reply toggle, collapsible -- */
+        html body #wpdcom .wpd-avatar img,
+        html body #wpdcom img.avatar {
+            width: 44px !important;
+            height: 44px !important;
+            max-width: 44px !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+        }
+        html body #wpdcom .wpd-vote-up,
+        html body #wpdcom .wpd-vote-down,
+        html body #wpdcom .wpd-vote .wpd-vote-up,
+        html body #wpdcom .wpd-vote .wpd-vote-down {
+            display: none !important;
+        }
+        html body #wpdcom .wpd-vote {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            pointer-events: none !important;
+            margin: 0 !important;
+        }
+        html body #wpdcom .wpd-vote-result {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 3px 10px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 999px !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+            font: 800 12px 'JetBrains Mono', monospace !important;
+        }
+        html body #wpdcom .wpd-vote-result::before {
+            content: "Score" !important;
+            font: 700 10px 'DM Sans', sans-serif !important;
+            letter-spacing: .08em !important;
+            text-transform: uppercase !important;
+            color: var(--muted) !important;
+        }
+        html body #wpdcom .wpd-comment-footer {
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            margin-top: 8px !important;
+        }
+        html body #wpdcom .wpd-comment-footer .wpd-space {
+            flex: 1 1 auto !important;
+        }
+        html body #wpdcom .wpd-toggle {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-left: auto !important;
+            padding: 5px 12px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12px 'DM Sans', sans-serif !important;
+            cursor: pointer !important;
+            transition: transform .1s ease, box-shadow .1s ease, background .12s ease !important;
+        }
+        html body #wpdcom .wpd-toggle:hover {
+            background: var(--yellow) !important;
+            color: #000 !important;
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0 var(--bd) !important;
+        }
+        html body #wpdcom .wpd-toggle * {
+            color: inherit !important;
+            font-weight: 800 !important;
+        }
+        html body #wpdcom .wpd-toggle i,
+        html body #wpdcom .wpd-toggle svg {
+            transition: transform .2s ease !important;
+        }
+        html body #wpdcom .wpd-toggle.wpd-hide-replies i,
+        html body #wpdcom .wpd-toggle.wpd_clicked i,
+        html body #wpdcom .wpd-toggle[aria-expanded="true"] i {
+            transform: rotate(180deg) !important;
+        }
+        html body #wpdcom .wpd-comment-header {
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            gap: 4px 10px !important;
+        }
+        html body #wpdcom .md-col {
+            order: 99 !important;
+            margin-left: auto !important;
+            width: 28px !important;
+            height: 28px !important;
+            padding: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 7px !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+            font: 900 15px/1 'JetBrains Mono', monospace !important;
+            cursor: pointer !important;
+            transition: transform .1s ease, background .12s ease !important;
+        }
+        html body #wpdcom .md-col:hover {
+            background: var(--yellow) !important;
+            color: #000 !important;
+        }
+        html body #wpdcom .wpd-comment[data-md-collapsed] .wpd-comment {
+            display: none !important;
+        }
+        html body #wpdcom .wpd-comment[data-md-collapsed] > .wpd-comment-wrap .wpd-comment-text,
+        html body #wpdcom .wpd-comment[data-md-collapsed] > .wpd-comment-wrap .wpd-comment-footer,
+        html body #wpdcom .wpd-comment[data-md-collapsed] > .wpd-comment-wrap .wpd-comment-text + *,
+        html body #wpdcom .wpd-comment[data-md-collapsed] > .wpd-comment-wrap .wpd-comment-left .wpd-comment-label {
+            display: none !important;
+        }
+        html body #wpdcom .wpd-comment[data-md-collapsed] > .wpd-comment-wrap {
+            opacity: .75 !important;
+        }
+
+        /* -- LEADERBOARD: one frame, one heading, one rule -- */
+        html body .widget.c-popular .widget-heading::before,
+        html body .widget.c-popular h5.heading::before,
+        html body .widget.c-popular .widget-heading::after,
+        html body .widget.c-popular h5.heading::after {
+            content: none !important;
+            display: none !important;
+        }
+        html body .widget.c-popular div:not(.popular-item-wrap):not(.popular-item-wrap *):not([class*="heading"]):not([class*="heading"] *):not([class*="view-more"]):not([class*="view-more"] *) {
+            border: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        html body .widget.c-popular :is(.widget-heading, .c-blog__heading, .heading, h1, h2, h3, h4, h5):not(.popular-item-wrap *) {
+            border: 0 !important;
+            box-shadow: none !important;
+            background: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html body .widget.c-popular :is(.widget-heading, .c-blog__heading, .heading):not(.popular-item-wrap *):not(:is(.widget-heading, .c-blog__heading, .heading) :is(.widget-heading, .c-blog__heading, .heading)) {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin: 0 0 4px !important;
+            padding: 0 0 12px !important;
+            border-bottom: 3px solid var(--bd) !important;
+        }
+        html body .widget.c-popular :is(.widget-heading, .c-blog__heading, .heading) :is(h1, h2, h3, h4, h5):not(.popular-item-wrap *) {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            font: 900 17px 'DM Sans', sans-serif !important;
+            letter-spacing: .04em !important;
+            text-transform: uppercase !important;
+            color: var(--ink) !important;
+        }
+        html body .widget.c-popular :is(.widget-heading, .c-blog__heading, h1, h2, h3, h4, h5):not(.popular-item-wrap *) i {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            width: 30px !important;
+            height: 30px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 15px !important;
+            line-height: 1 !important;
+            background: var(--primary) !important;
+            color: #fff !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        html body .widget.c-popular :is(.widget-heading, .c-blog__heading, h1, h2, h3, h4, h5) i::before {
+            background: none !important;
+            color: #fff !important;
+        }
+        html body .widget.c-popular :is(.widget-heading, .c-blog__heading, h1, h2, h3, h4, h5) i::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        /* -- SERIES CARDS: poster layout. cover first (biggest), then title, rating, chapters -- */
+        div.row:has(> [class*="col-"] > div.page-item-detail),
+        .page-listing-item > .row {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+            gap: 22px 18px !important;
+            margin: 0 !important;
+            padding: 6px 4px 10px 0 !important;
+        }
+        div.row:has(> [class*="col-"] > div.page-item-detail)::before,
+        div.row:has(> [class*="col-"] > div.page-item-detail)::after,
+        .page-listing-item > .row::before,
+        .page-listing-item > .row::after {
+            content: none !important;
+            display: none !important;
+        }
+        div.row:has(> [class*="col-"] > div.page-item-detail) > [class*="col-"],
+        .page-listing-item > .row > [class*="col-"] {
+            width: auto !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            flex: none !important;
+            float: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        html body div.page-item-detail.manga {
+            position: relative !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0 !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            border-radius: 14px !important;
+        }
+        html body div.page-item-detail.manga .item-thumb {
+            position: relative !important;
+            flex: 0 0 auto !important;
+            width: 100% !important;
+            height: auto !important;
+            aspect-ratio: 2 / 3 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            border-bottom: var(--bw) solid var(--bd) !important;
+            background: var(--soft) !important;
+        }
+        html body div.page-item-detail.manga .item-thumb a {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        html body div.page-item-detail.manga .item-thumb a img,
+        html body div.page-item-detail.manga .item-thumb img {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+            max-width: none !important;
+            aspect-ratio: auto !important;
+            object-fit: cover !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            transition: transform .35s ease !important;
+        }
+        html body div.page-item-detail.manga:hover .item-thumb img {
+            transform: scale(1.05) !important;
+        }
+        html body div.page-item-detail.manga .manga-title-badges,
+        html body div.page-item-detail.manga .badge-pos,
+        html body div.page-item-detail.manga span[class*="badge"] {
+            position: absolute !important;
+            z-index: 3 !important;
+            top: 10px !important;
+            left: 10px !important;
+            right: auto !important;
+            bottom: auto !important;
+            margin: 0 !important;
+        }
+        html body div.page-item-detail.manga .item-summary {
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+            gap: 6px !important;
+            height: auto !important;
+            min-width: 0 !important;
+            padding: 12px 14px 14px !important;
+            margin: 0 !important;
+            float: none !important;
+        }
+        html body div.page-item-detail.manga .post-title,
+        html body div.page-item-detail.manga .post-title h3,
+        html body div.page-item-detail.manga .post-title h4,
+        html body div.page-item-detail.manga .post-title h5 {
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+            max-height: none !important;
+        }
+        html body div.page-item-detail.manga .post-title a {
+            min-height: 2.7em !important;
+            max-height: 2.7em !important;
+            font-size: 15px !important;
+            line-height: 1.35 !important;
+        }
+        html body div.page-item-detail.manga .meta-item.rating {
+            display: flex !important;
+            align-items: center !important;
+            height: 20px !important;
+            margin: 0 !important;
+        }
+        html body div.page-item-detail.manga .list-chapter {
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            gap: 6px !important;
+            margin-top: auto !important;
+            padding-top: 6px !important;
+            min-height: 70px !important;
+            max-height: none !important;
+            overflow: visible !important;
+            border-top: 2px dotted rgba(128, 128, 128, .4) !important;
+        }
+        html body div.page-item-detail.manga .list-chapter .chapter-item {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto !important;
+            align-items: center !important;
+            gap: 8px !important;
+            height: auto !important;
+            min-height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+        }
+        html body div.page-item-detail.manga .list-chapter .chapter-item span.chapter,
+        html body div.page-item-detail.manga .list-chapter .chapter-item .chapter {
+            display: block !important;
+            flex: none !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        html body div.page-item-detail.manga .list-chapter .chapter-item .chapter a {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            padding: 4px 9px !important;
+            margin: 0 !important;
+            font-size: 11.5px !important;
+            line-height: 1.35 !important;
+        }
+        html body div.page-item-detail.manga .list-chapter .chapter-item .post-on,
+        html body div.page-item-detail.manga .list-chapter .chapter-item span.post-on {
+            flex: none !important;
+            max-width: 96px !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            font: 600 10.5px 'JetBrains Mono', monospace !important;
+            color: var(--muted) !important;
+            text-align: right !important;
+        }
+        @media (max-width: 600px) {
+            div.row:has(> [class*="col-"] > div.page-item-detail),
+            .page-listing-item > .row {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 16px 12px !important;
+            }
+            html body div.page-item-detail.manga .item-summary {
+                padding: 10px 10px 12px !important;
+            }
+            html body div.page-item-detail.manga .post-title a {
+                font-size: 13.5px !important;
+            }
+            html body div.page-item-detail.manga .list-chapter .chapter-item {
+                grid-template-columns: minmax(0, 1fr) !important;
+                gap: 2px !important;
+            }
+            html body div.page-item-detail.manga .list-chapter .chapter-item .post-on {
+                text-align: left !important;
+                max-width: none !important;
+            }
+        }
+
+        /* -- READER: backgrounds that really switch, top bar, no related block -- */
+        html[data-md-page="chapter"] body,
+        html[data-md-page="chapter"] body.reading-manga {
+            background:
+                linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+                linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+                var(--page-bg) !important;
+            padding-top: 72px !important;
+        }
+        html[data-md-page="chapter"] body :is(.wrap, .body-wrap, .site-content, #content, #primary, .site-main, .c-page-content, .c-page, .content-area, .main-col, .main-col-inner, .entry-content, .entry-content_wrap, .c-blog-post, .reading-content, .page-break, .read-container, .reading-content-wrap, .c-page__content) {
+            background-color: transparent !important;
+            background-image: none !important;
+        }
+        html[data-md-page="chapter"] header.site-header {
+            display: none !important;
+        }
+        html[data-md-page="chapter"] #md-top,
+        html[data-md-page="chapter"] .related-manga,
+        html[data-md-page="chapter"] .manga-related,
+        html[data-md-page="chapter"] #related-manga {
+            display: none !important;
+        }
+        html[data-md-page="chapter"] #wpdcom,
+        html[data-md-page="chapter"] #respond,
+        html[data-md-page="chapter"] #comments {
+            scroll-margin-top: 84px;
+        }
+        #md-rbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 90;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-sizing: border-box;
+            padding: 10px 16px;
+            background: var(--card);
+            border-bottom: var(--bw) solid var(--bd);
+            box-shadow: 0 4px 0 var(--bd);
+            transition: transform .25s ease;
+        }
+        html[data-md-navhide] #md-rbar {
+            transform: translateY(calc(-100% - 8px));
+        }
+        #md-rbar .md-rb-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            flex: 0 0 auto;
+            height: 38px;
+            padding: 0 12px;
+            box-sizing: border-box;
+            background: var(--card);
+            color: var(--ink);
+            border: var(--bw) solid var(--bd);
+            border-radius: 8px;
+            box-shadow: var(--sh-sm);
+            font: 800 12px 'DM Sans', sans-serif;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            text-decoration: none;
+            cursor: pointer;
+            transition: transform .1s ease, box-shadow .1s ease, background .12s ease;
+        }
+        #md-rbar .md-rb-btn:hover {
+            background: var(--yellow);
+            color: #000;
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0 var(--bd);
+        }
+        #md-rbar .md-rb-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+        #md-rbar .md-rb-title {
+            flex: 1 1 auto;
+            min-width: 0;
+            text-align: center;
+            line-height: 1.2;
+            cursor: default;
+        }
+        #md-rbar .md-rb-title b {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font: 900 14px 'DM Sans', sans-serif;
+            color: var(--ink);
+        }
+        #md-rbar .md-rb-title span {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font: 700 11px 'JetBrains Mono', monospace;
+            color: var(--muted);
+        }
+        #md-rbar .md-rb-count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 6px;
+            box-sizing: border-box;
+            background: var(--ink-bg);
+            color: var(--on-ink);
+            border-radius: 999px;
+            font: 800 11px 'JetBrains Mono', monospace;
+        }
+        #md-rbar .md-rb-count:empty {
+            display: none;
+        }
+        #md-rbar .md-rb-theme {
+            display: inline-flex;
+            flex: 0 0 auto;
+        }
+        @media (max-width: 680px) {
+            #md-rbar { gap: 8px; padding: 8px 10px; }
+            #md-rbar .md-rb-lbl { display: none; }
+            #md-rbar .md-rb-btn { padding: 0 10px; }
+            #md-rbar .md-rb-title b { font-size: 12.5px; }
+            html[data-md-page="chapter"] body { padding-top: 64px !important; }
+        }
+
+        /* =====================================================================
+           ROUND 4
+           ===================================================================== */
+
+        /* -- section headings: drawn glyph (icon font is often missing), one tile style everywhere -- */
+        html body [data-md-g="bolt"] { --md-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 2 4 14h6l-1 8 9-12h-6z'/%3E%3C/svg%3E"); }
+        html body [data-md-g="star"] { --md-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='black' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2.5l2.9 6.3 6.9.7-5.2 4.6 1.5 6.8L12 17.3 5.9 20.9l1.5-6.8L2.2 9.5l6.9-.7z'/%3E%3C/svg%3E"); }
+        html body [data-md-g="doc"] { --md-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 2.5h8.5L19 7v14.5H6zM14 2.5V7.5h5M9 13h7M9 17h7'/%3E%3C/svg%3E"); }
+        html body [data-md-g="list"] { --md-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01' stroke-width='3'/%3E%3C/svg%3E"); }
+        html body [data-md-g="chat"] { --md-g: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z'/%3E%3C/svg%3E"); }
+        html body [data-md-g][data-md-g] i:not(a *):not(button *) {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            width: 36px !important;
+            height: 36px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 0 !important;
+            line-height: 1 !important;
+            background: var(--primary) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 9px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        html body [data-md-g][data-md-g] i:not(a *):not(button *)::before {
+            content: "" !important;
+            display: block !important;
+            width: 20px !important;
+            height: 20px !important;
+            background: #ffffff !important;
+            -webkit-mask: var(--md-g) center / contain no-repeat !important;
+            mask: var(--md-g) center / contain no-repeat !important;
+        }
+        html body [data-md-g][data-md-g] i:not(a *):not(button *)::after {
+            content: none !important;
+            display: none !important;
+        }
+        html[data-md-page="list"] .c-blog__heading {
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            margin: 6px 0 22px !important;
+            padding: 12px 18px !important;
+            overflow: hidden !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        html[data-md-page="list"] .c-blog__heading::after {
+            content: "" !important;
+            display: block !important;
+            position: absolute !important;
+            right: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            width: 110px !important;
+            background: repeating-linear-gradient(135deg, var(--bd) 0 3px, transparent 3px 11px) !important;
+            opacity: .16 !important;
+            pointer-events: none !important;
+        }
+        html[data-md-page="list"] .c-blog__heading :is(h1, h2, h3, h4, h5) {
+            display: flex !important;
+            align-items: center !important;
+            gap: 14px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            font: 900 20px/1.2 'DM Sans', sans-serif !important;
+            letter-spacing: .03em !important;
+            text-transform: uppercase !important;
+            color: var(--ink) !important;
+        }
+
+        /* -- home grid: three columns on desktop -- */
+        @media (min-width: 900px) {
+            html body.home div.row:has(> [class*="col-"] > div.page-item-detail),
+            html body.home .page-listing-item > .row {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+                gap: 26px 22px !important;
+            }
+        }
+
+        /* -- COMMENTS: type, layout, report button -- */
+        html body #wpdcom {
+            font-family: 'DM Sans', system-ui, sans-serif !important;
+        }
+        html body #wpdcom .wpd-comment {
+            padding: 16px 18px !important;
+        }
+        html body #wpdcom .wpd-comment-wrap {
+            display: flex !important;
+            align-items: flex-start !important;
+            gap: 14px !important;
+        }
+        html body #wpdcom .wpd-comment-left {
+            flex: 0 0 64px !important;
+            width: 64px !important;
+            float: none !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 6px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html body #wpdcom .wpd-comment-right {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            float: none !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html body #wpdcom .wpd-comment-label,
+        html body #wpdcom .wpd-comment-left .wpd-comment-label {
+            max-width: 72px !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            padding: 2px 6px !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 6px !important;
+            font: 800 9.5px/1.3 'DM Sans', sans-serif !important;
+            letter-spacing: .03em !important;
+            text-transform: uppercase !important;
+            color: #fff !important;
+        }
+        html body #wpdcom .wpd-comment-label * {
+            font: inherit !important;
+            color: inherit !important;
+            padding: 0 !important;
+        }
+        html body #wpdcom .wpd-comment-author,
+        html body #wpdcom .wpd-comment-author a {
+            font: 800 15px/1.2 'DM Sans', sans-serif !important;
+            letter-spacing: 0 !important;
+            color: var(--primary) !important;
+            text-decoration: none !important;
+        }
+        html body #wpdcom .wpd-comment-date {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            font: 600 11.5px 'JetBrains Mono', monospace !important;
+            color: var(--muted) !important;
+        }
+        html body #wpdcom .wpd-comment-text,
+        html body #wpdcom .wpd-comment-text p {
+            font: 500 15px/1.65 'DM Sans', sans-serif !important;
+            color: var(--ink) !important;
+            letter-spacing: 0 !important;
+        }
+        html body #wpdcom .wpd-comment-text {
+            margin: 8px 0 10px !important;
+            padding: 0 !important;
+            border: 0 !important;
+            word-break: break-word !important;
+        }
+        html body #wpdcom .wpd-comment-text p {
+            margin: 0 0 .6em !important;
+        }
+        html body #wpdcom .wpd-comment-text a {
+            color: var(--primary) !important;
+            font-weight: 700 !important;
+            text-decoration: underline !important;
+        }
+        html body #wpdcom .wpd-comment-text img,
+        html body #wpdcom .wpd-comment-text video {
+            display: block !important;
+            max-width: 100% !important;
+            height: auto !important;
+            max-height: 380px !important;
+            margin: 10px 0 4px !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        html body #wpdcom .wpd-comment-text hr,
+        html body #wpdcom .wpd-comment-wrap hr {
+            display: none !important;
+        }
+        html body #wpdcom .wpd-reply-to,
+        html body #wpdcom .wpd-reply-to-text {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            margin: 4px 0 2px !important;
+            padding: 0 0 0 8px !important;
+            border-left: 3px solid var(--bd) !important;
+            font: 600 12px 'DM Sans', sans-serif !important;
+            font-style: normal !important;
+            color: var(--muted) !important;
+        }
+        html body #wpdcom .wpd-reply-to a {
+            color: var(--primary) !important;
+            font-weight: 800 !important;
+            text-decoration: none !important;
+        }
+        html body #wpdcom .wpd-comment-footer {
+            padding-top: 10px !important;
+            margin-top: 8px !important;
+            border-top: 2px dotted rgba(128, 128, 128, .35) !important;
+        }
+        html body #wpdcom .wpd-comment .wpd-comment {
+            margin: 14px 0 0 !important;
+            padding: 14px 16px !important;
+            background: var(--card) !important;
+            border: 2px solid var(--bd) !important;
+            border-left: 6px solid var(--primary) !important;
+            border-radius: 10px !important;
+            box-shadow: none !important;
+        }
+        html body #wpdcom .wpd-toggle,
+        html body #wpdcom .wpd-toggle * {
+            color: var(--ink) !important;
+            opacity: 1 !important;
+        }
+        html body #wpdcom .wpd-toggle:hover,
+        html body #wpdcom .wpd-toggle:hover * {
+            color: #000 !important;
+        }
+        html body #wpdcom [class*="wpd-report"],
+        html body #wpdcom [class*="wpd-comment-report"],
+        html body #wpdcom .wpd-comment-right [class*="report"] {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            min-width: 28px !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            margin: 0 !important;
+            background: transparent !important;
+            color: var(--muted) !important;
+            border: 2px solid transparent !important;
+            border-radius: 7px !important;
+            box-shadow: none !important;
+            font: 700 11px 'DM Sans', sans-serif !important;
+            cursor: pointer !important;
+            transition: background .12s ease, color .12s ease, border-color .12s ease !important;
+        }
+        html body #wpdcom [class*="wpd-report"]:hover,
+        html body #wpdcom [class*="wpd-comment-report"]:hover,
+        html body #wpdcom .wpd-comment-right [class*="report"]:hover {
+            background: var(--pink) !important;
+            color: #000 !important;
+            border-color: var(--bd) !important;
+        }
+        html body #wpdcom .md-col {
+            width: 30px !important;
+            height: 30px !important;
+            font: 900 16px/1 'DM Sans', sans-serif !important;
+        }
+
+        /* -- COMMENTS loading: own indicator instead of the corner bar -- */
+        html body #wpdiscuz-loading-bar,
+        html body .wpdiscuz-loading-bar {
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        html body #wpdcom .md-cload {
+            display: none;
+            position: sticky;
+            bottom: 18px;
+            z-index: 6;
+            width: max-content;
+            max-width: 100%;
+            align-items: center;
+            gap: 10px;
+            margin: 14px auto 0;
+            padding: 9px 18px;
+            background-color: var(--card);
+            background-image: repeating-linear-gradient(45deg, rgba(128, 128, 128, .16) 0 10px, transparent 10px 20px);
+            background-size: 28px 28px;
+            border: 3px solid var(--bd);
+            border-radius: 999px;
+            box-shadow: var(--sh);
+            color: var(--ink);
+            font: 800 12px 'DM Sans', sans-serif;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            animation: mdCStripes .8s linear infinite;
+        }
+        html body #wpdcom .md-cload::before {
+            content: "";
+            width: 16px;
+            height: 16px;
+            border: 3px solid var(--bd);
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: mdSpin .7s linear infinite;
+        }
+        html body #wpdcom[data-md-cload] .md-cload {
+            display: flex;
+        }
+        html body #wpdcom[data-md-cload] .wpd-comment {
+            animation: mdCPulse .9s ease-in-out infinite alternate;
+        }
+        @keyframes mdCStripes { from { background-position: 0 0; } to { background-position: 28px 0; } }
+        @keyframes mdCPulse { from { opacity: 1; } to { opacity: .55; } }
+
+        /* -- mobile + touch optimisation -- */
+        @media (max-width: 760px) {
+            :root { --sh: 3px 3px 0 var(--bd); --sh-hover: 4px 4px 0 var(--bd); }
+            html body div.page-item-detail.manga {
+                content-visibility: auto;
+                contain-intrinsic-size: auto 330px;
+            }
+            #md-hero .md-hero-bg {
+                inset: 0 !important;
+                transform: none !important;
+                filter: blur(10px) saturate(1.4) brightness(.8) !important;
+            }
+            html[data-md-theme="dark"] #md-hero .md-hero-bg {
+                filter: blur(8px) brightness(.34) saturate(1.2) !important;
+            }
+            html[data-md-page="overview"] div.profile-manga > .md-profile-bg {
+                inset: 0 !important;
+                transform: none !important;
+                filter: blur(12px) saturate(1.4) brightness(.8) !important;
+            }
+            html[data-md-theme="dark"][data-md-page="overview"] div.profile-manga > .md-profile-bg {
+                filter: blur(10px) brightness(.34) saturate(1.2) !important;
+            }
+            html[data-md-page="list"] .c-blog__heading {
+                padding: 10px 12px !important;
+                margin: 4px 0 16px !important;
+            }
+            html[data-md-page="list"] .c-blog__heading :is(h1, h2, h3, h4, h5) {
+                font-size: 16px !important;
+            }
+            html body [data-md-g][data-md-g] i:not(a *):not(button *) {
+                width: 32px !important;
+                height: 32px !important;
+            }
+            html body #wpdcom .wpd-comment {
+                padding: 12px 12px !important;
+            }
+            html body #wpdcom .wpd-comment-wrap {
+                gap: 10px !important;
+            }
+            html body #wpdcom .wpd-comment-left {
+                flex-basis: 48px !important;
+                width: 48px !important;
+            }
+            html body #wpdcom .wpd-avatar img,
+            html body #wpdcom img.avatar {
+                width: 40px !important;
+                height: 40px !important;
+                max-width: 40px !important;
+            }
+            html body #wpdcom .wpd-comment-label {
+                max-width: 52px !important;
+                font-size: 8.5px !important;
+            }
+            html body #wpdcom .wpd-comment .wpd-comment {
+                padding: 10px 10px !important;
+            }
+            html body #wpdcom .wpd-comment-text,
+            html body #wpdcom .wpd-comment-text p {
+                font-size: 14.5px !important;
+            }
+        }
+        @media (hover: none) {
+            html body div.page-item-detail.manga:hover,
+            html body div.row.c-tabs-item__content:hover,
+            ul.main.version-chap li.wp-manga-chapter:hover {
+                transform: none !important;
+            }
+            html body div.page-item-detail.manga:hover .item-thumb img {
+                transform: none !important;
+            }
+            html body div.page-item-detail.manga,
+            html body div.page-item-detail.manga .item-thumb img {
+                transition: none !important;
+            }
         }
     `;
 
@@ -4243,7 +5195,7 @@
         }
     }
 
-    const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], #md-dock, #md-toast, #md-top, header';
+    const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], #md-dock, #md-toast, #md-top, #md-rbar, header';
 
     function headerAutoHide() {
         if (!CONFIG.readerHeaderAutoHide) return;
@@ -4320,9 +5272,7 @@
             btn('zoom-in', ICON.plus, 'Zoom in (+)') +
             '<span class="md-sep"></span>' +
             btn('bg', ICON.bg, 'Background colour (B)') +
-            btn('series', ICON.list, 'Back to series') +
-            '<button type="button" class="md-dl" data-act="download"></button>' +
-            btn('top', ICON.up, 'Back to top');
+            '<button type="button" class="md-dl" data-act="download"></button>';
 
         document.body.appendChild(d);
 
@@ -4342,9 +5292,7 @@
                 case 'zoom-in': stepZoom(1); break;
                 case 'zoom-reset': applyZoom(1); break;
                 case 'bg': cycleBg(); break;
-                case 'series': if (cur.seriesUrl) location.href = cur.seriesUrl; break;
                 case 'download': toggleDownload(); break;
-                case 'top': scrollTo({ top: 0, behavior: 'smooth' }); break;
             }
         });
 
@@ -4445,6 +5393,12 @@
             setTheme(root.dataset.mdTheme, false);
         }
 
+        const rbSlot = document.querySelector('#md-rbar .md-rb-theme');
+        if (rbSlot) {
+            if (b.parentNode !== rbSlot) rbSlot.appendChild(b);
+            return;
+        }
+
         const searchUl = $('header.site-header ul.main-menu-search') || $('.search-navigation .main-menu-search');
         if (searchUl) {
             let li = searchUl.querySelector('li.menu-theme');
@@ -4468,7 +5422,7 @@
      *  EXTRAS (Back to Top & Search Focus)
      * ==================================================================== */
     function addExtras() {
-        if (CONFIG.backToTop && !document.getElementById('md-top')) {
+        if (CONFIG.backToTop && PAGE() !== 'chapter' && !document.getElementById('md-top')) {
             const b = document.createElement('button');
             b.id = 'md-top';
             b.type = 'button';
@@ -4832,6 +5786,149 @@
     }
 
     /* ====================================================================
+     *  READER TOP BAR, RELATED-BLOCK REMOVAL, COMMENT COLLAPSE
+     * ==================================================================== */
+    function commentCount() {
+        for (const sel of ['#wpdcom .wpd-thread-info', '.wpd-thread-info', '#comments .comments-title', '.comments-title']) {
+            const el = $(sel);
+            if (!el) continue;
+            const attr = el.getAttribute('data-comments-count');
+            if (attr && /\d/.test(attr)) return parseInt(attr.replace(/\D/g, ''), 10);
+            const m = (el.textContent || '').replace(/,/g, '').match(/\d+/);
+            if (m) return parseInt(m[0], 10);
+        }
+        return null;
+    }
+
+    function syncReaderBar() {
+        const bar = document.getElementById('md-rbar');
+        if (!bar) return;
+        const ctx = chapterContext();
+        const home = $('[data-k="home"]', bar);
+        const ser = $('[data-k="series"]', bar);
+        if (ser && ctx.seriesUrl && ser.getAttribute('href') !== ctx.seriesUrl) ser.setAttribute('href', ctx.seriesUrl);
+        if (home && !home.getAttribute('href')) home.setAttribute('href', '/');
+        const t = $('.md-rb-title', bar);
+        if (t) {
+            const b = $('b', t), sp = $('span', t);
+            if (b && b.textContent !== ctx.series) b.textContent = ctx.series;
+            if (sp && sp.textContent !== ctx.label) sp.textContent = ctx.label;
+        }
+        const n = commentCount();
+        const c = $('.md-rb-count', bar);
+        const txt = n == null ? '' : (n > 999 ? Math.round(n / 100) / 10 + 'K' : String(n));
+        if (c && c.textContent !== txt) c.textContent = txt;
+    }
+
+    function buildReaderBar() {
+        if (document.getElementById('md-rbar') || !document.body) { syncReaderBar(); return; }
+        const bar = document.createElement('div');
+        bar.id = 'md-rbar';
+        bar.innerHTML =
+            '<a class="md-rb-btn" data-k="home" href="/" title="Home">' + ICON.home + '<span class="md-rb-lbl">Home</span></a>' +
+            '<a class="md-rb-btn" data-k="series" href="#" title="Series page">' + ICON.list + '<span class="md-rb-lbl">Series</span></a>' +
+            '<div class="md-rb-title"><b></b><span></span></div>' +
+            '<button type="button" class="md-rb-btn" data-k="comments" title="Jump to comments">' + ICON.chat + '<span class="md-rb-lbl">Comments</span><span class="md-rb-count"></span></button>' +
+            '<span class="md-rb-theme"></span>';
+        document.body.appendChild(bar);
+        $('[data-k="comments"]', bar).addEventListener('click', () => {
+            const target = $('#wpdcom') || $('#respond') || $('#comments') || $('.comments-area');
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            else toast('No comments section on this page');
+        });
+        syncReaderBar();
+    }
+
+    function removeRelated() {
+        $$('h1,h2,h3,h4,h5,h6,.c-blog__heading,.widget-heading').forEach(h => {
+            const txt = (h.textContent || '').trim();
+            if (txt.length > 60 || !/you\s+may\s+also\s+like/i.test(txt)) return;
+            const keep = '#wpdcom, #respond, #comments, .reading-content, #md-rbar, #md-dock';
+            const box = h.closest('.related-manga, .manga-related, [class*="related"], .c-blog-post, section, .widget');
+            if (box && !box.querySelector(keep) && !box.matches(keep)) { box.remove(); return; }
+            const wrap = h.closest('.c-blog__heading') || h;
+            const nx = wrap.nextElementSibling;
+            if (nx && !nx.querySelector(keep) && !nx.matches(keep)) nx.remove();
+            wrap.remove();
+        });
+    }
+
+    function setupCommentCollapse() {
+        $$('#wpdcom .wpd-comment').forEach(c => {
+            if (c.dataset.mdColInit) return;
+            const head = $('.wpd-comment-header', c);
+            if (!head || head.closest('.wpd-comment') !== c) return;
+            c.dataset.mdColInit = '1';
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'md-col';
+            b.title = 'Collapse comment';
+            b.setAttribute('aria-expanded', 'true');
+            b.textContent = '\u2212';
+            b.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                const closed = c.hasAttribute('data-md-collapsed');
+                if (closed) c.removeAttribute('data-md-collapsed'); else c.setAttribute('data-md-collapsed', '1');
+                b.setAttribute('aria-expanded', closed ? 'true' : 'false');
+                b.title = closed ? 'Collapse comment' : 'Expand comment';
+                b.textContent = closed ? '\u2212' : '+';
+            });
+            head.appendChild(b);
+        });
+    }
+
+    /* ====================================================================
+     *  HEADING GLYPHS, COMMENT LOADING INDICATOR, IMAGE LAZINESS
+     * ==================================================================== */
+    function tagHeadings() {
+        $$('.c-blog__heading:not([data-md-g]), .widget-heading:not([data-md-g])').forEach(h => {
+            if (!h.querySelector('i')) return;
+            const t = (h.textContent || '').toLowerCase();
+            let g = 'star';
+            if (/summary|about|descr|synops/.test(t)) g = 'doc';
+            else if (/comment|discuss/.test(t)) g = 'chat';
+            else if (/chapter/.test(t)) g = 'list';
+            else if (/updat|latest|release|recent/.test(t)) g = 'bolt';
+            h.setAttribute('data-md-g', g);
+        });
+    }
+
+    function setupCommentLoading() {
+        const w = $('#wpdcom');
+        if (!w) return;
+        let ind = w.querySelector(':scope > .md-cload');
+        if (!ind) {
+            ind = document.createElement('div');
+            ind.className = 'md-cload';
+            ind.textContent = 'Loading comments';
+            w.appendChild(ind);
+        }
+        if (w.__mdCL) return;
+        w.__mdCL = setInterval(() => {
+            if (!w.isConnected) { clearInterval(w.__mdCL); w.__mdCL = null; return; }
+            if (ind.parentNode !== w) w.appendChild(ind);
+            const bar = document.getElementById('wpdiscuz-loading-bar') || $('.wpdiscuz-loading-bar');
+            let on = false;
+            if (bar) {
+                const cs = getComputedStyle(bar);
+                on = cs.display !== 'none' && parseFloat(cs.opacity || '1') > 0.05;
+            }
+            if (!on) on = !!w.querySelector('.wpd-loading, .wpd_loading');
+            if (on !== w.hasAttribute('data-md-cload')) {
+                if (on) w.setAttribute('data-md-cload', '1'); else w.removeAttribute('data-md-cload');
+            }
+        }, 250);
+    }
+
+    function lazyImages() {
+        $$('div.page-item-detail img, .popular-item-wrap img').forEach(i => {
+            if (!i.hasAttribute('loading')) i.setAttribute('loading', 'lazy');
+            if (!i.hasAttribute('decoding')) i.setAttribute('decoding', 'async');
+        });
+    }
+
+    /* ====================================================================
      *  RUN LOOP & LIFECYCLE
      * ==================================================================== */
     injectStyles();
@@ -4844,6 +5941,7 @@
             purgeAdContainers();
             cleanCardTitles();
             fixCommentImages();
+            try { setupCommentCollapse(); setupCommentLoading(); tagHeadings(); lazyImages(); } catch (_) {}
             try { setupLoadMore(); } catch (_) {}
             const page = PAGE();
             if (page === 'list') {
@@ -4853,6 +5951,8 @@
                 try { setupCoverBackdrop(); } catch (_) {}
             } else if (page === 'chapter') {
                 setupReader();
+                buildReaderBar();
+                removeRelated();
             }
             setupThemeToggle();
             addExtras();

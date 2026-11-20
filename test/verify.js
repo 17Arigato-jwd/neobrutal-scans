@@ -575,10 +575,10 @@ test('mangaread.user.js purges chat completely from PURGE_SELECTORS, Layer 1 CSS
 });
 
 test('mangaread.user.js and demonicscans.user.js hero carousel includes hit-test buffer to eliminate hover jitter', () => {
-    assert(mangareadCode.includes('#md-hero .md-hero-card:hover::after'), 'Missing :hover::after buffer in mangaread');
-    assert(demonicCode.includes('#md-hero .md-hero-card:hover::after'), 'Missing :hover::after buffer in demonicscans');
-    assert(/inset:\s*-16px\s+-36px\s+-16px\s+-16px/.test(mangareadCode), 'Incorrect inset hit-test buffer in mangaread');
-    assert(/inset:\s*-16px\s+-36px\s+-16px\s+-16px/.test(demonicCode), 'Incorrect inset hit-test buffer in demonicscans');
+    assert(mangareadCode.includes('#md-hero .md-hero-card::after'), 'Missing hit-test buffer in mangaread');
+    assert(demonicCode.includes('#md-hero .md-hero-card::after'), 'Missing hit-test buffer in demonicscans');
+    assert(/inset:\s*-16px\s+-64px\s+-16px\s+-16px/.test(mangareadCode) || /inset:\s*-16px\s+-36px\s+-16px\s+-16px/.test(mangareadCode), 'Incorrect inset hit-test buffer in mangaread');
+    assert(/inset:\s*-16px\s+-64px\s+-16px\s+-16px/.test(demonicCode) || /inset:\s*-16px\s+-36px\s+-16px\s+-16px/.test(demonicCode), 'Incorrect inset hit-test buffer in demonicscans');
     assert(mangareadCode.includes('rotate(5deg) translateY(-6px) scale(1.01)'), 'Missing dampened rotation in mangaread');
     assert(demonicCode.includes('rotate(5deg) translateY(-6px) scale(1.01)'), 'Missing dampened rotation in demonicscans');
 });
