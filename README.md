@@ -18,21 +18,12 @@ Install a userscript manager extension in your browser:
 
 Choose the dedicated script for your site:
 
-[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)  
-- **[Install DemonicScans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)**  
-  *Lightweight, high-performance userscript exclusively tailored for DemonicScans and MangaDemon mirrors.*
-
-[![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)  
-- **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)**  
-  *Dedicated script designed specifically for Asura Scans (comics and web novels).*
-
-[![Version](https://img.shields.io/badge/version-2026--11--20.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)  
-- **[Install MangaRead Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)**  
-  *Dedicated userscript designed specifically for MangaRead (mangaread.org).*
-
-[![Version](https://img.shields.io/badge/version-2026--11--20.4-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)  
-- **[Install Comix Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)**  
-  *Dedicated userscript designed specifically for Comix (comix.to).*
+| Edition & One-Click Install | Details & Highlights |
+|---|---|
+| **[Install DemonicScans Dedicated](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)**<br>[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)<br>`demonicscans.org`, `mangademon.org`, & mirrors | **Popunder killer & membership popup immunity**, Netflix-style hero carousel with falling progress timer, cookie-stored Continue Reading shelf, 3-tier podium leaderboard, single-chapter `.cbz` export, and comic ↔ novel reader formatting. |
+| **[Install Asura Scans Dedicated](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)**<br>[![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)<br>`asurascans.com`, `*.asurascans.com` | **High-contrast Neobrutalism skin** with zero-flash dark/light toggle, minimalist floating reader dock with zoom (50%–200%) & contrast switcher, novel reader overhaul, and multi-chapter batch ZIP downloader. |
+| **[Install MangaRead Dedicated](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)**<br>[![Version](https://img.shields.io/badge/version-2026--11--20.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)<br>`mangaread.org`, `*.mangaread.org` | **4-layer ad & popunder debloater**, hero carousel, series cover blur backdrop, restructured wpDiscuz comments with collapsible trees & live indicators, sticky bottom reader bar, `.cbz` export, and multi-chapter batch ZIP downloader. |
+| **[Install Comix Dedicated](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)**<br>[![Version](https://img.shields.io/badge/version-2026--11--20.4-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)<br>`comix.to`, `*.comix.to` | **Full-site Neobrutalism & Settings theme sync**, sign-in nag removal & ad neutralizer, hero banner carousel, local reading history shelf (`.nb-history`), floating reader dock, `.cbz` packaging with `ComicInfo.xml`, and batch ZIP & PDF exporter. |
 
 *(Note: The legacy monolithic combined script has been archived to [`archive/neobrutal-scans.user.js`](archive/neobrutal-scans.user.js)).*
 
