@@ -30,7 +30,7 @@ Choose the dedicated script for your site:
 - **[Install MangaRead Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)**  
   *Dedicated userscript designed specifically for MangaRead (mangaread.org).*
 
-[![Version](https://img.shields.io/badge/version-2026--11--20.1-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)  
+[![Version](https://img.shields.io/badge/version-2026--11--20.4-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)  
 - **[Install Comix Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)**  
   *Dedicated userscript designed specifically for Comix (comix.to).*
 
@@ -90,12 +90,13 @@ Your userscript manager will automatically detect the script and prompt you to c
 ---
 
 ### Comix Dedicated Features
+- **Full-Site Neobrutalism & Theme Sync**: High-contrast neobrutalist aesthetic with solid borders, hard shadows, custom palettes (Light, Dark, Custom), and full synchronization with the site's own Settings.
 - **Featured Hero Carousel**: Prominent hero banner on `/home` showcasing top series with Title Case metadata, chapter badge, dynamic view formatting, and falling vertical progress bar (5.5s timer with pause-on-hover/focus).
 - **Continue Reading Shelf**: Local reading history shelf (`.nb-history`) tracking recent series, chapter titles, page progress, and read timestamps directly in `localStorage`.
 - **Floating Reader Dock**: Minimal bottom dock with dynamic zoom (50% to 200%), reading mode toggle, background selector (Paper, Charcoal, Black, Theme), and chapter navigation.
 - **Single Chapter `.cbz` Packaging**: One-click Comic Book Zip exporter embedding standard `ComicInfo.xml` metadata and parallel image downloading.
-- **Multi-Chapter Batch Downloader**: Download multiple selected chapters in a consolidated ZIP archive directly from series pages (`/title/*`).
-- **Promotion & Ad Debloater**: Automatic removal of sponsored homepage banners, PWA install prompts, ending promotional banners, and distracting third-party frames.
+- **Multi-Chapter Batch Downloader & PDF Export**: Download multiple selected chapters in a consolidated ZIP archive or export directly to PDF from series pages (`/title/*`).
+- **Promotion & Sign-In Debloater**: Automatic removal of sponsored homepage banners, PWA install prompts, ending promotional banners, sign-in UI nags, and distracting third-party frames.
 
 ---
 
@@ -148,7 +149,7 @@ To modify settings, open your userscript manager's dashboard, select your instal
 | **DemonicScans** | `demonicscans.org`, `mangademon.org`, `mangademon.com`, `mangademon.cc`, `mangademon.me`, `mgdemon.org`, `demonreader.org` | Popunder killer, Membership popup immunity, Netflix hero carousel, Continue Reading shelf, 3-tier podium leaderboard, .cbz download, Novel reader |
 | **MangaRead** | `mangaread.org`, `*.mangaread.org` | 4-layer ad & popunder debloater, Hero carousel, Series backdrop, AJAX load-more animations, wpDiscuz dynamic comments, .cbz export, Batch ZIP downloader |
 | **Asura Scans** | `asurascans.com`, `*.asurascans.com` | High-contrast Neobrutalism skin, Dark mode, Reader dock, Zoom controls, Novel reader formatting, Multi-chapter batch ZIP downloader |
-| **Comix** | `comix.to`, `*.comix.to` | High-contrast Neobrutalism skin, Featured hero carousel, Local reading history, Reader tools & backgrounds, .cbz export with ComicInfo.xml, Multi-chapter batch ZIP downloader, Promotion debloater |
+| **Comix** | `comix.to`, `*.comix.to` | High-contrast Neobrutalism skin, Theme sync, Featured hero carousel, Local reading history, Reader tools & backgrounds, .cbz export with ComicInfo.xml, Multi-chapter batch ZIP & PDF exporter, Promotion & sign-in debloater |
 
 ---
 

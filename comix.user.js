@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-20.1
-// @description  A high-contrast Comix skin with a featured carousel, local reading history, reader tools, and CBZ / batch ZIP export.
+// @version      2026-11-20.4
+// @description  Neobrutalist skin and debloater for Comix (comix.to): full-site Neobrutalism, sign-in UI removal, full Settings theme sync (Light/Dark/Custom), Netflix-style hero carousel, Continue Reading shelf, styled comments & sidebar widgets, floating reader dock, and CBZ / batch ZIP & PDF export.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
 // @supportURL   https://github.com/17Arigato-jwd/neobrutal-scans/issues
@@ -10,14 +10,19 @@
 // @downloadURL  https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js
 // @license      MIT
 // @match        https://comix.to/*
+// @match        https://*.comix.to/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=comix.to
 // @run-at       document-start
 // @noframes
+// @grant        unsafeWindow
 // @grant        GM_xmlhttpRequest
+// @grant        GM.xmlHttpRequest
+// @connect      comix.to
 // @connect      *
 // ==/UserScript==
 
 /*
- * ZIP writer adapted from Neobrutal Scans.
+ * Neobrutal Scans — Comix Dedicated Edition
  * Copyright (c) 2026 Varchas Mishra (17Arigato-jwd)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -39,71 +44,56 @@
  * SOFTWARE.
  */
 
-function startNeobrutalComix() {
+(function boot() {
     'use strict';
+    if (window.top !== window.self) return;
 
+    /* ====================================================================
+     *  LAYER 0: POPUP / AD-GLOBAL NEUTRALIZATION
+     * ==================================================================== */
+    function neutralizePopups() {
+        const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        const origOpen = typeof win.open === 'function' ? win.open.bind(win) : null;
+        const safeOpen = function (url, target, features) {
+            if (!url) return null;
+            try {
+                const u = new URL(String(url), location.href);
+                if (u.origin === location.origin) {
+                    return origOpen ? origOpen(u.href, target, features) : null;
+                }
+            } catch (_) {}
+            return null;
+        };
+        try { win.open = safeOpen; } catch (_) {}
+        try { window.open = safeOpen; } catch (_) {}
+    }
+    neutralizePopups();
+
+    /* ====================================================================
+     *  CONFIG & STATE INITIALIZATION
+     * ==================================================================== */
     const CONFIG = {
-        maxWidth: 1360,
-        themeDefault: 'system',
+        maxWidth: 1280,
+        backToTop: true,
         heroAutoplay: true,
+        heroMaxSlides: 10,
         hidePromotions: true,
+        hideAuthUI: true,
         historyLimit: 16,
-        downloadConcurrency: 4,
+        themeDefault: 'dark',
+        reader: {
+            baseWidth: 800,
+            zoomSteps: [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2],
+            concurrency: 4,
+        },
         batchLimit: 20,
+        readerDockOnTap: true,
+        dockHideOnScroll: true,
+        dockScrollPx: 150,
+        readerHeaderAutoHide: true,
     };
+
     const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
-
-    const root = document.documentElement;
-    const $ = (selector, scope = document) => scope.querySelector(selector);
-    const $$ = (selector, scope = document) => [...scope.querySelectorAll(selector)];
-    const prefersDark = matchMedia('(prefers-color-scheme: dark)');
-    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-
-    function readSetting(name, fallback) {
-        try {
-            return JSON.parse(localStorage.getItem('nb-comix:' + name)) ?? fallback;
-        } catch {
-            return fallback;
-        }
-    }
-
-    function writeSetting(name, value) {
-        try { localStorage.setItem('nb-comix:' + name, JSON.stringify(value)); } catch {}
-    }
-
-    let theme = readSetting('theme', CONFIG.themeDefault);
-
-    function applyTheme() {
-        const dark = theme === 'dark' || (theme !== 'light' && prefersDark.matches);
-        root.dataset.nbComix = dark ? 'dark' : 'light';
-        themeButton.setAttribute('aria-checked', String(dark));
-    }
-
-    function element(tag, className = '', text = '') {
-        const node = document.createElement(tag);
-        if (className) node.className = className;
-        if (text) node.textContent = text;
-        return node;
-    }
-
-    function button(label, click, className = 'nb-button') {
-        const node = element('button', className, label);
-        node.type = 'button';
-        node.addEventListener('click', click);
-        return node;
-    }
-
-    function link(label, href, className) {
-        const node = element('a', className, label);
-        node.href = href;
-        return node;
-    }
-
-    function parseUrl(value, base = location.href) {
-        if (!value) return null;
-        try { return new URL(value, base); } catch { return null; }
-    }
-
     const SERIES_PATH = /^\/title\/[^/]+\/?$/;
     const CHAPTER_PATH = /^(\/title\/[^/]+)\/(\d+)-chapter-([^/]+)\/?$/;
     const READER_PAGES = '.rpage-main .rpage-page[data-page]';
@@ -111,7 +101,128 @@ function startNeobrutalComix() {
         '#app-root a:is(.home-banner, .rpage-chap-ending__banner)[rel~="sponsored"]',
         '#app-root .social-share',
         '#app-root .pwa-banner',
+        '#app-root .pwa-banner-group',
+        'iframe[src*="doubleclick" i]',
+        'iframe[src*="googlesyndication" i]',
+        'iframe[src*="a-ads.com" i]',
+        'ins.adsbygoogle',
+        '[id^="div-gpt-ad"]',
     ];
+    const AUTH_SELECTORS = [
+        '.topnav .login-btn',
+        'a[href^="/login"]',
+        'a[href^="/signin"]',
+        'a[href^="/register"]',
+        'a[href^="/signup"]',
+        '.mpage__follow',
+        '.mpage__follow-btn',
+        '.mpage__collect',
+        '.mpage__collect-btn',
+        '.mpage__rate',
+        '.mpage__rate-stack',
+        '.mpage__rate-strip',
+        '.mpage__rate-trigger',
+        '.mstars',
+        '.mchap-bookmark',
+        '.mchap-row__likes',
+        '.mrec-vote',
+        '.cm-item--editor',
+        '.cm-widget__announcement',
+        '.cm-item__ctrls',
+        '.cm-item__ctrl--like',
+        '.cm-item__ctrl--dislike',
+        '.cm-item__ctrl--reply',
+        '.cm-item__ctrl--menu',
+        '.rpage-chap-ending__like',
+        '.rpage-cmpanel__like',
+        '.rpage-cmpanel__like-attribution',
+        '.rpage-cmpanel__follow',
+        '[data-md-auth-hide="1"]',
+    ];
+    const UI_ZONES = '#md-hero, #md-continue-reading, #md-dock, #md-sel-bar, #md-toast, #md-top, #md-theme';
+    const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], #md-dock, #md-toast, #md-top, #md-theme, .topnav, .rpage-floatctl, .rpage-bottombar, .rpage-cmpanel, .settings-dialog';
+
+    const root = document.documentElement;
+    root.dataset.mdSite = 'comix';
+
+    const prefersDark = matchMedia('(prefers-color-scheme: dark)');
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+    const store = {
+        get: (k, def) => {
+            try {
+                let v = localStorage.getItem('md-comix-' + k);
+                if (v === null) v = localStorage.getItem('nb-comix:' + k);
+                if (v === null) return def;
+                try { return JSON.parse(v); } catch (_) { return v; }
+            } catch (_) {
+                return def;
+            }
+        },
+        set: (k, v) => {
+            try { localStorage.setItem('md-comix-' + k, JSON.stringify(v)); } catch (_) {}
+        },
+    };
+
+    const savedTheme = (() => {
+        const nativeTheme = root.getAttribute('data-theme');
+        const t = store.get('theme', nativeTheme === 'custom' ? 'custom' : CONFIG.themeDefault);
+        if (t === 'light' || t === 'dark' || t === 'custom') return t;
+        if (t === 'system') return prefersDark.matches ? 'dark' : 'light';
+        return CONFIG.themeDefault === 'system' ? (prefersDark.matches ? 'dark' : 'light') : CONFIG.themeDefault;
+    })();
+    root.dataset.mdTheme = savedTheme;
+    root.dataset.mdTone = root.getAttribute('data-tone') === 'light' ? 'light' : 'dark';
+
+    function detectPage(path = location.pathname) {
+        if (CHAPTER_PATH.test(path)) return 'chapter';
+        if (SERIES_PATH.test(path)) return 'overview';
+        if (/^\/(?:home\/?)?$/.test(path) || /^\/(browser|browse|filter|latest|popular|genre|search|groups|collections|community|uploaders)/i.test(path)) return 'list';
+        return 'other';
+    }
+    root.dataset.mdPage = detectPage();
+
+    /* ====================================================================
+     *  UTILITIES & UNIFIED SVG ICON SET (2.2px stroke, currentColor)
+     * ==================================================================== */
+    const SVG = body => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+    const ICON = {
+        prev: SVG('<path d="m15 18-6-6 6-6"/>'),
+        next: SVG('<path d="m9 18 6-6-6-6"/>'),
+        minus: SVG('<path d="M5 12h14"/>'),
+        plus: SVG('<path d="M12 5v14M5 12h14"/>'),
+        bg: SVG('<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/>'),
+        down: SVG('<path d="M12 4v12m0 0-5-5m5 5 5-5M5 20h14"/>'),
+        up: SVG('<path d="M12 19V5m0 0-6 6m6-6 6 6"/>'),
+        check: SVG('<path d="m5 12 5 5 9-10"/>'),
+        stop: SVG('<path d="M6 6l12 12M18 6 6 18"/>'),
+        play: SVG('<polygon points="7 4 20 12 7 20 7 4" fill="currentColor" stroke="none"/>'),
+        info: SVG('<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/>'),
+        eye: SVG('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'),
+        sun: SVG('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+        moon: SVG('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
+    };
+
+    function toTitleCase(str) {
+        if (!str) return '';
+        const cleaned = str.replace(/\s+/g, ' ').trim();
+        if (/[a-z]/.test(cleaned) && /[A-Z]/.test(cleaned)) return cleaned;
+        const MINOR = new Set(['a', 'an', 'and', 'as', 'at', 'but', 'by', 'for', 'from', 'in', 'into', 'near', 'nor', 'of', 'on', 'onto', 'or', 'the', 'to', 'with']);
+        return cleaned.toLowerCase().split(' ').map((w, i, arr) => {
+            if (!w) return '';
+            if (i === 0 || i === arr.length - 1 || !MINOR.has(w)) {
+                return w.replace(/^\p{L}/u, c => c.toUpperCase());
+            }
+            return w;
+        }).join(' ');
+    }
+
+    function parseUrl(value, base = location.href) {
+        if (!value) return null;
+        try { return new URL(value, base); } catch (_) { return null; }
+    }
 
     function route(value, pattern) {
         const url = parseUrl(value);
@@ -123,250 +234,2181 @@ function startNeobrutalComix() {
         return url?.protocol === 'https:' && !url.username && !url.password ? url.href : '';
     }
 
-    const themeButton = button('', () => {
-        theme = root.dataset.nbComix === 'dark' ? 'light' : 'dark';
-        writeSetting('theme', theme);
-        applyTheme();
-    }, 'nb-theme');
-    themeButton.title = 'Toggle Neobrutal Comix dark mode';
-    themeButton.setAttribute('role', 'switch');
-    themeButton.setAttribute('aria-label', 'Neobrutal Comix dark mode');
-    themeButton.append(element('span', 'nb-theme-knob'));
-    applyTheme();
-    prefersDark.addEventListener('change', applyTheme);
+    function xmlEsc(value) {
+        return String(value).replace(/[<>&"']/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[c]));
+    }
 
-    const css = element('style');
-    css.textContent = `
-        html[data-nb-comix] {
-            --nb-bg:#fff8e9; --nb-bg-rgb:255 248 233;
-            --nb-surface:#fffdf6; --nb-surface-rgb:255 253 246;
-            --nb-raised:#f5ead4; --nb-raised-rgb:245 234 212;
-            --nb-ink:#211827; --nb-ink-rgb:33 24 39;
-            --nb-muted:#5d505f; --nb-muted-rgb:93 80 95;
-            --nb-line:#261a31; --nb-shadow:#261a31;
-            --nb-accent:#813bb5; --nb-accent-rgb:129 59 181;
-            --nb-key:#e7cfff; --nb-hit:#d7f984; --nb-grid:#271c3210;
-            color-scheme:light !important;
+    function safeName(value) {
+        return String(value).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').replace(/\s+/g, ' ').slice(0, 110).trim().replace(/[. ]+$/, '') || 'Comix';
+    }
+
+    function fmtChapter(raw) {
+        if (!raw) return '';
+        const m = String(raw).match(/(?:chapter|ch\.?)\s*([\d.]+)/i);
+        if (m) return 'Latest: Ch.\u00a0' + m[1];
+        return 'Latest: ' + String(raw).trim();
+    }
+
+    function toast(msg, ms = 2200) {
+        if (!document.body) return;
+        let t = $('#md-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.id = 'md-toast';
+            t.setAttribute('role', 'status');
+            t.setAttribute('aria-live', 'polite');
+            document.body.appendChild(t);
         }
-        html[data-nb-comix="dark"] {
-            --nb-bg:#17121f; --nb-bg-rgb:23 18 31;
-            --nb-surface:#2a2135; --nb-surface-rgb:42 33 53;
-            --nb-raised:#392c49; --nb-raised-rgb:57 44 73;
-            --nb-ink:#fff6e8; --nb-ink-rgb:255 246 232;
-            --nb-muted:#dbcbe1; --nb-muted-rgb:219 203 225;
-            --nb-line:#765e91; --nb-shadow:#09070d;
-            --nb-accent:#deb7ff; --nb-accent-rgb:222 183 255;
-            --nb-key:#533473; --nb-hit:#d7f984; --nb-grid:#f0cbff0c;
-            color-scheme:dark !important;
+        t.textContent = msg;
+        t.classList.add('show');
+        clearTimeout(t.__h);
+        t.__h = setTimeout(() => t.classList.remove('show'), ms);
+    }
+
+    function isDarkAppearance() {
+        if (root.dataset.mdTheme === 'dark') return true;
+        if (root.dataset.mdTheme === 'light') return false;
+        return root.getAttribute('data-tone') !== 'light';
+    }
+
+    let syncingTheme = false;
+
+    function setTheme(t, persist = true) {
+        const val = (t === 'light' || t === 'dark' || t === 'custom') ? t : 'dark';
+        syncingTheme = true;
+        try {
+            root.dataset.mdTheme = val;
+            root.dataset.mdTone = root.getAttribute('data-tone') === 'light' ? 'light' : 'dark';
+            if (persist) store.set('theme', val);
+            const b = document.getElementById('md-theme');
+            if (b) {
+                const dark = isDarkAppearance();
+                b.setAttribute('aria-checked', String(dark));
+                b.title = val === 'custom'
+                    ? 'Theme: Custom (click for ' + (dark ? 'Light' : 'Dark') + ')'
+                    : (dark ? 'Theme: Dark (click for Light)' : 'Theme: Light (click for Dark)');
+            }
+            try { if (reader.init) paintBg(); } catch (_) {}
+        } finally {
+            queueMicrotask(() => { syncingTheme = false; });
         }
-        html[data-nb-comix] {
-            --bg:var(--nb-bg) !important; --bg-rgb:var(--nb-bg-rgb) !important;
-            --bg-2:var(--nb-raised) !important; --bg-2-rgb:var(--nb-raised-rgb) !important;
-            --surface:var(--nb-surface) !important; --surface-rgb:var(--nb-surface-rgb) !important;
-            --surface-2:var(--nb-raised) !important; --surface-2-rgb:var(--nb-raised-rgb) !important;
-            --surface-3:var(--nb-raised) !important; --surface-3-rgb:var(--nb-raised-rgb) !important;
-            --text:var(--nb-ink) !important; --text-rgb:var(--nb-ink-rgb) !important;
-            --text-emphasis:var(--nb-ink) !important; --text-emphasis-rgb:var(--nb-ink-rgb) !important;
-            --text-2:var(--nb-muted) !important; --text-2-rgb:var(--nb-muted-rgb) !important;
-            --text-3:var(--nb-muted) !important; --text-3-rgb:var(--nb-muted-rgb) !important;
-            --text-4:var(--nb-muted) !important; --text-4-rgb:var(--nb-muted-rgb) !important;
-            --accent:var(--nb-accent) !important; --accent-rgb:var(--nb-accent-rgb) !important;
-            --accent-2:var(--nb-accent) !important; --accent-2-rgb:var(--nb-accent-rgb) !important;
-            --accent-ink:var(--nb-surface) !important;
-            --border:var(--nb-line) !important; --border-2:var(--nb-line) !important;
-            --container:${CONFIG.maxWidth}px !important;
-            --f-sans:"Poppins", system-ui, sans-serif;
-            --nb-mono:"JetBrains Mono", ui-monospace, monospace;
-            --nb-outline:2px solid var(--nb-line);
-            --nb-hard-shadow:4px 4px 0 var(--nb-shadow);
-        }
-        html[data-nb-comix] body:not(.rpage-body) {
-            background-color:var(--nb-bg);
-            background-image:radial-gradient(var(--nb-grid) 1px,transparent 1px);
-            background-size:16px 16px;
-        }
-        ${CONFIG.hidePromotions ? PROMOTIONS.join(',') + '{display:none!important}' : ''}
-        html[data-nb-comix] .topnav {
-            background:var(--nb-key);
-            border-bottom:var(--nb-outline);
-            box-shadow:0 3px 0 var(--nb-shadow);
-        }
-        html[data-nb-comix] .search__form {
-            border:var(--nb-outline); border-radius:8px; box-shadow:2px 2px 0 var(--nb-shadow);
-        }
-        html[data-nb-comix] .topnav .login-btn { white-space:nowrap; }
-        html[data-nb-comix] .layout--top .main-col > :not(:first-child) { margin-top:24px; }
-        html[data-nb-comix] .section__title, html[data-nb-comix] .mpage__sec-title {
-            color:var(--nb-ink); font-family:var(--f-sans); font-weight:900;
-            letter-spacing:-.045em; font-size:clamp(1.18rem,2.5vw,1.75rem);
-        }
-        html[data-nb-comix] .section__title-wrap {
-            border-left:5px solid var(--nb-accent); padding-left:10px;
-        }
-        html[data-nb-comix] :is(.card__poster-wrap .poster,.lrow__poster .poster,.mpage__poster .poster) {
-            aspect-ratio:2/3 !important; border:var(--nb-outline);
-            border-radius:8px; box-shadow:3px 3px 0 var(--nb-shadow);
-        }
-        html[data-nb-comix] .card { padding:2px 5px 7px 2px; }
-        html[data-nb-comix] .card__title {
-            color:var(--nb-ink); font-weight:800; display:-webkit-box;
-            -webkit-box-orient:vertical; -webkit-line-clamp:2;
-            overflow:hidden; white-space:normal; line-height:1.3; min-height:2.6em;
-        }
-        html[data-nb-comix] .card__meta { font-family:var(--nb-mono); font-weight:650; }
-        html[data-nb-comix] :is(.nav-btn,.filter-action,.npager__num,.mpage__read,.mchap-toolbar .ubtn) {
-            border:var(--nb-outline); border-radius:7px; box-shadow:2px 2px 0 var(--nb-shadow);
-        }
-        html[data-nb-comix] .mpage__read {
-            background:var(--nb-hit); color:#24152d;
-        }
-        html[data-nb-comix] :is(.lrow,.filter-grid,.mpage__hero,.mchap-toolbar,.announce) {
-            background:var(--nb-surface); border:var(--nb-outline);
-            border-radius:9px; box-shadow:var(--nb-hard-shadow);
-        }
-        html[data-nb-comix] .lrow { padding:12px; margin-bottom:8px; }
-        html[data-nb-comix] .filter-grid { padding:12px; }
-        html[data-nb-comix] .mpage__hero { padding:clamp(14px,3vw,30px); margin:6px 5px 24px 0; }
-        html[data-nb-comix] .mpage__title { font-weight:900; letter-spacing:-.045em; }
-        html[data-nb-comix] .mchap-toolbar { padding:8px; }
-        html[data-nb-comix] .mchap-row { border-bottom:1px solid var(--nb-line); }
-        html[data-nb-comix] .mchap-item[data-nb-selected] { background:var(--nb-key); }
-        html[data-nb-comix] :is(.nb-button,.nb-theme):focus-visible,
-        html[data-nb-comix] .nb-hero a:focus-visible, html[data-nb-comix] .nb-history a:focus-visible {
-            outline:3px solid var(--nb-accent); outline-offset:3px;
+    }
+
+    /* ====================================================================
+     *  COMIX SETTINGS THEME SYNC (Main / Dark / Light / Custom)
+     *  Applies Comix's native Settings theme selections live on top of the
+     *  Neobrutalist shell (including all Custom presets & hex color pickers).
+     * ==================================================================== */
+    function setupNativeThemeSync() {
+        const syncFromHtml = () => {
+            if (syncingTheme) return;
+            const dt = (root.getAttribute('data-theme') || '').toLowerCase();
+            const tone = (root.getAttribute('data-tone') || '').toLowerCase();
+            root.dataset.mdTone = tone === 'light' ? 'light' : 'dark';
+            if (dt === 'custom') {
+                setTheme('custom', true);
+            } else if (dt === 'light') {
+                setTheme('light', true);
+            } else if (dt === 'dark' || dt === 'main') {
+                setTheme('dark', true);
+            }
+        };
+
+        new MutationObserver(syncFromHtml).observe(root, {
+            attributes: true,
+            attributeFilter: ['data-theme', 'data-tone'],
+        });
+
+        // Also sync immediately when clicking inside .settings-dialog__panel
+        document.addEventListener('click', e => {
+            const btn = e.target instanceof Element ? e.target.closest('.settings-seg__btn, .settings-custom__preset, .settings-custom__reset, .settings-dialog__reset') : null;
+            if (!btn) return;
+            const txt = (btn.textContent || '').trim().toLowerCase();
+            if (btn.classList.contains('settings-custom__preset') || txt === 'custom') {
+                setTimeout(() => setTheme('custom', true), 0);
+            } else if (txt === 'light') {
+                setTimeout(() => setTheme('light', true), 0);
+            } else if (txt === 'dark' || txt === 'main') {
+                setTimeout(() => setTheme('dark', true), 0);
+            } else {
+                setTimeout(syncFromHtml, 20);
+            }
+        }, true);
+
+        document.addEventListener('input', e => {
+            if (e.target instanceof Element && e.target.closest('.settings-custom')) {
+                setTheme('custom', true);
+            }
+        }, true);
+    }
+    setupNativeThemeSync();
+
+    /* ====================================================================
+     *  LAYER 1: NEOBRUTAL SCANS DESIGN SYSTEM CSS
+     * ==================================================================== */
+    const cssComix = `
+        /* ===== SHARED STRUCTURAL TOKENS ===== */
+        html[data-md-site="comix"][data-md-site="comix"] {
+            --bw: 2.5px;
+            --r: 10px;
+            --container: ${CONFIG.maxWidth}px !important;
+            --f-sans: 'DM Sans', system-ui, -apple-system, sans-serif !important;
+            --f-mono: 'JetBrains Mono', ui-monospace, monospace;
+            --md-zoom: 1;
+            --md-base: ${CONFIG.reader.baseWidth}px;
         }
 
-        .nb-button, .nb-theme {
-            box-sizing:border-box; border:var(--nb-outline); border-radius:7px;
-            box-shadow:2px 2px 0 var(--nb-shadow); cursor:pointer; color:var(--nb-ink);
-            background:var(--nb-surface); min-height:36px; font:750 .78rem var(--f-sans);
+        /* ===== NEOBRUTAL LIGHT PALETTE ===== */
+        html[data-md-site="comix"][data-md-site="comix"][data-md-theme="light"] {
+            --bg: #f5f2ea !important;
+            --bg-rgb: 245 242 234 !important;
+            --page-bg: #f5f2ea;
+            --card: #ffffff;
+            --surface: #ffffff !important;
+            --surface-rgb: 255 255 255 !important;
+            --bg-2: #efe9d8 !important;
+            --bg-2-rgb: 239 233 216 !important;
+            --surface-2: #efe9d8 !important;
+            --surface-2-rgb: 239 233 216 !important;
+            --surface-3: #fffbeb !important;
+            --surface-3-rgb: 255 251 235 !important;
+            --ink: #111111;
+            --text: #111111 !important;
+            --text-rgb: 17 17 17 !important;
+            --text-emphasis: #111111 !important;
+            --text-emphasis-rgb: 17 17 17 !important;
+            --muted: #555555;
+            --text-2: #555555 !important;
+            --text-2-rgb: 85 85 85 !important;
+            --text-3: #555555 !important;
+            --text-3-rgb: 85 85 85 !important;
+            --text-4: #555555 !important;
+            --text-4-rgb: 85 85 85 !important;
+            --bd: #111111;
+            --border: #111111 !important;
+            --border-2: #111111 !important;
+            --sh: 4px 4px 0 #111111;
+            --sh-hover: 6px 6px 0 #111111;
+            --sh-sm: 2px 2px 0 #111111;
+            --yellow: #ffdc58;
+            --pink: #ff6b6b;
+            --blue: #88aaee;
+            --lime: #a3e635;
+            --mint: #e3f6ec;
+            --cream: #fffbeb;
+            --soft: #efe9d8;
+            --violet: #6d28d9;
+            --accent: #6d28d9 !important;
+            --accent-rgb: 109 40 217 !important;
+            --accent-2: #ffdc58 !important;
+            --accent-2-rgb: 255 220 88 !important;
+            --accent-ink: #ffffff !important;
+            --ink-bg: #111111;
+            --on-ink: #ffffff;
+            --grid: rgba(0, 0, 0, 0.045);
+            --img-outline: oklch(0 0 0 / 0.1);
+            --header-bg: #ffdc58;
+            color-scheme: light !important;
         }
-        .nb-button {
-            display:inline-flex; justify-content:center; align-items:center;
-            padding:5px 10px; text-decoration:none; line-height:1.2;
-        }
-        .nb-button:active, .nb-theme:active { transform:translate(2px,2px); box-shadow:none; }
-        .nb-button:disabled { opacity:.55; cursor:default; }
-        .nb-button-primary { background:var(--nb-hit); color:#211827; }
-        .nb-theme { position:relative; width:39px; min-height:24px; padding:0; flex:none; }
-        .nb-theme-knob {
-            position:absolute; top:3px; left:3px; width:14px; height:14px;
-            border:1px solid var(--nb-line); border-radius:50%; background:#ffc25b;
-            transition:transform .18s ease,background-color .18s ease;
-        }
-        .nb-theme[aria-checked="true"] .nb-theme-knob { transform:translateX(15px); background:#d7b7ff; }
 
-        .nb-hero {
-            margin:0 6px 0 0; position:relative; isolation:isolate; overflow:hidden;
-            display:grid; grid-template-columns:minmax(0,1fr) minmax(112px,32%); align-items:center;
-            border:var(--nb-outline); border-radius:12px; background:#322247; color:#fff9ee;
-            box-shadow:6px 6px 0 var(--nb-shadow);
+        /* ===== NEOBRUTAL DARK PALETTE ===== */
+        html[data-md-site="comix"][data-md-site="comix"][data-md-theme="dark"] {
+            --bg: #150f26 !important;
+            --bg-rgb: 21 15 38 !important;
+            --page-bg: #150f26;
+            --card: #241b3d;
+            --surface: #241b3d !important;
+            --surface-rgb: 36 27 61 !important;
+            --bg-2: #33295a !important;
+            --bg-2-rgb: 51 41 90 !important;
+            --surface-2: #33295a !important;
+            --surface-2-rgb: 51 41 90 !important;
+            --surface-3: #2f2354 !important;
+            --surface-3-rgb: 47 35 84 !important;
+            --ink: #ece8ff;
+            --text: #ece8ff !important;
+            --text-rgb: 236 232 255 !important;
+            --text-emphasis: #ece8ff !important;
+            --text-emphasis-rgb: 236 232 255 !important;
+            --muted: #a9a0d0;
+            --text-2: #a9a0d0 !important;
+            --text-2-rgb: 169 160 208 !important;
+            --text-3: #a9a0d0 !important;
+            --text-3-rgb: 169 160 208 !important;
+            --text-4: #a9a0d0 !important;
+            --text-4-rgb: 169 160 208 !important;
+            --bd: #000000;
+            --border: #000000 !important;
+            --border-2: #000000 !important;
+            --sh: 4px 4px 0 #000000;
+            --sh-hover: 6px 6px 0 #000000;
+            --sh-sm: 2px 2px 0 #000000;
+            --yellow: #5a3fc2;
+            --pink: #a3315f;
+            --blue: #33479f;
+            --lime: #1b7f68;
+            --mint: #1d3a45;
+            --cream: #2f2354;
+            --soft: #33295a;
+            --violet: #c1b0ff;
+            --accent: #c1b0ff !important;
+            --accent-rgb: 193 176 255 !important;
+            --accent-2: #5a3fc2 !important;
+            --accent-2-rgb: 90 63 194 !important;
+            --accent-ink: #150f26 !important;
+            --ink-bg: #7c5cff;
+            --on-ink: #ffffff;
+            --grid: rgba(255, 255, 255, 0.035);
+            --img-outline: oklch(1 0 0 / 0.1);
+            --header-bg: linear-gradient(135deg, #5a3fc2 0%, #3b267d 100%);
+            color-scheme: dark !important;
         }
-        .nb-hero::before, .nb-hero::after {
-            content:""; position:absolute; inset:0; pointer-events:none; z-index:-1;
-        }
-        .nb-hero::before {
-            background:var(--nb-hero-image,none) center 42% / cover;
-            filter:blur(14px); opacity:.45; transform:scale(1.08);
-        }
-        .nb-hero::after { background:linear-gradient(97deg,#22142f 3%,#36214bde 62%,#3921514d); }
-        .nb-hero-body { min-width:0; padding:clamp(14px,4vw,40px); }
-        .nb-hero-title {
-            color:inherit; margin:0 0 8px; font-size:clamp(1.35rem,4.1vw,3.6rem);
-            font-weight:900; letter-spacing:-.055em; line-height:1.03;
-            display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2;
-            height:2.06em; overflow:hidden; overflow-wrap:anywhere;
-        }
-        .nb-hero-title a { color:inherit; text-decoration:none; }
-        .nb-hero-meta { color:#f4dfeb; font:650 .73rem var(--nb-mono); margin:0 0 14px; min-height:1.2em; }
-        .nb-hero-actions { display:flex; flex-wrap:wrap; gap:8px; }
-        .nb-hero .nb-button { --nb-line:#170e23; --nb-shadow:#170e23; }
-        .nb-hero-art {
-            display:block; justify-self:center; width:min(74%,194px); margin-top:12px;
-            border:3px solid #140d1e; border-radius:9px; background:#50356b;
-            aspect-ratio:2/3; box-shadow:7px 7px 0 #140d1e; transform:rotate(7deg);
-            transition:transform .18s ease;
-        }
-        .nb-hero-art:hover, .nb-hero-art:focus-visible { transform:rotate(3deg); }
-        .nb-hero-art img, .nb-history-card img, .nb-thumb img {
-            width:100%; height:100%; display:block; object-fit:cover; border-radius:inherit;
-        }
-        .nb-thumbs { display:flex; gap:8px; overflow-x:auto; padding:4px 3px; margin:12px -3px -3px; }
-        .nb-thumb {
-            position:relative; flex:0 0 36px; aspect-ratio:2/3; padding:0; overflow:hidden;
-            border:2px solid #170e23; border-radius:4px; background:#50356b; cursor:pointer;
-        }
-        .nb-thumb[aria-pressed="true"] { border-color:#d7f984; }
-        .nb-thumb::after {
-            content:""; position:absolute; inset:0; background:#d7f98444;
-            transform:scaleY(0); transform-origin:top; pointer-events:none;
-        }
-        .nb-hero[data-playing] .nb-thumb[aria-pressed="true"]::after { animation:nb-fill 5.5s linear forwards; }
-        @keyframes nb-fill { to { transform:scaleY(1); } }
 
-        .nb-history { margin:0 5px 0 0; }
-        .nb-history-heading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
-        .nb-history-track {
-            display:grid; grid-auto-flow:column; grid-auto-columns:minmax(190px,1fr);
-            gap:10px; overflow-x:auto; padding:3px 5px 7px 1px;
+        /* ===== COMIX CUSTOM SETTINGS THEME (Honors Settings > Custom presets & hex pickers!) ===== */
+        html[data-md-site="comix"][data-md-site="comix"][data-md-theme="custom"] {
+            --page-bg: var(--bg);
+            --card: var(--surface);
+            --soft: var(--surface-2);
+            --cream: var(--surface-3);
+            --ink: var(--text-emphasis, var(--text));
+            --muted: var(--text-2);
+            --bd: #000000;
+            --border: #000000 !important;
+            --border-2: #000000 !important;
+            --sh: 4px 4px 0 #000000;
+            --sh-hover: 6px 6px 0 #000000;
+            --sh-sm: 2px 2px 0 #000000;
+            --yellow: var(--accent);
+            --violet: var(--accent);
+            --lime: var(--accent);
+            --pink: #e11d48;
+            --blue: var(--accent-2, var(--accent));
+            --ink-bg: var(--accent);
+            --on-ink: var(--accent-ink, #111111);
+            --grid: rgba(255, 255, 255, 0.04);
+            --img-outline: oklch(1 0 0 / 0.1);
+            --header-bg: var(--surface-2);
         }
-        .nb-history-card {
-            display:grid; grid-template-columns:42px minmax(0,1fr); gap:9px; align-items:center;
-            min-width:0; color:var(--nb-ink); background:var(--nb-surface);
-            border:var(--nb-outline); border-radius:8px; box-shadow:3px 3px 0 var(--nb-shadow);
-            padding:7px; text-decoration:none;
+        html[data-md-site="comix"][data-md-site="comix"][data-md-theme="custom"][data-md-tone="light"] {
+            --bd: #111111;
+            --border: #111111 !important;
+            --border-2: #111111 !important;
+            --sh: 4px 4px 0 #111111;
+            --sh-hover: 6px 6px 0 #111111;
+            --sh-sm: 2px 2px 0 #111111;
+            --grid: rgba(0, 0, 0, 0.045);
+            --img-outline: oklch(0 0 0 / 0.1);
         }
-        .nb-history-card img { aspect-ratio:2/3; height:auto; border-radius:4px; }
-        .nb-history-cover { background:var(--nb-key); border-radius:4px; aspect-ratio:2/3; }
-        .nb-history-title { font-weight:850; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
-        .nb-history-label { display:block; font:650 .72rem var(--nb-mono); color:var(--nb-muted); margin-top:3px; }
 
-        html[data-nb-comix] .rpage { --reader-bg:var(--nb-reader-bg,var(--nb-bg)); }
-        html[data-nb-comix] .rpage-main { background:var(--reader-bg); }
-        html[data-nb-comix] :is(.rpage-floatctl__btn,.rpage-floatctl__chap,.rpage-zoom,.rpage-chap-ending__nav-btn) {
-            border:var(--nb-outline); border-radius:7px;
+        /* ===== LAYER 1 PROMOTION DE-BLOAT ===== */
+        ${CONFIG.hidePromotions ? PROMOTIONS.join(', ') + ' { display: none !important; visibility: hidden !important; height: 0 !important; pointer-events: none !important; }' : ''}
+
+        /* ===== BASE, TYPOGRAPHY & CANVAS ===== */
+        html[data-md-site="comix"] {
+            background: var(--page-bg) !important;
+            scroll-behavior: smooth;
         }
-        .nb-reader {
-            position:fixed; z-index:90; left:max(12px,env(safe-area-inset-left));
-            bottom:max(12px,env(safe-area-inset-bottom)); max-width:calc(100vw - 26px);
-            color:var(--nb-ink); font-family:var(--f-sans);
+        html[data-md-site="comix"] body:not(.rpage-body) {
+            background:
+                linear-gradient(to right, var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+                linear-gradient(to bottom, var(--grid) 1px, transparent 1px) 0 0 / 32px 32px,
+                var(--page-bg) !important;
+            color: var(--ink) !important;
+            font-family: var(--f-sans) !important;
         }
-        .nb-reader-box, .nb-batch {
-            background:var(--nb-surface); border:var(--nb-outline);
-            border-radius:8px; box-shadow:var(--nb-hard-shadow); padding:9px;
+        html[data-md-site="comix"] a,
+        html[data-md-site="comix"] a:hover,
+        html[data-md-site="comix"] a:visited {
+            text-decoration: none !important;
         }
-        .nb-reader-box { margin-bottom:8px; max-width:330px; }
-        .nb-reader-actions, .nb-batch {
-            display:flex; align-items:center; flex-wrap:wrap; gap:7px;
+        html[data-md-site="comix"] :is(h1, h2, h3) {
+            text-wrap: balance;
         }
-        .nb-reader-box[hidden], .nb-batch [hidden] { display:none !important; }
-        .nb-status { font:650 .72rem var(--nb-mono); color:var(--nb-muted); overflow-wrap:anywhere; }
-        .nb-reader-box .nb-status { margin:6px 0 0; }
-        .nb-batch { margin:0 4px 10px 0; }
-        .nb-chapter-check { width:18px; height:18px; margin:0 8px; align-self:center; accent-color:var(--nb-accent); }
+        html[data-md-site="comix"] ::selection {
+            background: var(--yellow);
+            color: var(--on-ink);
+        }
+        html[data-md-site="comix"] :focus-visible {
+            outline: 3px solid var(--ink) !important;
+            outline-offset: 2px !important;
+        }
+
+        /* ===== HEADER & NAVIGATION ===== */
+        html[data-md-site="comix"][data-md-site="comix"] header.topnav {
+            background: var(--header-bg) !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-bottom: var(--bw) solid var(--bd) !important;
+            box-shadow: 0 4px 0 var(--bd) !important;
+            transition: transform .22s ease-out, opacity .22s ease-out !important;
+        }
+        html[data-md-site="comix"] .topnav__inner {
+            background: transparent !important;
+        }
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-navhide] header.topnav {
+            transform: translateY(calc(-100% - 8px)) !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        html[data-md-site="comix"] .topnav__right {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        html[data-md-site="comix"] .topnav .icon-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 36px !important;
+            height: 36px !important;
+            min-width: 36px !important;
+            min-height: 36px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] .topnav .icon-btn:hover {
+            background: var(--cream) !important;
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"] .topnav .icon-btn:active {
+            transform: scale(0.96) !important;
+        }
+        html[data-md-site="comix"] .search__form {
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: box-shadow .15s ease-out, transform .15s ease-out !important;
+        }
+        html[data-md-site="comix"] .search__form:focus-within {
+            box-shadow: var(--sh) !important;
+            transform: translate(-1px, -1px);
+        }
+        html[data-md-site="comix"] .search__browse {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 6px !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 800 !important;
+        }
+
+        /* ===== BROWSE MENU, DROPDOWNS & SETTINGS DIALOG (.settings-dialog__panel) ===== */
+        html[data-md-site="comix"] :is(
+            .settings-dialog__panel,
+            [data-md-dropdown="1"],
+            [role="menu"],
+            [role="listbox"]
+        ) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 14px !important;
+            box-shadow: 6px 6px 0 var(--bd) !important;
+        }
+        html[data-md-site="comix"] :is([data-md-dropdown="1"], [role="menu"], [role="listbox"]) :is(a, button) {
+            color: var(--ink) !important;
+            border-radius: 8px !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 700 !important;
+            transition: background-color .12s ease-out !important;
+        }
+        html[data-md-site="comix"] :is([data-md-dropdown="1"], [role="menu"], [role="listbox"]) :is(a, button):hover {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] :is([data-md-dropdown="1"], [role="menu"], [role="listbox"]) :is(a, button):hover {
+            color: #ffffff !important;
+        }
+        /* Settings Dialog Neobrutalist Polish */
+        html[data-md-site="comix"] .settings-dialog__head {
+            border-bottom: 2px solid var(--bd) !important;
+        }
+        html[data-md-site="comix"] .settings-dialog__foot {
+            border-top: 2px solid var(--bd) !important;
+        }
+        html[data-md-site="comix"] .settings-dialog__title {
+            font-family: var(--f-sans) !important;
+            font-weight: 900 !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] .settings-dialog__close {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        html[data-md-site="comix"] .settings-seg__btn,
+        html[data-md-site="comix"] .settings-custom__reset,
+        html[data-md-site="comix"] .settings-dialog__reset,
+        html[data-md-site="comix"] .settings-dialog__save,
+        html[data-md-site="comix"] .settings-advanced-row,
+        html[data-md-site="comix"] .settings-radio__row {
+            border: 2px solid var(--bd) !important;
+            border-radius: 9px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 700 !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] .settings-seg__btn[aria-pressed="true"],
+        html[data-md-site="comix"] .settings-dialog__save {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            font-weight: 900 !important;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .settings-seg__btn[aria-pressed="true"],
+        html[data-md-site="comix"][data-md-theme="dark"] .settings-dialog__save {
+            color: #ffffff !important;
+        }
+        html[data-md-site="comix"] .settings-custom {
+            background: var(--soft) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 10px !important;
+        }
+        html[data-md-site="comix"] .settings-color__hex,
+        html[data-md-site="comix"] .settings-color__swatch {
+            border: 2px solid var(--bd) !important;
+            border-radius: 7px !important;
+        }
+        html[data-md-site="comix"] :is(.settings-seg__btn, .settings-dialog__save, .settings-dialog__reset, .settings-custom__reset):active {
+            transform: scale(0.96) !important;
+        }
+
+        /* ===== SLIDING PILL THEME TOGGLE (#md-theme) ===== */
+        #md-theme {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            flex: 0 0 auto !important;
+            width: 60px !important;
+            height: 34px !important;
+            min-width: 60px !important;
+            min-height: 34px !important;
+            box-sizing: border-box !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 999px !important;
+            box-shadow: var(--sh-sm) !important;
+            cursor: pointer !important;
+            position: relative !important;
+            overflow: hidden !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out !important;
+        }
+        #md-theme:hover {
+            transform: translate(1px, 1px) !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+        }
+        #md-theme:active {
+            transform: scale(0.96) !important;
+        }
+        #md-theme .md-th-sw {
+            display: block !important;
+            position: relative !important;
+            width: 100% !important;
+            height: 100% !important;
+            background: var(--cream) !important;
+            transition: background-color .2s ease-out !important;
+        }
+        #md-theme .md-th-knob {
+            position: absolute !important;
+            top: 2.5px !important;
+            left: 3px !important;
+            width: 24px !important;
+            height: 24px !important;
+            box-sizing: border-box !important;
+            border-radius: 50% !important;
+            background: var(--yellow) !important;
+            border: 2px solid var(--bd) !important;
+            display: grid !important;
+            place-items: center !important;
+            transition: transform .25s cubic-bezier(.3, 1.4, .5, 1), background-color .2s ease-out !important;
+        }
+        #md-theme .md-th-knob > span {
+            grid-area: 1 / 1 !important;
+            display: grid !important;
+            place-items: center !important;
+            transition: transform .26s cubic-bezier(0.2, 0, 0, 1), opacity .22s cubic-bezier(0.2, 0, 0, 1), filter .26s cubic-bezier(0.2, 0, 0, 1) !important;
+        }
+        #md-theme .md-th-knob svg {
+            width: 13px !important;
+            height: 13px !important;
+            display: block !important;
+        }
+        #md-theme .md-th-sun svg { color: #111111 !important; }
+        #md-theme .md-th-moon svg { color: #ece8ff !important; }
+        #md-theme .md-th-moon { opacity: 0; transform: scale(0.25) rotate(-55deg); filter: blur(4px); }
+        #md-theme .md-th-sun { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0px); }
+        #md-theme[aria-checked="true"] .md-th-sw {
+            background: #1b1430 !important;
+        }
+        #md-theme[aria-checked="true"] .md-th-knob {
+            transform: translateX(26px) !important;
+            background: var(--blue) !important;
+        }
+        #md-theme[aria-checked="true"] .md-th-moon { opacity: 1; transform: scale(1) rotate(0deg); filter: blur(0px); }
+        #md-theme[aria-checked="true"] .md-th-sun { opacity: 0; transform: scale(0.25) rotate(55deg); filter: blur(4px); }
+
+        /* ===== MAIN COLUMN HEADINGS, CARDS, COLLECTIONS & FOOTER ===== */
+        html[data-md-site="comix"] .layout--top .main-col > :not(:first-child) {
+            margin-top: 28px;
+        }
+        html[data-md-site="comix"] .section__title,
+        html[data-md-site="comix"] .mpage__sec-title {
+            color: var(--ink) !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 900 !important;
+            text-transform: uppercase;
+            letter-spacing: .015em;
+            font-size: clamp(1.1rem, 2.1vw, 1.45rem);
+        }
+        html[data-md-site="comix"] .section__title-wrap {
+            background: linear-gradient(transparent 62%, var(--yellow) 62%);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 6px;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .section__title-wrap {
+            background: linear-gradient(transparent 66%, rgba(124, 92, 255, 0.38) 66%);
+        }
+        html[data-md-site="comix"] :is(.card__poster-wrap .poster, .lrow__poster .poster, .mpage__poster .poster, .hcoll-card__poster) {
+            aspect-ratio: 2 / 3 !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            overflow: hidden !important;
+            background: var(--soft) !important;
+            transition: box-shadow .15s ease-out !important;
+        }
+        html[data-md-site="comix"] .hcoll-card__poster {
+            aspect-ratio: 16 / 9 !important;
+        }
+        html[data-md-site="comix"] :is(.card__poster-wrap .poster img, .lrow__poster .poster img, .mpage__poster .poster img) {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+            outline: 1px solid var(--img-outline);
+            outline-offset: -1px;
+        }
+        html[data-md-site="comix"] .card {
+            padding: 4px 6px 8px 2px;
+        }
+        html[data-md-site="comix"] .card:hover .card__poster-wrap .poster {
+            box-shadow: var(--sh-hover) !important;
+        }
+        html[data-md-site="comix"] .card__title {
+            color: var(--ink) !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 800 !important;
+            display: -webkit-box !important;
+            -webkit-box-orient: vertical !important;
+            -webkit-line-clamp: 2 !important;
+            overflow: hidden !important;
+            white-space: normal !important;
+            line-height: 1.35 !important;
+            min-height: 2.7em !important;
+            max-height: 2.7em !important;
+            margin-top: 8px;
+        }
+        html[data-md-site="comix"] .card__meta,
+        html[data-md-site="comix"] .card__ch {
+            font-family: var(--f-mono) !important;
+            font-weight: 700 !important;
+            font-size: 11.5px !important;
+        }
+        html[data-md-site="comix"] :is(.nav-btn, .filter-action, .npager__num, .npager__nav, .mpage__read, .mchap-toolbar .ubtn, .view-more, .see-all, .cm-foot__btn, .useg__btn) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 800 !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] :is(.nav-btn, .filter-action, .npager__num, .npager__nav, .mpage__read, .mchap-toolbar .ubtn, .view-more, .see-all, .cm-foot__btn, .useg__btn):hover {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] :is(.nav-btn, .filter-action, .npager__num, .npager__nav, .mpage__read, .mchap-toolbar .ubtn, .view-more, .see-all, .cm-foot__btn, .useg__btn):hover {
+            color: #ffffff !important;
+        }
+        html[data-md-site="comix"] :is(.nav-btn, .filter-action, .npager__num, .npager__nav, .mpage__read, .mchap-toolbar .ubtn, .view-more, .see-all, .cm-foot__btn, .useg__btn):active {
+            transform: scale(0.96) !important;
+        }
+        html[data-md-site="comix"] .useg__btn.is-on {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .useg__btn.is-on {
+            color: #ffffff !important;
+        }
+        html[data-md-site="comix"] .mpage__read {
+            background: var(--lime) !important;
+            color: #111111 !important;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .mpage__read {
+            color: #ffffff !important;
+        }
+        html[data-md-site="comix"] :is(.lrow, .filter-grid, .mpage__hero, .mchap-toolbar, .announce) {
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"] .lrow { padding: 12px; margin-bottom: 10px; }
+        html[data-md-site="comix"] .filter-grid { padding: 14px; }
+        html[data-md-site="comix"] .footer {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border-top: var(--bw) solid var(--bd) !important;
+        }
+
+        /* ===== EXACT SIDEBAR WIDGETS: RECENTLY ADDED, COMPLETE SERIES, TOP 10 UPLOADERS, LATEST POSTS, LATEST COMMENTS ===== */
+        html[data-md-site="comix"] .side-col {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 24px !important;
+        }
+        html[data-md-site="comix"] .side-col .panel__tabs-inline {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-bottom: 12px !important;
+            flex-wrap: wrap !important;
+        }
+        html[data-md-site="comix"] .side-col .panel__tab-sep {
+            display: none !important;
+        }
+        html[data-md-site="comix"] .side-col .panel__tab-inline {
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 5px 11px !important;
+            background: var(--card) !important;
+            color: var(--muted) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 900 12.5px/1.2 var(--f-sans) !important;
+            text-transform: uppercase !important;
+            letter-spacing: .02em !important;
+            cursor: pointer;
+            transition: background-color .14s ease-out, transform .12s ease-out !important;
+        }
+        html[data-md-site="comix"] .side-col .panel__tab-inline.is-active {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .side-col .panel__tab-inline.is-active {
+            color: #ffffff !important;
+        }
+        html[data-md-site="comix"] .side-col .panel__foot {
+            margin-top: 10px !important;
+        }
+        html[data-md-site="comix"] .side-col .panel__foot .view-more {
+            width: 100% !important;
+            justify-content: center !important;
+            padding: 8px 12px !important;
+        }
+
+        /* 1. Recently Added & Complete Series (ol.side-list > li.side-item) */
+        html[data-md-site="comix"] ol.side-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 9px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+        html[data-md-site="comix"] li.side-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 11px !important;
+            padding: 8px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] li.side-item:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"] li.side-item .side-item__poster {
+            flex: 0 0 46px !important;
+            width: 46px !important;
+            display: block !important;
+        }
+        html[data-md-site="comix"] li.side-item .poster--sm {
+            width: 46px !important;
+            height: 69px !important;
+            aspect-ratio: 2 / 3 !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 6px !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+        }
+        html[data-md-site="comix"] li.side-item .poster--sm img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+            outline: 1px solid var(--img-outline);
+            outline-offset: -1px;
+        }
+        html[data-md-site="comix"] li.side-item .side-item__body {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 3px !important;
+        }
+        html[data-md-site="comix"] li.side-item .side-item__kicker {
+            font: 700 10px/1.1 var(--f-mono) !important;
+            text-transform: uppercase !important;
+            color: var(--muted) !important;
+        }
+        html[data-md-site="comix"] li.side-item .side-item__title {
+            font: 800 13px/1.3 var(--f-sans) !important;
+            color: var(--ink) !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+        html[data-md-site="comix"] li.side-item .side-item__meta {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            font: 700 11px/1.2 var(--f-mono) !important;
+            color: var(--muted) !important;
+        }
+
+        /* 2. Top 10 Uploaders (ol.top-uploaders > li.top-uploader) */
+        html[data-md-site="comix"] ol.top-uploaders {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+        html[data-md-site="comix"] li.top-uploader {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            padding: 8px 10px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] li.top-uploader:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"] .top-uploader__rank {
+            display: inline-grid !important;
+            place-items: center !important;
+            width: 26px !important;
+            height: 26px !important;
+            flex: 0 0 26px !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 6px !important;
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            font: 800 12px/1 var(--f-mono) !important;
+            font-variant-numeric: tabular-nums !important;
+        }
+        html[data-md-site="comix"] li.top-uploader--rank1 .top-uploader__rank {
+            background: #ffdc58 !important;
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"] li.top-uploader--rank2 .top-uploader__rank {
+            background: #e2e8f0 !important;
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"] li.top-uploader--rank3 .top-uploader__rank {
+            background: #fdba74 !important;
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"] .top-uploader__avatar .uavatar {
+            border: 2px solid var(--bd) !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+        }
+        html[data-md-site="comix"] .top-uploader__user {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            font: 800 13px/1.2 var(--f-sans) !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] .top-uploader__count {
+            font: 700 11.5px/1 var(--f-mono) !important;
+            font-variant-numeric: tabular-nums !important;
+            color: var(--muted) !important;
+            white-space: nowrap !important;
+        }
+
+        /* 3. Latest Posts (ul.latest-posts > li.latest-post) */
+        html[data-md-site="comix"] ul.latest-posts {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+        html[data-md-site="comix"] li.latest-post {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            padding: 12px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] li.latest-post:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"] .latest-post__cat .cpost-cat {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            padding: 2px 8px !important;
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 1.5px solid var(--bd) !important;
+            border-radius: 999px !important;
+            font: 800 10.5px/1.2 var(--f-mono) !important;
+            text-transform: uppercase !important;
+        }
+        html[data-md-site="comix"] .latest-post__title {
+            font: 800 13.5px/1.3 var(--f-sans) !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] .latest-post__excerpt {
+            margin: 0 !important;
+            font: 500 12.5px/1.45 var(--f-sans) !important;
+            color: var(--muted) !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+        html[data-md-site="comix"] .latest-post__foot {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 8px !important;
+            margin-top: 2px !important;
+            font: 700 11px/1.2 var(--f-mono) !important;
+            color: var(--muted) !important;
+        }
+
+        /* 4. Latest Comments Sidebar (ul.comments > li.comment — flat cards, no outer wrapper card) */
+        html[data-md-site="comix"] ul.comments {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 9px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        html[data-md-site="comix"] ul.comments > li.comment {
+            padding: 10px 12px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] ul.comments > li.comment:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"] ul.comments .poster--xs {
+            border: 2px solid var(--bd) !important;
+            border-radius: 5px !important;
+            overflow: hidden !important;
+        }
+        html[data-md-site="comix"] ul.comments .comment__title {
+            font: 800 12.5px/1.3 var(--f-sans) !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] ul.comments .comment__content {
+            font: 500 12.5px/1.4 var(--f-sans) !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] ul.comments .comment__foot {
+            font: 700 11px/1.2 var(--f-mono) !important;
+            color: var(--muted) !important;
+        }
+
+        /* ===== SERIES PAGE COMMENTS (.cm-widget) — Clean Flat Neobrutal Thread Cards ===== */
+        html[data-md-site="comix"] .cm-widget {
+            margin-top: 28px !important;
+        }
+        html[data-md-site="comix"] .cm-widget__head {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+            margin-bottom: 14px !important;
+        }
+        html[data-md-site="comix"] .cm-widget__title {
+            font: 900 1.25rem/1.2 var(--f-sans) !important;
+            text-transform: uppercase !important;
+            color: var(--ink) !important;
+            background: linear-gradient(transparent 62%, var(--yellow) 62%);
+            padding: 0 6px;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .cm-widget__title {
+            background: linear-gradient(transparent 66%, rgba(124, 92, 255, 0.38) 66%);
+        }
+        html[data-md-site="comix"] .cm-widget__sort {
+            display: inline-flex !important;
+            gap: 6px !important;
+        }
+        html[data-md-site="comix"] ul.cm-items {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 12px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+        html[data-md-site="comix"] ul.cm-items > li.cm-item {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+            padding: 14px 16px !important;
+            margin: 0 !important;
+        }
+        /* Nested replies: recessed surface, thin border, NO nested box-shadow or side-stripe */
+        html[data-md-site="comix"] li.cm-item li.cm-item {
+            background: var(--soft) !important;
+            border: 1.5px solid var(--bd) !important;
+            border-radius: 9px !important;
+            box-shadow: none !important;
+            padding: 10px 12px !important;
+            margin-top: 8px !important;
+        }
+        html[data-md-site="comix"] .cm-item__avatar .uavatar {
+            border: 2px solid var(--bd) !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+        }
+        html[data-md-site="comix"] .cm-item__user a {
+            font: 800 13.5px/1.2 var(--f-sans) !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] .cm-item__time {
+            font: 700 11px/1.2 var(--f-mono) !important;
+            color: var(--muted) !important;
+        }
+        html[data-md-site="comix"] .cm-item__content {
+            color: var(--ink) !important;
+            font: 500 14px/1.55 var(--f-sans) !important;
+            margin-top: 6px !important;
+            max-width: 72ch;
+            text-wrap: pretty;
+        }
+        html[data-md-site="comix"] .cm-item__content img.rich-img {
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            margin-top: 8px !important;
+            max-width: min(100%, 420px) !important;
+        }
+        html[data-md-site="comix"] .cm-item__collapser {
+            display: inline-grid !important;
+            place-items: center !important;
+            width: 24px !important;
+            height: 24px !important;
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 1.5px solid var(--bd) !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+        }
+        html[data-md-site="comix"] .cm-foot {
+            margin-top: 14px !important;
+        }
+        html[data-md-site="comix"] .cm-foot__btn {
+            width: 100% !important;
+            padding: 10px 16px !important;
+        }
+
+        /* ===== SERIES OVERVIEW HERO, BADGES, SIDEBAR & CHAPTERS ===== */
+        html[data-md-site="comix"] .mpage__hero {
+            position: relative;
+            overflow: hidden;
+            isolation: isolate;
+            padding: clamp(18px, 3vw, 32px);
+            margin: 6px 4px 24px 0;
+        }
+        html[data-md-site="comix"] .mpage__hero > .md-profile-bg {
+            position: absolute;
+            inset: -24px;
+            z-index: -1;
+            background-size: cover;
+            background-position: center 25%;
+            filter: blur(26px) saturate(1.4);
+            opacity: 0.16;
+            pointer-events: none;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .mpage__hero > .md-profile-bg {
+            opacity: 0.24;
+            filter: blur(24px) brightness(0.45) saturate(1.3);
+        }
+        html[data-md-site="comix"] .mpage__title {
+            font-family: var(--f-sans) !important;
+            font-weight: 900 !important;
+            letter-spacing: -0.025em;
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] :is(.mpage__badge, .mpage__chip) {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 1.5px solid var(--bd) !important;
+            border-radius: 999px !important;
+            font-family: var(--f-mono) !important;
+            font-weight: 700 !important;
+        }
+        html[data-md-site="comix"] .mpage__side ol.mrec-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 10px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            list-style: none !important;
+        }
+        html[data-md-site="comix"] .mpage__side li.mrec-item {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            padding: 8px !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] .mpage__side li.mrec-item:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"] .mpage__side :is(.mcoll-item__poster, .mrec-item__poster) {
+            border: 2px solid var(--bd) !important;
+            border-radius: 6px !important;
+            overflow: hidden !important;
+            flex-shrink: 0 !important;
+        }
+        html[data-md-site="comix"] .mchap-toolbar {
+            padding: 10px;
+            border-radius: 14px !important;
+        }
+        html[data-md-site="comix"] .mchap-list {
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+            overflow: hidden !important;
+        }
+        html[data-md-site="comix"] .mchap-row {
+            border-bottom: 1.5px solid rgba(17, 17, 17, 0.14);
+            transition: background-color .12s ease-out;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .mchap-row {
+            border-bottom-color: rgba(255, 255, 255, 0.1);
+        }
+        html[data-md-site="comix"] .mchap-row:hover {
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"] .mchap-item[data-md-sel] .mchap-row,
+        html[data-md-site="comix"] .mchap-item[data-md-sel] {
+            background: var(--yellow) !important;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] .mchap-item[data-md-sel] .mchap-row,
+        html[data-md-site="comix"][data-md-theme="dark"] .mchap-item[data-md-sel] {
+            background: rgba(124, 92, 255, 0.35) !important;
+        }
+
+        /* ===== NETFLIX-STYLE HERO CAROUSEL (#md-hero) ===== */
+        #md-hero {
+            position: relative;
+            width: 100%;
+            margin: 4px 0 24px;
+            min-height: clamp(360px, 34vw, 460px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            overflow: hidden;
+            border: var(--bw) solid var(--bd);
+            border-radius: 14px;
+            box-shadow: 6px 6px 0 var(--bd);
+            background: #ffffff;
+            box-sizing: border-box;
+            padding: clamp(22px, 3.8vw, 42px);
+            gap: 24px;
+            isolation: isolate;
+        }
+        #md-hero .md-hero-bg {
+            position: absolute;
+            inset: -20px;
+            background-size: cover;
+            background-position: center 25%;
+            filter: blur(22px) saturate(1.6) brightness(0.8);
+            opacity: 0.85;
+            transform: scale(1.08);
+            pointer-events: none;
+            z-index: -2;
+            transition: opacity .32s ease-out;
+        }
+        #md-hero::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            background:
+                linear-gradient(to top, rgba(255,255,255,.72) 0%, rgba(255,255,255,.15) 52%, transparent 100%),
+                linear-gradient(to right, rgba(255,255,255,.84) 0%, rgba(255,255,255,.28) 58%, transparent 100%);
+            pointer-events: none;
+        }
+        #md-hero .md-hero-body {
+            position: relative !important;
+            z-index: 2 !important;
+            max-width: min(580px, calc(100% - 390px)) !important;
+            color: var(--ink) !important;
+            flex: 1 1 auto !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: flex-end !important;
+            min-height: 310px !important;
+        }
+        #md-hero .md-hero-tag {
+            display: inline-block !important;
+            align-self: flex-start !important;
+            padding: 5px 12px !important;
+            margin-bottom: 12px !important;
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            border: 2px solid #000000 !important;
+            border-radius: 7px !important;
+            font: 800 11px/1 var(--f-mono) !important;
+            text-transform: uppercase !important;
+            letter-spacing: .08em !important;
+            box-shadow: 3px 3px 0 #000000 !important;
+        }
+        #md-hero .md-hero-title {
+            margin: 0 0 10px !important;
+            padding: 0 !important;
+            color: var(--ink) !important;
+            font: 900 clamp(22px, 3vw, 36px)/1.2 var(--f-sans) !important;
+            text-transform: none !important;
+            letter-spacing: -0.02em !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            min-height: 2.4em !important;
+            max-height: 2.4em !important;
+            transition: opacity .22s ease-out, transform .22s ease-out !important;
+        }
+        #md-hero .md-hero-meta {
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+            margin: 0 0 16px !important;
+            min-height: 28px !important;
+            font: 700 12px/1 var(--f-mono) !important;
+        }
+        #md-hero .md-hero-views {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            padding: 4px 10px !important;
+            background: rgba(255, 255, 255, 0.88) !important;
+            border: 1.5px solid rgba(0, 0, 0, 0.3) !important;
+            border-radius: 999px !important;
+            color: #111111 !important;
+            font-size: 11.5px !important;
+            box-shadow: 1.5px 1.5px 0 rgba(0, 0, 0, 0.14) !important;
+            backdrop-filter: blur(6px) !important;
+        }
+        #md-hero .md-hero-views svg {
+            width: 13px !important;
+            height: 13px !important;
+            flex-shrink: 0 !important;
+        }
+        #md-hero .md-hero-chapter {
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 4px 10px !important;
+            background: var(--lime) !important;
+            color: #111111 !important;
+            border: 1.5px solid #000000 !important;
+            border-radius: 999px !important;
+            font-size: 11.5px !important;
+            font-weight: 800 !important;
+            box-shadow: 1.5px 1.5px 0 #000000 !important;
+        }
+        #md-hero .md-hero-cta {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            flex-wrap: wrap !important;
+            margin-bottom: 20px !important;
+            position: relative !important;
+            z-index: 5 !important;
+        }
+        #md-hero .md-hero-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            padding: 10px 22px !important;
+            min-height: 42px !important;
+            box-sizing: border-box !important;
+            border: var(--bw) solid #000000 !important;
+            border-radius: var(--r) !important;
+            box-shadow: 3px 3px 0 #000000 !important;
+            font: 900 13.5px/1 var(--f-sans) !important;
+            text-transform: uppercase !important;
+            letter-spacing: .03em !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        #md-hero .md-hero-btn svg {
+            width: 15px !important;
+            height: 15px !important;
+            flex-shrink: 0 !important;
+        }
+        #md-hero .md-hero-play svg {
+            transform: translateX(1px);
+        }
+        #md-hero .md-hero-play {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+        }
+        #md-hero .md-hero-more {
+            background: #ffffff !important;
+            color: #111111 !important;
+        }
+        #md-hero .md-hero-btn:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: 5px 5px 0 #000000 !important;
+        }
+        #md-hero .md-hero-btn:active {
+            transform: scale(0.96) !important;
+            box-shadow: 1px 1px 0 #000000 !important;
+        }
+        #md-hero .md-hero-thumbs {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin: 0 0 0 -18px !important;
+            padding: 4px 28px 8px 24px !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+            -webkit-overflow-scrolling: touch !important;
+            max-width: calc(100% + 18px) !important;
+            position: relative !important;
+            z-index: 4 !important;
+            mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
+        }
+        #md-hero .md-hero-thumbs::-webkit-scrollbar { display: none !important; }
+        #md-hero .md-hero-thumb {
+            position: relative !important;
+            flex: 0 0 46px !important;
+            width: 46px !important;
+            height: 68px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+            border: 2px solid #000000 !important;
+            border-radius: 6px !important;
+            overflow: hidden !important;
+            cursor: pointer !important;
+            background: #111111 !important;
+            box-shadow: 2px 2px 0 #000000 !important;
+            opacity: 0.65 !important;
+            transition: transform .18s ease-out, opacity .18s ease-out, border-color .18s ease-out, box-shadow .18s ease-out !important;
+        }
+        #md-hero .md-hero-thumb:hover {
+            opacity: 0.95 !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 3px 3px 0 #000000 !important;
+        }
+        #md-hero .md-hero-thumb:active {
+            transform: scale(0.96) !important;
+        }
+        #md-hero .md-hero-thumb.is-active {
+            opacity: 1 !important;
+            border-color: var(--violet) !important;
+            transform: translateY(-3px) scale(1.05) !important;
+            box-shadow: 0 0 0 2px var(--violet), 3px 3px 0 #000000 !important;
+        }
+        #md-hero .md-hero-thumb img {
+            display: block !important;
+            position: absolute !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            pointer-events: none !important;
+            outline: 1px solid var(--img-outline);
+            outline-offset: -1px;
+        }
+        #md-hero .md-thumb-fill {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 0%;
+            background: linear-gradient(to bottom, rgba(109, 40, 217, 0.52) 0%, rgba(255, 220, 88, 0.28) 100%) !important;
+            border-bottom: 2.5px solid var(--violet) !important;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45) !important;
+            pointer-events: none !important;
+            z-index: 2 !important;
+            opacity: 0;
+            transition: opacity .15s ease-out;
+        }
+        #md-hero .md-hero-thumb.is-active .md-thumb-fill {
+            opacity: 1 !important;
+            animation: mdProgressFall 5.5s linear forwards;
+        }
+        @keyframes mdProgressFall {
+            0% { height: 0%; }
+            100% { height: 100%; }
+        }
+        #md-hero .md-hero-card {
+            --mdc-w: 280px;
+            position: absolute;
+            z-index: 3;
+            right: 92px;
+            bottom: -68px;
+            width: var(--mdc-w);
+            height: calc(var(--mdc-w) * 1.5);
+            display: block;
+            text-decoration: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #md-hero .md-hero-card-art {
+            position: absolute;
+            inset: 0;
+            display: block;
+            box-sizing: border-box;
+            border: var(--bw) solid #000000;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #111111;
+            box-shadow: 10px 10px 0 #000000;
+            transform: rotate(6.5deg);
+            transform-origin: bottom center;
+            transition: box-shadow .22s ease-out;
+            pointer-events: none;
+        }
+        #md-hero .md-hero-card:hover .md-hero-card-art {
+            box-shadow: 14px 14px 0 #000000;
+        }
+        #md-hero .md-hero-card::after {
+            content: "";
+            position: absolute;
+            inset: -16px -64px -16px -16px;
+            z-index: 10;
+        }
+        #md-hero .md-hero-card img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            outline: 1px solid var(--img-outline);
+            outline-offset: -1px;
+            transition: opacity .22s ease-out;
+        }
+
+        html[data-md-theme="dark"] #md-hero,
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero {
+            background: #0b0813 !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-bg,
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-bg {
+            filter: blur(16px) brightness(0.32) saturate(1.2) !important;
+            opacity: 1 !important;
+        }
+        html[data-md-theme="dark"] #md-hero::after,
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero::after {
+            background:
+                linear-gradient(to top, rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, .24) 60%, transparent 100%),
+                linear-gradient(to right, rgba(0, 0, 0, .86) 0%, rgba(0, 0, 0, .42) 55%, transparent 100%) !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-body,
+        html[data-md-theme="dark"] #md-hero .md-hero-title,
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-body,
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-title {
+            color: #ffffff !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-title,
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-title {
+            text-shadow: 2px 2px 0 #000000 !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-views,
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-views {
+            background: rgba(0, 0, 0, 0.58) !important;
+            border-color: rgba(255, 255, 255, 0.32) !important;
+            color: #ffffff !important;
+            box-shadow: none !important;
+        }
+        html[data-md-theme="dark"] #md-hero .md-hero-tag,
+        html[data-md-theme="dark"] #md-hero .md-hero-chapter,
+        html[data-md-theme="dark"] #md-hero .md-hero-play {
+            color: #ffffff !important;
+        }
+
+        /* ===== CONTINUE READING SHELF (#md-continue-reading) ===== */
+        #md-continue-reading {
+            display: block !important;
+            width: 100% !important;
+            margin: 0 0 24px !important;
+            box-sizing: border-box !important;
+        }
+        #md-continue-reading .md-cr-head {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 12px !important;
+            margin-bottom: 12px !important;
+        }
+        #md-continue-reading .md-cr-clear {
+            padding: 6px 12px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 11.5px/1 var(--f-sans) !important;
+            text-transform: uppercase !important;
+            letter-spacing: .04em !important;
+            cursor: pointer !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        #md-continue-reading .md-cr-clear:hover {
+            background: var(--pink) !important;
+            color: #ffffff !important;
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh) !important;
+        }
+        #md-continue-reading .md-cr-clear:active {
+            transform: scale(0.96);
+        }
+        #md-continue-reading .md-cr-track {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 16px !important;
+            overflow-x: auto !important;
+            padding: 4px 6px 14px 2px !important;
+            scroll-behavior: smooth !important;
+            scrollbar-width: thin !important;
+        }
+        #md-continue-reading .md-cr-card {
+            position: relative !important;
+            flex: 0 0 clamp(165px, 16vw, 200px) !important;
+            width: clamp(165px, 16vw, 200px) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+            overflow: hidden !important;
+            transition: transform .15s ease-out, box-shadow .15s ease-out, background-color .15s ease-out !important;
+        }
+        #md-continue-reading .md-cr-card:hover {
+            transform: translate(-2px, -2px) !important;
+            box-shadow: var(--sh-hover) !important;
+            background: var(--cream) !important;
+        }
+        #md-continue-reading .md-cr-remove {
+            position: absolute !important;
+            top: 8px !important;
+            right: 8px !important;
+            z-index: 4 !important;
+            width: 26px !important;
+            height: 26px !important;
+            padding: 0 !important;
+            display: grid !important;
+            place-items: center !important;
+            background: rgba(17, 17, 17, 0.78) !important;
+            color: #ffffff !important;
+            border: 2px solid #000000 !important;
+            border-radius: 6px !important;
+            cursor: pointer !important;
+            opacity: 0;
+            transition: opacity .14s ease-out, transform .12s ease-out, background-color .14s ease-out !important;
+        }
+        #md-continue-reading .md-cr-card:hover .md-cr-remove,
+        #md-continue-reading .md-cr-remove:focus-visible {
+            opacity: 1;
+        }
+        #md-continue-reading .md-cr-remove:hover {
+            background: var(--pink) !important;
+        }
+        #md-continue-reading .md-cr-remove:active {
+            transform: scale(0.96);
+        }
+        #md-continue-reading .md-cr-remove svg {
+            width: 13px !important;
+            height: 13px !important;
+        }
+        #md-continue-reading .md-cr-thumb-wrap {
+            position: relative !important;
+            width: 100% !important;
+            aspect-ratio: 2 / 3 !important;
+            overflow: hidden !important;
+            background: var(--soft) !important;
+            border-bottom: var(--bw) solid var(--bd) !important;
+        }
+        #md-continue-reading .md-cr-thumb-link {
+            display: block !important;
+            width: 100% !important;
+            height: 100% !important;
+        }
+        #md-continue-reading .md-cr-img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+            outline: 1px solid var(--img-outline);
+            outline-offset: -1px;
+        }
+        #md-continue-reading .md-cr-progress {
+            position: absolute !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 7px !important;
+            background: rgba(0, 0, 0, 0.52) !important;
+            z-index: 2 !important;
+        }
+        #md-continue-reading .md-cr-bar {
+            height: 100% !important;
+            background: var(--lime) !important;
+            transition: width .28s ease-out !important;
+        }
+        #md-continue-reading .md-cr-body {
+            padding: 10px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            flex: 1 1 auto !important;
+        }
+        #md-continue-reading .md-cr-title {
+            margin: 0 !important;
+            font: 800 13px/1.3 var(--f-sans) !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            min-height: 2.6em !important;
+            color: var(--ink) !important;
+        }
+        #md-continue-reading .md-cr-title a {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        #md-continue-reading .md-cr-badges {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 5px !important;
+        }
+        #md-continue-reading .md-cr-badge {
+            font: 700 10.5px/1.2 var(--f-mono) !important;
+            padding: 2px 7px !important;
+            border-radius: 999px !important;
+            border: 1.5px solid var(--bd) !important;
+            white-space: nowrap !important;
+        }
+        #md-continue-reading .md-cr-last {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+        }
+        #md-continue-reading .md-cr-page {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            font-weight: 800 !important;
+        }
+        html[data-md-theme="dark"] #md-continue-reading .md-cr-page {
+            color: #ffffff !important;
+        }
+        #md-continue-reading .md-cr-btn {
+            margin-top: auto !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 7px 10px !important;
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: 2px 2px 0 var(--bd) !important;
+            font: 800 11.5px/1.2 var(--f-sans) !important;
+            text-transform: uppercase !important;
+            letter-spacing: .03em !important;
+            text-decoration: none !important;
+            cursor: pointer !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-theme="dark"] #md-continue-reading .md-cr-btn {
+            color: #ffffff !important;
+        }
+        #md-continue-reading .md-cr-btn:hover {
+            background: var(--lime) !important;
+            color: #111111 !important;
+            transform: translate(1px, 1px) !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+        }
+        #md-continue-reading .md-cr-btn:active {
+            transform: scale(0.96) !important;
+        }
+
+        /* ===== READER CANVAS, ZOOM, BACKGROUNDS & NATIVE FLOATING TOOLBARS ===== */
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-bg="paper"] { --nb-reader-bg: #f5f2ea; }
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-bg="dark"] { --nb-reader-bg: #150f26; }
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-bg="black"] { --nb-reader-bg: #000000; }
+        html[data-md-site="comix"] .rpage {
+            --reader-bg: var(--nb-reader-bg, var(--page-bg));
+        }
+        html[data-md-site="comix"] .rpage-main {
+            background: var(--reader-bg) !important;
+        }
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-page[data-page] {
+            max-width: calc(var(--md-base) * var(--md-zoom)) !important;
+            width: 100% !important;
+            margin-inline: auto !important;
+            transition: max-width .18s ease-out;
+        }
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-page__img {
+            display: block !important;
+            width: 100% !important;
+            height: auto !important;
+        }
+        /* Keep outer .rpage-floatctl transparent; frame .rpage-floatctl__row and .rpage-floatctl__col cleanly */
+        html[data-md-site="comix"] .rpage-floatctl {
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            gap: 8px !important;
+        }
+        html[data-md-site="comix"] :is(.rpage-floatctl__row, .rpage-floatctl__col, .rpage-bottombar) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 14px !important;
+            box-shadow: var(--sh) !important;
+            padding: 5px !important;
+            gap: 5px !important;
+        }
+        html[data-md-site="comix"] :is(.rpage-floatctl__btn, .rpage-floatctl__chap, .rpage-zoom, .rpage-iconbtn) {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+            transition: background-color .14s ease-out, transform .12s ease-out !important;
+        }
+        html[data-md-site="comix"] :is(.rpage-floatctl__btn, .rpage-floatctl__chap, .rpage-iconbtn):hover:not(:disabled) {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"][data-md-theme="dark"] :is(.rpage-floatctl__btn, .rpage-floatctl__chap, .rpage-iconbtn):hover:not(:disabled) {
+            color: #ffffff !important;
+        }
+        html[data-md-site="comix"] :is(.rpage-floatctl__btn, .rpage-floatctl__chap, .rpage-iconbtn):active:not(:disabled) {
+            transform: scale(0.96) !important;
+        }
+        html[data-md-site="comix"] .rpage-cmpanel {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border-left: var(--bw) solid var(--bd) !important;
+        }
+        html[data-md-site="comix"] .rpage-chap-ending__nav-btn {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+
+        /* ===== FLOATING READER DOCK (#md-dock) — Concentric: 14px outer = 8px inner + 6px pad ===== */
+        #md-dock {
+            position: fixed;
+            left: 50%;
+            bottom: max(14px, env(safe-area-inset-bottom));
+            z-index: 120;
+            transform: translateX(-50%) translateY(0);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            max-width: calc(100vw - 20px);
+            padding: 6px;
+            background: var(--card);
+            color: var(--ink);
+            border: var(--bw) solid var(--bd);
+            border-radius: 14px;
+            box-shadow: var(--sh);
+            transition: transform .2s ease-out, opacity .18s ease-out;
+        }
+        #md-dock.hide {
+            transform: translateX(-50%) translateY(14px);
+            opacity: 0;
+            pointer-events: none;
+        }
+        #md-dock button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            height: 38px;
+            min-width: 38px;
+            padding: 0 9px !important;
+            margin: 0;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12px var(--f-sans) !important;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            cursor: pointer;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out;
+        }
+        #md-dock button:hover:not(:disabled) {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0 var(--bd) !important;
+        }
+        html[data-md-theme="dark"] #md-dock button:hover:not(:disabled) {
+            color: #ffffff !important;
+        }
+        #md-dock button:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+        #md-dock button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        #md-dock .md-sep {
+            width: 2px;
+            height: 24px;
+            background: var(--bd);
+            margin: 0 2px;
+        }
+        #md-dock .md-zoom {
+            min-width: 56px;
+            font: 800 12px var(--f-mono) !important;
+            font-variant-numeric: tabular-nums;
+        }
+        #md-dock .md-dl {
+            --p: 0%;
+            min-width: 92px;
+        }
+        #md-dock .md-dl[data-state="busy"] {
+            background: linear-gradient(90deg, var(--lime) var(--p), var(--card) var(--p)) !important;
+        }
+        #md-dock .md-dl[data-state="done"] {
+            background: var(--lime) !important;
+            color: #111111 !important;
+        }
+        #md-dock .md-dl[data-state="error"] {
+            background: var(--pink) !important;
+            color: #ffffff !important;
+        }
+        #md-dock [data-act="bg"] svg {
+            transition: transform .24s ease-out;
+        }
+        html[data-md-bg="paper"] #md-dock [data-act="bg"] svg { transform: rotate(90deg); }
+        html[data-md-bg="dark"] #md-dock [data-act="bg"] svg { transform: rotate(180deg); }
+        html[data-md-bg="black"] #md-dock [data-act="bg"] svg { transform: rotate(270deg); }
+
+        /* ===== CHAPTER SELECT BAR (#md-sel-bar) — Concentric: 14px outer = 6px inner + 8px pad ===== */
+        #md-sel-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin: 10px 4px 12px 0;
+            padding: 8px;
+            background: var(--card);
+            border: var(--bw) solid var(--bd);
+            border-radius: 14px;
+            box-shadow: var(--sh);
+        }
+        #md-sel-bar button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            min-height: 36px;
+            padding: 6px 12px !important;
+            cursor: pointer;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12px var(--f-sans) !important;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out;
+        }
+        #md-sel-bar button:hover:not(:disabled) {
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0 var(--bd) !important;
+        }
+        html[data-md-theme="dark"] #md-sel-bar button:hover:not(:disabled) {
+            color: #ffffff !important;
+        }
+        #md-sel-bar button:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+        #md-sel-bar button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        #md-sel-bar button[aria-pressed="true"] {
+            background: var(--ink-bg) !important;
+            color: var(--on-ink) !important;
+        }
+        #md-sel-bar .md-sel-dl {
+            --p: 0%;
+            background: var(--lime) !important;
+            color: #111111 !important;
+        }
+        html[data-md-theme="dark"] #md-sel-bar .md-sel-dl {
+            color: #ffffff !important;
+        }
+        #md-sel-bar .md-sel-dl[data-state="busy"] {
+            background: linear-gradient(90deg, var(--lime) var(--p), var(--card) var(--p)) !important;
+            color: var(--ink) !important;
+        }
+        #md-sel-bar .md-sel-count,
+        #md-sel-bar .md-sel-status {
+            font: 800 12px var(--f-mono);
+            font-variant-numeric: tabular-nums;
+            color: var(--muted);
+            padding: 0 4px;
+        }
+        #md-sel-bar [hidden] { display: none !important; }
+        .md-ck {
+            width: 18px !important;
+            height: 18px !important;
+            margin: 0 10px 0 6px !important;
+            align-self: center !important;
+            accent-color: var(--ink-bg) !important;
+            cursor: pointer !important;
+            flex: 0 0 auto !important;
+        }
+
+        /* ===== BACK TO TOP (#md-top) & TOAST (#md-toast) ===== */
+        #md-top {
+            position: fixed;
+            z-index: 95;
+            right: 24px;
+            bottom: 24px;
+            width: 46px;
+            height: 46px;
+            padding: 0;
+            background: var(--yellow) !important;
+            color: #111111 !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 999px !important;
+            box-shadow: var(--sh) !important;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity .18s ease-out, transform .18s ease-out, background-color .14s ease-out, box-shadow .14s ease-out;
+        }
+        html[data-md-theme="dark"] #md-top {
+            color: #ffffff !important;
+        }
+        #md-top.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        #md-top:hover {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh-hover) !important;
+        }
+        #md-top:active {
+            transform: scale(0.96);
+        }
+        html[data-md-page="chapter"] #md-top {
+            display: none !important;
+        }
+
+        #md-toast {
+            position: fixed;
+            left: 50%;
+            bottom: 78px;
+            z-index: 130;
+            transform: translateX(-50%) translateY(8px);
+            max-width: calc(100vw - 24px);
+            padding: 8px 14px;
+            background: var(--ink-bg);
+            color: var(--on-ink);
+            border: 2px solid var(--bd);
+            border-radius: 8px;
+            box-shadow: var(--sh-sm);
+            font: 700 13px var(--f-sans);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .18s ease-out, transform .18s ease-out;
+        }
+        #md-toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
         .nb-frame {
-            opacity:0; pointer-events:none; position:fixed; z-index:-1;
-            inset:0; width:100vw; height:100vh; border:0;
+            opacity: 0;
+            pointer-events: none;
+            position: fixed;
+            z-index: -1;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            border: 0;
         }
-        @media(max-width:680px) {
-            .nb-theme { width:34px; }
-            .nb-theme[aria-checked="true"] .nb-theme-knob { transform:translateX(10px); }
-            .nb-hero { grid-template-columns:minmax(0,1fr) minmax(92px,28%); }
-            .nb-hero-title { height:3.09em; -webkit-line-clamp:3; }
-            .nb-hero-art { width:83%; transform:rotate(5deg); box-shadow:4px 4px 0 #140d1e; }
-            .nb-thumb { flex-basis:30px; }
-            .nb-history-track { grid-auto-columns:minmax(150px,43%); }
-        }
-        @media(max-width:390px) {
-            html[data-nb-comix] .topnav .logo { width:6.2rem; }
-            html[data-nb-comix] .topnav .login-btn { padding-inline:7px; }
-        }
-        @media(prefers-reduced-motion:reduce) {
-            .nb-hero *, .nb-theme-knob { animation:none !important; transition:none !important; }
-        }
-    `;
-    (document.head || root).append(css);
 
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1180px) {
+            #md-hero .md-hero-card {
+                right: clamp(20px, 4vw, 68px);
+                --mdc-w: clamp(210px, 23vw, 260px);
+                bottom: -58px;
+            }
+            #md-hero .md-hero-body {
+                max-width: min(540px, 56%) !important;
+            }
+        }
+        @media (max-width: 768px) {
+            #md-hero {
+                padding: 16px 14px 14px !important;
+                min-height: clamp(320px, 84vw, 390px) !important;
+                flex-direction: column !important;
+                align-items: stretch !important;
+                justify-content: flex-start !important;
+                gap: 10px !important;
+            }
+            #md-hero .md-hero-body {
+                max-width: 100% !important;
+                min-height: 0 !important;
+                justify-content: flex-start !important;
+            }
+            #md-hero .md-hero-card {
+                --mdc-w: clamp(118px, 36vw, 165px);
+                bottom: -36px !important;
+                right: clamp(16px, 5vw, 28px) !important;
+            }
+            #md-hero .md-hero-card-art {
+                border-radius: 12px !important;
+                box-shadow: 6px 6px 0 #000000 !important;
+                transform: rotate(3.5deg) !important;
+            }
+            #md-hero .md-hero-meta,
+            #md-hero .md-hero-cta {
+                max-width: calc(100% - clamp(142px, 42vw, 190px)) !important;
+            }
+            #md-hero .md-hero-cta {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 8px !important;
+                margin-bottom: 14px !important;
+            }
+            #md-hero .md-hero-btn {
+                width: 100% !important;
+                max-width: 170px !important;
+                padding: 9px 14px !important;
+                font-size: 12.5px !important;
+            }
+            #md-hero .md-hero-thumbs {
+                margin-top: auto !important;
+                max-width: calc(100% - clamp(142px, 42vw, 190px) + 18px) !important;
+                gap: 7px !important;
+            }
+            #md-hero .md-hero-thumb {
+                flex: 0 0 38px !important;
+                width: 38px !important;
+                height: 56px !important;
+            }
+            #md-dock {
+                gap: 4px;
+                padding: 5px;
+            }
+            #md-dock button {
+                padding: 0 7px !important;
+                height: 36px;
+                min-width: 36px;
+            }
+            #md-dock .md-lbl {
+                display: none !important;
+            }
+        }
+        @media (max-width: 420px) {
+            html[data-md-site="comix"] .topnav .logo { width: 6.2rem; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            html[data-md-site="comix"] *,
+            #md-hero *,
+            #md-theme * {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        /* ===== FINAL HIGH-SPECIFICITY AUTH DE-BLOAT (Always wins over button rules above) ===== */
+        ${CONFIG.hideAuthUI ? `html[data-md-site="comix"][data-md-site="comix"] :is(${AUTH_SELECTORS.join(', ')}) { display: none !important; }` : ''}
+    `;
+
+    function injectStyles() {
+        if (!document.getElementById('md-fonts')) {
+            const fontLink = document.createElement('link');
+            fontLink.id = 'md-fonts';
+            fontLink.rel = 'stylesheet';
+            fontLink.href = 'https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,500..900&family=JetBrains+Mono:wght@500;700;800&display=swap';
+            (document.head || root).appendChild(fontLink);
+        }
+        let style = document.getElementById('neobrutalism-comix-css');
+        if (!style) {
+            style = document.createElement('style');
+            style.id = 'neobrutalism-comix-css';
+            style.textContent = cssComix;
+            (document.head || root).appendChild(style);
+        }
+        if (style.parentNode && style.parentNode.lastElementChild !== style) {
+            style.parentNode.appendChild(style);
+        }
+    }
+    injectStyles();
+
+    /* ====================================================================
+     *  DOM DE-BLOAT (SIGN-IN FEATURES) & DROPDOWN TAGGING
+     * ==================================================================== */
+    const AUTH_EXACT_RE = /^(log\s*in|login|sign\s*in|sign\s*up|register|follow|following|unfollow|add\s+to\s+collection|add\s+to\s+list|bookmark|reply|post\s+comment|add\s+comment)$/i;
+
+    function purgeAuthUI(app) {
+        if (!CONFIG.hideAuthUI) return;
+        for (const el of $$('button, a, [role="button"]', app)) {
+            if (el.closest(UI_ZONES) || el.dataset.mdAuthHide === '1') continue;
+            const txt = (el.textContent || '').replace(/\s+/g, ' ').trim();
+            const aria = (el.getAttribute('aria-label') || el.getAttribute('title') || '').trim();
+            if (AUTH_EXACT_RE.test(txt) || AUTH_EXACT_RE.test(aria)) {
+                el.dataset.mdAuthHide = '1';
+            }
+        }
+    }
+
+    function tagDropdowns(app) {
+        // Tag Comix's open Browse dropdown (never tag .nav-menu--inline kebab wrappers!)
+        const browseWrap = $('.topnav .browse', app);
+        if (browseWrap) {
+            for (const child of browseWrap.children) {
+                if (child.tagName !== 'BUTTON' && child.querySelector('a[href]')) {
+                    child.dataset.mdDropdown = '1';
+                }
+            }
+        }
+    }
+
+    /* ====================================================================
+     *  SLIDING PILL THEME TOGGLE
+     * ==================================================================== */
+    function setupThemeToggle(app) {
+        let b = document.getElementById('md-theme');
+        if (!b) {
+            b = document.createElement('button');
+            b.id = 'md-theme';
+            b.type = 'button';
+            b.setAttribute('role', 'switch');
+            b.setAttribute('aria-label', 'Toggle dark mode');
+            const icons = `<span class="md-th-sun">${ICON.sun}</span><span class="md-th-moon">${ICON.moon}</span>`;
+            b.innerHTML = `<span class="md-th-sw"><span class="md-th-knob">${icons}</span></span>`;
+            b.addEventListener('click', e => {
+                setTheme(isDarkAppearance() ? 'light' : 'dark');
+                if (e.detail > 0) b.blur();
+            });
+            setTheme(root.dataset.mdTheme, false);
+        }
+        const nav = $('.topnav__right', app);
+        if (nav && b.parentNode !== nav) nav.prepend(b);
+    }
+
+    /* ====================================================================
+     *  NETFLIX-STYLE FEATURED HERO CAROUSEL (#md-hero)
+     * ==================================================================== */
     let heroState = null;
 
     function mountHero(column) {
@@ -375,162 +2417,417 @@ function startNeobrutalComix() {
         const items = [];
         for (const card of cards) {
             const url = route(card.href, SERIES_PATH);
-            const title = $('.card__title', card)?.textContent.trim();
+            const rawTitle = $('.card__title', card)?.textContent.trim();
             const img = $('.card__poster-wrap img', card);
-            const cover = imageUrl(img?.getAttribute('src')) || imageUrl(img?.currentSrc);
-            if (!url || !title || !cover || seen.has(url.pathname)) continue;
+            const cover = imageUrl(img?.currentSrc || img?.getAttribute('src'));
+            if (!url || !rawTitle || !cover || seen.has(url.pathname)) continue;
             seen.add(url.pathname);
-            items.push({ url: url.pathname, title, cover, meta: $('.card__ch', card)?.textContent.trim() || '' });
-            if (items.length === 7) break;
+            const ch = $('.card__ch', card)?.textContent.trim() || '';
+            const metaText = $('.card__meta', card)?.textContent.trim() || '';
+            const views = metaText && metaText !== ch ? metaText.replace(ch, '').trim() : '';
+            items.push({
+                url: url.pathname,
+                title: toTitleCase(rawTitle),
+                cover,
+                chapter: ch,
+                views,
+            });
+            if (items.length === CONFIG.heroMaxSlides) break;
         }
         if (!items.length) return;
 
-        const hero = element('section', 'nb-hero');
-        hero.setAttribute('aria-label', 'Featured comics');
-        const body = element('div', 'nb-hero-body');
-        const heading = element('h2', 'nb-hero-title');
-        const title = link('', items[0].url);
-        heading.append(title);
-        const meta = element('p', 'nb-hero-meta');
-        const art = link('', items[0].url, 'nb-hero-art');
-        const cover = element('img');
-        cover.alt = '';
-        art.append(cover);
-        const actions = element('div', 'nb-hero-actions');
-        const details = link('View series', items[0].url, 'nb-button nb-button-primary');
-        actions.append(details);
-        const thumbs = element('div', 'nb-thumbs');
-        let index = 0;
-        let timer;
-        let automatic = CONFIG.heroAutoplay && !reducedMotion.matches;
-        let hover = false;
-        const pause = button('', () => {
-            automatic = !automatic;
-            updatePlayback();
-        });
+        const hero = document.createElement('section');
+        hero.id = 'md-hero';
+        hero.setAttribute('aria-label', 'Featured series');
+        hero.innerHTML = `
+            <div class="md-hero-bg"></div>
+            <div class="md-hero-body">
+                <span class="md-hero-tag">Featured on Comix</span>
+                <h2 class="md-hero-title"></h2>
+                <div class="md-hero-meta">
+                    <span class="md-hero-views">${ICON.eye}<span class="md-hero-views-text"></span></span>
+                    <span class="md-hero-chapter"></span>
+                </div>
+                <div class="md-hero-cta">
+                    <a class="md-hero-btn md-hero-play">${ICON.play}<span>Read now</span></a>
+                    <a class="md-hero-btn md-hero-more">${ICON.info}<span>More info</span></a>
+                </div>
+                <div class="md-hero-thumbs" role="tablist" aria-label="Featured series"></div>
+            </div>
+            <a class="md-hero-card" title="View series">
+                <span class="md-hero-card-art"><img alt=""></span>
+            </a>
+        `;
 
-        function updatePlayback() {
-            clearTimeout(timer);
-            hero.removeAttribute('data-playing');
-            pause.textContent = automatic ? 'Pause' : 'Play';
-            if (!automatic || hover || hero.contains(document.activeElement) || document.hidden || items.length < 2) return;
-            // Restart the thumbnail animation even when resuming the same slide.
-            void thumbs.offsetWidth;
-            hero.setAttribute('data-playing', '');
-            timer = setTimeout(() => select((index + 1) % items.length), 5500);
-        }
+        const thumbsContainer = $('.md-hero-thumbs', hero);
+        let currentSlide = 0;
+        let slideTimer = null;
 
-        function select(next) {
-            index = next;
-            const item = items[index];
-            title.textContent = item.title;
-            title.href = art.href = details.href = item.url;
-            art.setAttribute('aria-label', item.title);
-            cover.src = item.cover;
-            meta.textContent = item.meta.replace(/^Ch\.?\s*/i, 'Chapter ');
-            hero.style.setProperty('--nb-hero-image', 'url(' + JSON.stringify(item.cover) + ')');
-            [...thumbs.children].forEach((thumb, i) => thumb.setAttribute('aria-pressed', String(i === index)));
-            const active = thumbs.children[index];
-            if (active) {
-                thumbs.scrollTo({
-                    left: active.offsetLeft - thumbs.children[0].offsetLeft - (thumbs.clientWidth - active.offsetWidth) / 2,
-                    behavior: reducedMotion.matches ? 'instant' : 'smooth',
-                });
-            }
-            updatePlayback();
-        }
-
-        if (items.length > 1) {
-            actions.append(pause);
-            items.forEach((item, i) => {
-                const thumb = button('', () => select(i), 'nb-thumb');
-                thumb.setAttribute('aria-label', item.title);
-                const img = element('img');
-                img.src = item.cover;
-                img.alt = '';
-                thumb.append(img);
-                thumbs.append(thumb);
+        function setProgressRate(rate) {
+            const activeFill = $('.md-hero-thumb.is-active .md-thumb-fill', hero);
+            if (!activeFill || typeof activeFill.getAnimations !== 'function') return;
+            activeFill.getAnimations().forEach(anim => {
+                try { anim.playbackRate = rate; } catch (_) {}
             });
         }
-        body.append(heading, meta, actions, thumbs);
-        hero.append(body, art);
+
+        function restartTimer() {
+            clearTimeout(slideTimer);
+            if (!CONFIG.heroAutoplay || reducedMotion.matches || items.length <= 1) return;
+            if (hero.matches(':hover') || document.hidden) return;
+            let delay = 5800;
+            const activeFill = $('.md-hero-thumb.is-active .md-thumb-fill', hero);
+            if (activeFill && typeof activeFill.getAnimations === 'function') {
+                const anims = activeFill.getAnimations();
+                const a = anims.find(an => an.animationName === 'mdProgressFall') || anims[0];
+                if (a && typeof a.currentTime === 'number') {
+                    if (a.currentTime >= 5500) {
+                        delay = 50;
+                    } else {
+                        const rem = 5500 - a.currentTime;
+                        if (rem > 0 && rem <= 5500) delay = rem + 300;
+                    }
+                }
+            }
+            slideTimer = setTimeout(() => {
+                if (!hero.matches(':hover') && !document.hidden) {
+                    showSlide((currentSlide + 1) % items.length);
+                }
+            }, delay);
+        }
+
+        function showSlide(idx) {
+            currentSlide = (idx + items.length) % items.length;
+            const cur = items[currentSlide];
+
+            const bg = $('.md-hero-bg', hero);
+            if (bg) {
+                bg.style.opacity = '0.18';
+                setTimeout(() => {
+                    bg.style.backgroundImage = 'url(' + JSON.stringify(cur.cover) + ')';
+                    bg.style.opacity = '';
+                }, 120);
+            }
+
+            const titleEl = $('.md-hero-title', hero);
+            if (titleEl) {
+                titleEl.style.opacity = '0.2';
+                titleEl.style.transform = 'translateY(2px)';
+                setTimeout(() => {
+                    titleEl.textContent = cur.title;
+                    titleEl.style.opacity = '1';
+                    titleEl.style.transform = 'translateY(0)';
+                }, 100);
+            }
+
+            const viewsEl = $('.md-hero-views', hero);
+            const viewsText = $('.md-hero-views-text', hero);
+            if (viewsEl && viewsText) {
+                if (cur.views) {
+                    viewsText.textContent = cur.views;
+                    viewsEl.style.display = 'inline-flex';
+                } else {
+                    viewsEl.style.display = 'none';
+                }
+            }
+
+            const chapEl = $('.md-hero-chapter', hero);
+            if (chapEl) {
+                if (cur.chapter) {
+                    chapEl.textContent = fmtChapter(cur.chapter);
+                    chapEl.style.display = 'inline-flex';
+                } else {
+                    chapEl.style.display = 'none';
+                }
+            }
+
+            const playBtn = $('.md-hero-play', hero);
+            const moreBtn = $('.md-hero-more', hero);
+            const cardLink = $('.md-hero-card', hero);
+            if (playBtn) playBtn.href = cur.url;
+            if (moreBtn) moreBtn.href = cur.url;
+            if (cardLink) {
+                cardLink.href = cur.url;
+                cardLink.setAttribute('aria-label', cur.title);
+            }
+
+            const cardImg = $('.md-hero-card img', hero);
+            if (cardImg) {
+                cardImg.style.opacity = '0.35';
+                setTimeout(() => {
+                    cardImg.src = cur.cover;
+                    cardImg.alt = cur.title;
+                    cardImg.style.opacity = '1';
+                }, 120);
+            }
+
+            $$('.md-hero-thumb', thumbsContainer).forEach((th, i) => {
+                const f = $('.md-thumb-fill', th);
+                const active = i === currentSlide;
+                th.classList.toggle('is-active', active);
+                th.setAttribute('aria-selected', String(active));
+                if (active) {
+                    if (f) {
+                        f.style.animation = 'none';
+                        void f.offsetWidth;
+                        f.style.animation = '';
+                        if (hero.matches(':hover') || !CONFIG.heroAutoplay || reducedMotion.matches) {
+                            requestAnimationFrame(() => setProgressRate(hero.matches(':hover') ? 0.1 : 0));
+                        }
+                    }
+                    const left = th.offsetLeft - (thumbsContainer.clientWidth - th.offsetWidth) / 2;
+                    thumbsContainer.scrollTo({
+                        left: Math.max(0, left),
+                        behavior: reducedMotion.matches ? 'instant' : 'smooth',
+                    });
+                } else if (f) {
+                    f.style.animation = 'none';
+                }
+            });
+
+            restartTimer();
+        }
+
+        items.forEach((item, idx) => {
+            const thumb = document.createElement('button');
+            thumb.type = 'button';
+            thumb.className = 'md-hero-thumb';
+            thumb.setAttribute('role', 'tab');
+            thumb.setAttribute('aria-label', item.title);
+            thumb.title = item.title;
+            const img = document.createElement('img');
+            img.src = item.cover;
+            img.alt = '';
+            img.loading = 'lazy';
+            img.decoding = 'async';
+            const fill = document.createElement('div');
+            fill.className = 'md-thumb-fill';
+            thumb.append(img, fill);
+            thumb.addEventListener('click', e => {
+                e.preventDefault();
+                showSlide(idx);
+            });
+            fill.addEventListener('animationend', e => {
+                if (e.animationName === 'mdProgressFall' && thumb.classList.contains('is-active') && !hero.matches(':hover')) {
+                    showSlide((currentSlide + 1) % items.length);
+                }
+            });
+            thumbsContainer.appendChild(thumb);
+        });
+
+        thumbsContainer.addEventListener('wheel', e => {
+            if (e.deltaY !== 0 && !e.deltaX) {
+                e.preventDefault();
+                thumbsContainer.scrollLeft += e.deltaY;
+            }
+        }, { passive: false });
+
+        const onEnter = () => { clearTimeout(slideTimer); setProgressRate(0.1); };
+        const onLeave = () => { setProgressRate(1.0); restartTimer(); };
+        const onVis = () => {
+            if (document.hidden) { clearTimeout(slideTimer); setProgressRate(0); }
+            else { setProgressRate(hero.matches(':hover') ? 0.1 : 1.0); restartTimer(); }
+        };
+
+        hero.addEventListener('mouseenter', onEnter);
+        hero.addEventListener('mouseleave', onLeave);
+        document.addEventListener('visibilitychange', onVis);
+
         column.prepend(hero);
-        hero.addEventListener('mouseenter', () => { hover = true; updatePlayback(); });
-        hero.addEventListener('mouseleave', () => { hover = false; updatePlayback(); });
-        hero.addEventListener('focusin', updatePlayback);
-        hero.addEventListener('focusout', () => queueMicrotask(updatePlayback));
-        document.addEventListener('visibilitychange', updatePlayback);
         heroState = {
             node: hero,
             dispose() {
-                clearTimeout(timer);
-                document.removeEventListener('visibilitychange', updatePlayback);
+                clearTimeout(slideTimer);
+                document.removeEventListener('visibilitychange', onVis);
                 hero.remove();
             },
         };
-        select(0);
+        showSlide(0);
     }
 
-    let historyNode;
-    let lastTracked;
+    /* ====================================================================
+     *  CONTINUE READING SHELF (#md-continue-reading)
+     * ==================================================================== */
+    let historyNode = null;
+    let lastTracked = null;
+    let clearArmed = false;
 
     function historyItems() {
-        const stored = readSetting('history', []);
+        const stored = store.get('history', []);
         if (!Array.isArray(stored)) return [];
         return stored.filter(item => item && typeof item.title === 'string' && route(item.url, CHAPTER_PATH));
+    }
+
+    function saveHistory(items) {
+        store.set('history', items.slice(0, CONFIG.historyLimit));
     }
 
     function mountHistory(column) {
         if (historyNode?.isConnected) return;
         const items = historyItems();
         if (!items.length) return;
-        const section = element('section', 'nb-history');
-        const header = element('div', 'nb-history-heading');
-        const track = element('div', 'nb-history-track');
-        const clear = button('Clear history', () => {
-            if (!confirm('Clear your Neobrutal Comix reading history?')) return;
-            writeSetting('history', []);
-            section.remove();
-        });
-        header.append(element('h2', 'section__title', 'Continue reading'), clear);
-        items.forEach(item => {
-            const page = Number.isInteger(item.page) && item.page > 1 ? item.page : 0;
-            const card = link('', item.url + (page ? '#page=' + page : ''), 'nb-history-card');
-            const art = element('span', 'nb-history-cover');
-            const cover = imageUrl(item.cover);
-            if (cover) {
-                const img = element('img');
-                img.src = cover;
-                img.alt = '';
-                img.loading = 'lazy';
-                art.append(img);
+
+        const sec = document.createElement('section');
+        sec.id = 'md-continue-reading';
+        sec.setAttribute('aria-label', 'Continue reading');
+
+        const head = document.createElement('div');
+        head.className = 'md-cr-head';
+        const headingWrap = document.createElement('div');
+        headingWrap.className = 'section__title-wrap';
+        const h2 = document.createElement('h2');
+        h2.className = 'section__title';
+        h2.textContent = 'Continue Reading';
+        headingWrap.appendChild(h2);
+
+        const clearBtn = document.createElement('button');
+        clearBtn.type = 'button';
+        clearBtn.className = 'md-cr-clear';
+        clearBtn.textContent = 'Clear history';
+        clearBtn.addEventListener('click', () => {
+            if (!clearArmed) {
+                clearArmed = true;
+                clearBtn.textContent = 'Click again to confirm';
+                setTimeout(() => {
+                    clearArmed = false;
+                    if (clearBtn.isConnected) clearBtn.textContent = 'Clear history';
+                }, 3000);
+                return;
             }
-            const copy = element('span');
-            copy.append(element('span', 'nb-history-title', item.title),
-                element('span', 'nb-history-label', item.label + (page ? ' · Page ' + page : '')));
-            card.append(art, copy);
-            track.append(card);
+            clearArmed = false;
+            saveHistory([]);
+            sec.remove();
+            historyNode = null;
+            toast('Reading history cleared');
         });
-        section.append(header, track);
-        if (heroState?.node.isConnected) heroState.node.after(section);
-        else column.prepend(section);
-        historyNode = section;
+        head.append(headingWrap, clearBtn);
+
+        const track = document.createElement('div');
+        track.className = 'md-cr-track';
+
+        items.forEach(item => {
+            const page = Number.isInteger(item.page) && item.page > 0 ? item.page : 0;
+            const totalPages = Number.isInteger(item.totalPages) && item.totalPages > 0 ? item.totalPages : 0;
+            const pct = page && totalPages ? Math.min(100, Math.round((page / totalPages) * 100)) : (page > 1 ? 35 : 10);
+            const resumeHref = item.url + (page > 1 ? '#page=' + page : '');
+            const displayTitle = toTitleCase(item.title);
+            const cover = imageUrl(item.cover);
+
+            const card = document.createElement('article');
+            card.className = 'md-cr-card';
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'md-cr-remove';
+            removeBtn.title = 'Remove from history';
+            removeBtn.setAttribute('aria-label', 'Remove ' + displayTitle + ' from history');
+            removeBtn.innerHTML = ICON.stop;
+            removeBtn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                const next = historyItems().filter(x => x.seriesPath !== item.seriesPath);
+                saveHistory(next);
+                card.remove();
+                if (!track.children.length) {
+                    sec.remove();
+                    historyNode = null;
+                }
+                toast('Removed from Continue Reading');
+            });
+
+            const thumbWrap = document.createElement('div');
+            thumbWrap.className = 'md-cr-thumb-wrap';
+            const thumbLink = document.createElement('a');
+            thumbLink.href = resumeHref;
+            thumbLink.className = 'md-cr-thumb-link';
+            thumbLink.title = displayTitle;
+            if (cover) {
+                const img = document.createElement('img');
+                img.src = cover;
+                img.alt = displayTitle;
+                img.loading = 'lazy';
+                img.decoding = 'async';
+                img.className = 'md-cr-img';
+                thumbLink.appendChild(img);
+            }
+            const progress = document.createElement('div');
+            progress.className = 'md-cr-progress';
+            const bar = document.createElement('div');
+            bar.className = 'md-cr-bar';
+            bar.style.width = pct + '%';
+            progress.appendChild(bar);
+            thumbWrap.append(thumbLink, progress);
+
+            const body = document.createElement('div');
+            body.className = 'md-cr-body';
+
+            const h3 = document.createElement('h3');
+            h3.className = 'md-cr-title';
+            const titleLink = document.createElement('a');
+            titleLink.href = item.seriesPath || resumeHref;
+            titleLink.textContent = displayTitle;
+            h3.appendChild(titleLink);
+
+            const badges = document.createElement('div');
+            badges.className = 'md-cr-badges';
+            const chBadge = document.createElement('span');
+            chBadge.className = 'md-cr-badge md-cr-last';
+            chBadge.textContent = (item.label || 'Chapter').replace(/^Chapter\s+/i, 'Ch. ');
+            badges.appendChild(chBadge);
+            if (page > 0) {
+                const pgBadge = document.createElement('span');
+                pgBadge.className = 'md-cr-badge md-cr-page';
+                pgBadge.textContent = totalPages ? `P.${page}/${totalPages}` : `P.${page}`;
+                badges.appendChild(pgBadge);
+            }
+
+            const cta = document.createElement('a');
+            cta.href = resumeHref;
+            cta.className = 'md-cr-btn';
+            cta.textContent = 'Continue Reading';
+
+            body.append(h3, badges, cta);
+            card.append(removeBtn, thumbWrap, body);
+            track.appendChild(card);
+        });
+
+        sec.append(head, track);
+        if (heroState?.node.isConnected) heroState.node.after(sec);
+        else column.prepend(sec);
+        historyNode = sec;
     }
 
-    let docDataNode;
-    let docData;
+    /* ====================================================================
+     *  COMIX DATA & CHAPTER CONTEXT
+     * ==================================================================== */
+    let docDataNode = null;
+    let docData = null;
 
     function initialData() {
         const node = $('#initial-data');
         if (!node) return null;
         if (node !== docDataNode || !docData) {
             docDataNode = node;
-            try { docData = JSON.parse(node.textContent); } catch { docData = null; }
+            try { docData = JSON.parse(node.textContent); } catch (_) { docData = null; }
         }
         return docData;
     }
 
-    function chapterContext(url, doc = document) {
+    function findPrevNext(doc = document) {
+        let prev = null;
+        let next = null;
+        const navBtns = $$('.rpage-chap-ending__nav-btn[href], .rpage-floatctl a[href*="-chapter-"]', doc);
+        for (const a of navBtns) {
+            const u = route(a.href, CHAPTER_PATH);
+            if (!u || u.pathname === location.pathname) continue;
+            const txt = (a.textContent + ' ' + (a.getAttribute('aria-label') || '') + ' ' + a.className).toLowerCase();
+            if (/prev|previous|back/.test(txt) && !prev) prev = u.pathname;
+            else if (/next|forward/.test(txt) && !next) next = u.pathname;
+        }
+        return { prev, next };
+    }
+
+    function chapterContext(url = location.href, doc = document) {
         const parsed = route(url, CHAPTER_PATH);
         if (!parsed) return null;
         const [, seriesPath, id, slug] = parsed.pathname.match(CHAPTER_PATH);
@@ -541,8 +2838,15 @@ function startNeobrutalComix() {
         if (!series) return null;
         const number = matchingData?.read?.chapterNumber ?? slug.match(/^\d+(?:\.\d+)?/)?.[0];
         const label = $('.rpage-floatctl__chap .mono', doc)?.textContent.trim();
+        const nav = findPrevNext(doc);
         return {
-            id, seriesPath, series, number, url: parsed.pathname,
+            id,
+            seriesPath,
+            series,
+            number,
+            url: parsed.pathname,
+            prev: nav.prev,
+            next: nav.next,
             cover: manga?.poster?.medium || $('meta[property="og:image"]', doc)?.content,
             label: label && !label.includes('undefined') ? label.replace(/^Ch\.?\s*/i, 'Chapter ') : 'Chapter ' + (number ?? slug),
         };
@@ -552,35 +2856,46 @@ function startNeobrutalComix() {
         const items = historyItems();
         const old = items.find(item => item.seriesPath === context.seriesPath);
         if (lastTracked === context.url && old?.cover) return;
-        const page = old?.url === context.url ? old.page : undefined;
+        const page = old?.url === context.url ? old.page : 1;
+        const totalPages = $$('.rpage-progress__seg').length || readerPages(document).length || old?.totalPages || 0;
         items.unshift({
-            url: context.url, title: context.series, seriesPath: context.seriesPath,
-            label: context.label, page, cover: imageUrl(context.cover) || imageUrl(old?.cover),
+            url: context.url,
+            title: context.series,
+            seriesPath: context.seriesPath,
+            label: context.label,
+            page,
+            totalPages,
+            cover: imageUrl(context.cover) || imageUrl(old?.cover),
         });
-        writeSetting('history', items.filter((item, i) => !i || item.seriesPath !== context.seriesPath).slice(0, CONFIG.historyLimit));
+        saveHistory(items.filter((item, i) => !i || item.seriesPath !== context.seriesPath));
         lastTracked = context.url;
     }
 
-    let progressTimer;
+    let progressTimer = null;
 
     function scheduleProgress() {
         if (!lastTracked || !CHAPTER_PATH.test(location.pathname) || progressTimer) return;
         progressTimer = setTimeout(() => {
             progressTimer = null;
             if (lastTracked !== location.pathname) return;
+            const segs = $$('.rpage-progress__seg');
             const segment = $('.rpage-progress__seg.is-active');
             const page = Number(segment?.getAttribute('aria-label')?.match(/\d+$/)?.[0]);
+            const totalPages = segs.length || readerPages(document).length;
             if (!Number.isInteger(page) || page < 1) return;
             const items = historyItems();
             const entry = items.find(item => item.url === lastTracked);
-            if (entry && entry.page !== page) {
+            if (entry && (entry.page !== page || (totalPages && entry.totalPages !== totalPages))) {
                 entry.page = page;
-                writeSetting('history', items);
+                if (totalPages) entry.totalPages = totalPages;
+                saveHistory(items);
             }
         }, 250);
     }
 
-    // Store ZIP entries without recompressing already compressed page images.
+    /* ====================================================================
+     *  OFFLINE ARCHIVE ENGINE (ZIP STORE, CBZ + ComicInfo.xml, PDF WRITER)
+     * ==================================================================== */
     const CRC_T = (() => {
         const t = new Uint32Array(256);
         for (let n = 0; n < 256; n++) {
@@ -656,17 +2971,99 @@ function startNeobrutalComix() {
         throw new Error('The server did not return a supported comic image.');
     }
 
-    function xml(value) {
-        return String(value).replace(/[<>&"']/g, char => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' })[char]);
+    function jpegInfo(u8) {
+        if (u8.length < 4 || u8[0] !== 0xFF || u8[1] !== 0xD8) return null;
+        let i = 2;
+        while (i + 9 < u8.length) {
+            if (u8[i] !== 0xFF) return null;
+            while (u8[i] === 0xFF) i++;
+            const m = u8[i++];
+            if (m === 0xD9 || m === 0xDA) return null;
+            const len = (u8[i] << 8) | u8[i + 1];
+            if (m >= 0xC0 && m <= 0xCF && m !== 0xC4 && m !== 0xC8 && m !== 0xCC) {
+                const h = (u8[i + 3] << 8) | u8[i + 4], w = (u8[i + 5] << 8) | u8[i + 6], c = u8[i + 7];
+                if (c === 1 || c === 3) return { w, h, gray: c === 1 };
+                return null;
+            }
+            i += len;
+        }
+        return null;
     }
 
-    function safeName(value) {
-        return String(value).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_').slice(0, 110).trim().replace(/[. ]+$/, '') || 'Comix';
+    async function toJpegPart(u8) {
+        const info = jpegInfo(u8);
+        if (info) return { blob: new Blob([u8]), ...info };
+        const bmp = await createImageBitmap(new Blob([u8]));
+        const c = document.createElement('canvas');
+        c.width = bmp.width;
+        c.height = bmp.height;
+        const g = c.getContext('2d');
+        g.fillStyle = '#fff';
+        g.fillRect(0, 0, c.width, c.height);
+        g.drawImage(bmp, 0, 0);
+        bmp.close();
+        const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.92));
+        return { blob, w: c.width, h: c.height, gray: false };
+    }
+
+    function buildPdf(chapters, title) {
+        const enc = new TextEncoder();
+        const esc = s => String(s).replace(/[\\()]/g, '\\$&').replace(/[^\x20-\x7E]/g, '?');
+        const parts = [], offs = [0];
+        let pos = 0;
+        const put = x => {
+            const b = typeof x === 'string' ? enc.encode(x) : x;
+            parts.push(b);
+            pos += (b.byteLength ?? b.size);
+        };
+        const obj = (n, body, stream) => {
+            offs[n] = pos;
+            put(n + ' 0 obj\n' + body + (stream ? '\nstream\n' : '\nendobj\n'));
+            if (stream) { put(stream); put('\nendstream\nendobj\n'); }
+        };
+        put('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+        const pages = [];
+        const marks = [];
+        let id = 4;
+        for (const ch of chapters) {
+            const first = id;
+            for (const im of ch.imgs) {
+                const pId = id++, cId = id++, iId = id++;
+                pages.push({ pId, cId, iId, im });
+            }
+            if (ch.imgs.length) marks.push({ title: ch.label, page: first });
+        }
+        const outBase = id;
+        const outId = marks.length ? outBase : 0;
+        obj(1, `<< /Type /Catalog /Pages 2 0 R${outId ? ` /Outlines ${outId} 0 R /PageMode /UseOutlines` : ''} >>`);
+        obj(2, `<< /Type /Pages /Kids [${pages.map(p => p.pId + ' 0 R').join(' ')}] /Count ${pages.length} >>`);
+        obj(3, `<< /Title (${esc(title)}) /Creator (Neobrutal Comix) >>`);
+        for (const { pId, cId, iId, im } of pages) {
+            const w = +(im.w * 0.75).toFixed(2), h = +(im.h * 0.75).toFixed(2);
+            const cs = `q ${w} 0 0 ${h} 0 0 cm /Im Do Q`;
+            obj(pId, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Resources << /XObject << /Im ${iId} 0 R >> >> /Contents ${cId} 0 R >>`);
+            obj(cId, `<< /Length ${cs.length} >>`, cs);
+            obj(iId, `<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /Device${im.gray ? 'Gray' : 'RGB'} /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.blob.size} >>`, im.blob);
+        }
+        if (outId) {
+            obj(outId, `<< /Type /Outlines /First ${outBase + 1} 0 R /Last ${outBase + marks.length} 0 R /Count ${marks.length} >>`);
+            marks.forEach((m, i) => {
+                const n = outBase + 1 + i;
+                const prev = i ? ` /Prev ${n - 1} 0 R` : '';
+                const next = i + 1 < marks.length ? ` /Next ${n + 1} 0 R` : '';
+                obj(n, `<< /Title (${esc(m.title)}) /Parent ${outId} 0 R${prev}${next} /Dest [${m.page} 0 R /Fit] >>`);
+            });
+        }
+        const xPos = pos;
+        put(`xref\n0 ${offs.length}\n0000000000 65535 f \n` + offs.slice(1).map(o => String(o).padStart(10, '0') + ' 00000 n \n').join(''));
+        put(`trailer\n<< /Size ${offs.length} /Root 1 0 R /Info 3 0 R >>\nstartxref\n${xPos}\n%%EOF`);
+        return new Blob(parts, { type: 'application/pdf' });
     }
 
     function storeDownload(blob, filename) {
         const objectUrl = URL.createObjectURL(blob);
-        const anchor = link('', objectUrl);
+        const anchor = document.createElement('a');
+        anchor.href = objectUrl;
         anchor.download = filename;
         anchor.hidden = true;
         document.body.append(anchor);
@@ -674,6 +3071,10 @@ function startNeobrutalComix() {
         anchor.remove();
         setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
     }
+
+    const gmReq = typeof GM_xmlhttpRequest === 'function'
+        ? GM_xmlhttpRequest
+        : (typeof GM !== 'undefined' && typeof GM.xmlHttpRequest === 'function' ? GM.xmlHttpRequest.bind(GM) : null);
 
     function gmImage(url, signal) {
         return new Promise((resolve, reject) => {
@@ -683,15 +3084,19 @@ function startNeobrutalComix() {
                 request?.abort?.();
                 finish(reject, signal.reason);
             };
-            const finish = (callback, value) => {
+            const finish = (cb, value) => {
                 signal.removeEventListener('abort', abort);
-                callback(value);
+                cb(value);
             };
-            request = GM_xmlhttpRequest({
-                method: 'GET', url, anonymous: true, responseType: 'arraybuffer', timeout: 20000,
-                onload: result => {
-                    if (result.status >= 200 && result.status < 300 && result.response) finish(resolve, result.response);
-                    else finish(reject, new Error('Image HTTP ' + result.status));
+            request = gmReq({
+                method: 'GET',
+                url,
+                anonymous: true,
+                responseType: 'arraybuffer',
+                timeout: 20000,
+                onload: res => {
+                    if (res.status >= 200 && res.status < 300 && res.response) finish(resolve, res.response);
+                    else finish(reject, new Error('Image HTTP ' + res.status));
                 },
                 onerror: () => finish(reject, new Error('The image host could not be reached.')),
                 ontimeout: () => finish(reject, new Error('The image request timed out.')),
@@ -702,11 +3107,12 @@ function startNeobrutalComix() {
     }
 
     async function fetchImage(url, signal) {
-        if (new URL(url).origin !== location.origin && typeof GM_xmlhttpRequest === 'function') {
+        if (new URL(url).origin !== location.origin && gmReq) {
             return new Uint8Array(await gmImage(url, signal));
         }
         const res = await fetch(url, {
-            credentials: 'omit', referrerPolicy: 'no-referrer',
+            credentials: 'omit',
+            referrerPolicy: 'no-referrer',
             signal: AbortSignal.any([signal, AbortSignal.timeout(20000)]),
         });
         if (!res.ok) throw new Error('Image HTTP ' + res.status);
@@ -748,7 +3154,8 @@ function startNeobrutalComix() {
             if (current?.every(Boolean)) return current;
         }
 
-        const frame = element('iframe', 'nb-frame');
+        const frame = document.createElement('iframe');
+        frame.className = 'nb-frame';
         frame.title = 'Comix chapter export';
         frame.setAttribute('aria-hidden', 'true');
         frame.tabIndex = -1;
@@ -764,13 +3171,12 @@ function startNeobrutalComix() {
             if (!doc || route(doc.URL, CHAPTER_PATH)?.pathname !== context.url) {
                 throw new Error('Comix could not load this chapter for export.');
             }
-
-            const reader = await waitFor(() => {
+            const readerEl = await waitFor(() => {
                 const current = $('.rpage', doc);
                 return current && (readerPages(doc).length || $('.rpage-progress__seg', current)) && current;
             }, signal, 20000, 'Comix did not make any chapter pages available.');
-            const vertical = reader.classList.contains('rpage--long-strip');
-            const jumps = $$('.rpage-progress__seg', reader);
+            const vertical = readerEl.classList.contains('rpage--long-strip');
+            const jumps = $$('.rpage-progress__seg', readerEl);
             const pages = vertical ? stripPages(doc) : null;
             const total = vertical ? pages?.length : jumps.length;
             if (!total) {
@@ -787,7 +3193,7 @@ function startNeobrutalComix() {
                 };
                 let src = currentSource();
                 if (!src) {
-                    feedback('Finding page ' + (index + 1) + ' of ' + total + '…');
+                    feedback('Finding page ' + (index + 1) + '/' + total + '…', Math.round((index / total) * 20));
                     if (jumps[index]) jumps[index].click();
                     else pages[index].scrollIntoView({ block: 'start', behavior: 'instant' });
                     src = await waitFor(currentSource, signal, 8000, 'Comix did not load page ' + (index + 1) + '.');
@@ -800,14 +3206,12 @@ function startNeobrutalComix() {
         }
     }
 
-    async function chapterArchive(context, feedback, controller) {
+    async function downloadChapterBytes(context, feedback, controller) {
         const { signal } = controller;
-        feedback('Opening ' + context.label + '…');
+        feedback('Opening ' + context.label + '…', 5);
         const sources = await listPageSources(context, feedback, signal);
         const pages = new Array(sources.length);
-        let next = 0;
-        let done = 0;
-        let size = 0;
+        let next = 0, done = 0, size = 0;
 
         async function worker() {
             while (next < sources.length) {
@@ -823,250 +3227,647 @@ function startNeobrutalComix() {
                     signal.throwIfAborted();
                     throw new Error('Page ' + (index + 1) + ': ' + error.message);
                 }
-                feedback('Downloading pages ' + (++done) + '/' + sources.length + '…');
+                done++;
+                feedback(done + '/' + sources.length, 20 + Math.round((done / sources.length) * 80));
             }
         }
 
         try {
-            await Promise.all(Array.from({ length: Math.min(sources.length, CONFIG.downloadConcurrency) }, worker));
+            await Promise.all(Array.from({ length: Math.min(sources.length, CONFIG.reader.concurrency) }, worker));
         } catch (error) {
             controller.abort(error);
             throw error;
         }
         signal.throwIfAborted();
-        pages.push({
+        return pages;
+    }
+
+    async function chapterArchive(context, feedback, controller) {
+        const pages = await downloadChapterBytes(context, feedback, controller);
+        const entries = [...pages, {
             name: 'ComicInfo.xml',
             data: new TextEncoder().encode(
                 '<?xml version="1.0" encoding="utf-8"?>\n<ComicInfo>\n' +
-                '  <Title>' + xml(context.label) + '</Title>\n  <Series>' + xml(context.series) + '</Series>\n' +
-                (context.number == null ? '' : '  <Number>' + xml(context.number) + '</Number>\n') +
-                '  <Web>' + xml(location.origin + context.url) + '</Web>\n' +
-                '  <PageCount>' + sources.length + '</PageCount>\n</ComicInfo>\n'
+                '  <Title>' + xmlEsc(context.label) + '</Title>\n' +
+                '  <Series>' + xmlEsc(context.series) + '</Series>\n' +
+                (context.number == null ? '' : '  <Number>' + xmlEsc(context.number) + '</Number>\n') +
+                '  <Web>' + xmlEsc(location.origin + context.url) + '</Web>\n' +
+                '  <PageCount>' + pages.length + '</PageCount>\n</ComicInfo>\n'
             ),
-        });
-        return { filename: safeName(context.series) + ' - ' + safeName(context.label) + '.cbz', blob: makeZip(pages) };
+        }];
+        return { filename: safeName(context.series) + ' - ' + safeName(context.label) + '.cbz', blob: makeZip(entries) };
     }
 
-    let job;
+    /* ====================================================================
+     *  FLOATING READER DOCK (#md-dock), AUTO-HIDE CHROME & KEYBOARD SHORTCUTS
+     * ==================================================================== */
     const CANCELLED = new DOMException('Export cancelled', 'AbortError');
+    const BG_MODES = ['theme', 'paper', 'dark', 'black'];
+    const BG_LABELS = { theme: 'Theme', paper: 'Paper', dark: 'Dark', black: 'Black' };
 
-    async function startExport(control, status, idleLabel, exportArchive) {
-        if (job) {
-            if (job.control === control) job.controller.abort(CANCELLED);
+    const reader = {
+        init: false,
+        dock: null,
+        dl: null,
+        zoom: 1,
+        bg: 'theme',
+        job: null,
+        chromeBound: false,
+        keysBound: false,
+    };
+
+    function applyZoom(z) {
+        const steps = CONFIG.reader.zoomSteps;
+        const clamped = Math.max(steps[0], Math.min(steps[steps.length - 1], Number(z) || 1));
+        reader.zoom = clamped;
+        root.style.setProperty('--md-zoom', String(clamped));
+        store.set('zoom', clamped);
+        const zBtn = reader.dock && $('.md-zoom', reader.dock);
+        if (zBtn) zBtn.textContent = Math.round(clamped * 100) + '%';
+    }
+
+    function stepZoom(dir) {
+        const steps = CONFIG.reader.zoomSteps;
+        let best = 0;
+        let minDiff = Infinity;
+        steps.forEach((s, i) => {
+            const d = Math.abs(s - reader.zoom);
+            if (d < minDiff) { minDiff = d; best = i; }
+        });
+        const nextIdx = Math.max(0, Math.min(steps.length - 1, best + dir));
+        applyZoom(steps[nextIdx]);
+        toast('Zoom: ' + Math.round(steps[nextIdx] * 100) + '%', 1200);
+    }
+
+    function paintBg() {
+        if (detectPage() !== 'chapter') {
+            delete root.dataset.mdBg;
+            root.style.removeProperty('--nb-reader-bg');
             return;
         }
-        const active = { control, controller: new AbortController() };
-        job = active;
-        control.textContent = 'Cancel export';
-        control.disabled = false;
-        const report = message => { if (job === active) status.textContent = message; };
-        try {
-            const result = await exportArchive(report, active.controller);
-            active.controller.signal.throwIfAborted();
-            storeDownload(result.blob, result.filename);
-            report('Download ready.');
-        } catch (error) {
-            report(error === CANCELLED ? 'Export cancelled.' : (error.message || 'Export failed.'));
-        } finally {
-            control.textContent = idleLabel;
-            if (job === active) job = null;
-            schedule();
+        if (reader.bg === 'theme') {
+            delete root.dataset.mdBg;
+            root.style.removeProperty('--nb-reader-bg');
+        } else {
+            root.dataset.mdBg = reader.bg;
         }
     }
 
-    let readerTools;
-    const backgrounds = { Theme: '', Paper: '#fff7e9', Charcoal: '#25212b', Black: '#000' };
-
-    function applyReaderBackground(select) {
-        const background = backgrounds[select.value];
-        if (background) root.style.setProperty('--nb-reader-bg', background);
-        else root.style.removeProperty('--nb-reader-bg');
+    function applyBg(name) {
+        reader.bg = BG_MODES.includes(name) ? name : 'theme';
+        store.set('bg', reader.bg);
+        paintBg();
     }
 
-    function mountReader(context, reader) {
-        if (readerTools?.isConnected) return;
-        const tools = element('aside', 'nb-reader');
-        tools.setAttribute('aria-label', 'Neobrutal reader tools');
-        const panel = element('div', 'nb-reader-box');
-        panel.hidden = true;
-        panel.id = 'nb-comix-reader-options';
-        const toggle = button('Reader tools', () => {
-            panel.hidden = !panel.hidden;
-            toggle.setAttribute('aria-expanded', String(!panel.hidden));
-        });
-        toggle.setAttribute('aria-expanded', 'false');
-        toggle.setAttribute('aria-controls', panel.id);
-        const actions = element('div', 'nb-reader-actions');
-        const status = element('p', 'nb-status');
-        status.setAttribute('role', 'status');
-        const download = button('Download CBZ', () => {
-            const current = chapterContext(location.href) || context;
-            startExport(download, status, 'Download CBZ', (report, ctl) => chapterArchive(current, report, ctl));
-        }, 'nb-button nb-button-primary');
-        const shrink = button('−', () => $('[aria-label="Shrink image"], [aria-label="Zoom out"]', reader)?.click());
-        const enlarge = button('+', () => $('[aria-label="Enlarge image"], [aria-label="Zoom in"]', reader)?.click());
-        shrink.setAttribute('aria-label', 'Zoom out');
-        enlarge.setAttribute('aria-label', 'Zoom in');
-        const background = element('select', 'nb-button');
-        background.setAttribute('aria-label', 'Reader background');
-        Object.keys(backgrounds).forEach(name => background.add(new Option(name, name)));
-        const saved = readSetting('reader background', 'Theme');
-        background.value = Object.hasOwn(backgrounds, saved) ? saved : 'Theme';
-        background.addEventListener('change', () => {
-            writeSetting('reader background', background.value);
-            applyReaderBackground(background);
-        });
-        applyReaderBackground(background);
-        actions.append(shrink, enlarge, background, download);
-        panel.append(actions, status);
-        tools.append(panel, toggle);
-        tools.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && !panel.hidden) {
-                event.stopPropagation();
-                panel.hidden = true;
-                toggle.setAttribute('aria-expanded', 'false');
-                toggle.focus();
+    function cycleBg() {
+        const idx = BG_MODES.indexOf(reader.bg);
+        const next = BG_MODES[(idx + 1) % BG_MODES.length];
+        applyBg(next);
+        toast('Reader background: ' + BG_LABELS[next], 1400);
+    }
+
+    function setDl(state, label, pct = 0) {
+        if (!reader.dl) return;
+        reader.dl.dataset.state = state;
+        reader.dl.style.setProperty('--p', Math.max(0, Math.min(100, pct)) + '%');
+        const icon = state === 'busy' ? ICON.stop : state === 'done' ? ICON.check : ICON.down;
+        reader.dl.innerHTML = `${icon}<span class="md-lbl">${label}</span>`;
+    }
+
+    async function toggleDownload() {
+        if (reader.job) {
+            reader.job.abort(CANCELLED);
+            return;
+        }
+        const ctx = chapterContext();
+        if (!ctx) {
+            toast('Chapter info not ready yet');
+            return;
+        }
+        const ctl = new AbortController();
+        reader.job = ctl;
+        setDl('busy', '0%', 2);
+        try {
+            const result = await chapterArchive(ctx, (msg, pct) => {
+                if (reader.job === ctl) setDl('busy', msg, pct || 10);
+            }, ctl);
+            ctl.signal.throwIfAborted();
+            storeDownload(result.blob, result.filename);
+            setDl('done', 'Saved', 100);
+            toast('Downloaded ' + result.filename, 2600);
+            setTimeout(() => { if (!reader.job) setDl('idle', 'CBZ', 0); }, 2500);
+        } catch (err) {
+            if (err === CANCELLED) {
+                setDl('idle', 'CBZ', 0);
+                toast('Export cancelled');
+            } else {
+                setDl('error', 'Error', 0);
+                toast(err.message || 'Export failed', 3200);
+                setTimeout(() => { if (!reader.job) setDl('idle', 'CBZ', 0); }, 3000);
             }
-        });
-        reader.append(tools);
-        readerTools = tools;
+        } finally {
+            if (reader.job === ctl) reader.job = null;
+        }
     }
 
-    let selection;
+    function bindReaderChrome() {
+        if (reader.chromeBound) return;
+        reader.chromeBound = true;
+        let last = scrollY;
+        let openY = scrollY;
+
+        const showDock = on => {
+            if (!reader.dock) return;
+            reader.dock.classList.toggle('hide', !on);
+            if (on) openY = scrollY;
+        };
+
+        if (CONFIG.readerDockOnTap) {
+            document.addEventListener('click', e => {
+                if (detectPage() !== 'chapter' || !reader.dock || e.button !== 0) return;
+                const t = e.target;
+                if (!(t instanceof Element) || t.closest(TAP_IGNORE)) return;
+                const sel = getSelection();
+                if (sel && !sel.isCollapsed && String(sel).trim()) return;
+                showDock(reader.dock.classList.contains('hide'));
+            }, true);
+            addEventListener('keydown', e => {
+                if (e.key === 'Escape' && reader.dock && !reader.dock.classList.contains('hide') && !reader.job) {
+                    showDock(false);
+                }
+            });
+        }
+
+        addEventListener('scroll', () => {
+            if (detectPage() !== 'chapter') return;
+            const y = scrollY, dy = y - last;
+            if (Math.abs(dy) < 8) return;
+            last = y;
+            if (CONFIG.readerHeaderAutoHide) {
+                const hdr = $('.topnav');
+                const busy = hdr && hdr.contains(document.activeElement);
+                if (busy || y < 80 || dy < 0) delete root.dataset.mdNavhide;
+                else root.dataset.mdNavhide = '1';
+            }
+            if (reader.dock && !reader.job) {
+                if (CONFIG.readerDockOnTap) {
+                    if (CONFIG.dockHideOnScroll && !reader.dock.classList.contains('hide') && dy > 0 && y - openY > CONFIG.dockScrollPx) {
+                        showDock(false);
+                    }
+                } else {
+                    const nearEnd = innerHeight + y >= root.scrollHeight - 320;
+                    reader.dock.classList.toggle('hide', dy > 0 && y > 240 && !nearEnd);
+                }
+            }
+        }, { passive: true });
+    }
+
+    function bindReaderKeys() {
+        if (reader.keysBound) return;
+        reader.keysBound = true;
+        addEventListener('keydown', e => {
+            if (detectPage() !== 'chapter' || e.ctrlKey || e.metaKey || e.altKey) return;
+            const a = document.activeElement;
+            if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
+            const ctx = chapterContext();
+            if (e.key === 'ArrowLeft' && ctx?.prev) location.href = ctx.prev;
+            else if (e.key === 'ArrowRight' && ctx?.next) location.href = ctx.next;
+            else if (e.key === '-' || e.key === '_') stepZoom(-1);
+            else if (e.key === '+' || e.key === '=') stepZoom(1);
+            else if (e.key === '0') { applyZoom(1); toast('Zoom: 100%', 1200); }
+            else if (e.key === 'b' || e.key === 'B') cycleBg();
+        });
+    }
+
+    function mountReader(context) {
+        if (!reader.init) {
+            reader.init = true;
+            applyBg(store.get('bg', 'theme'));
+            applyZoom(store.get('zoom', 1));
+            bindReaderChrome();
+            bindReaderKeys();
+        }
+        if (!reader.dock || !reader.dock.isConnected) {
+            const d = document.createElement('div');
+            d.id = 'md-dock';
+            d.setAttribute('role', 'toolbar');
+            d.setAttribute('aria-label', 'Reader controls');
+            if (CONFIG.readerDockOnTap) d.classList.add('hide');
+
+            const btn = (act, icon, title, label) =>
+                `<button type="button" data-act="${act}" title="${title}" aria-label="${title}">${icon}${label ? `<span class="md-lbl">${label}</span>` : ''}</button>`;
+
+            d.innerHTML =
+                btn('prev', ICON.prev, 'Previous chapter (←)') +
+                btn('next', ICON.next, 'Next chapter (→)') +
+                '<span class="md-sep" aria-hidden="true"></span>' +
+                btn('zoom-out', ICON.minus, 'Zoom out (-)') +
+                `<button type="button" class="md-zoom" data-act="zoom-reset" title="Reset zoom (0)" aria-label="Reset zoom">${Math.round(reader.zoom * 100)}%</button>` +
+                btn('zoom-in', ICON.plus, 'Zoom in (+)') +
+                '<span class="md-sep" aria-hidden="true"></span>' +
+                btn('bg', ICON.bg, 'Background colour (B)') +
+                '<button type="button" class="md-dl" data-act="download" title="Download chapter as CBZ"></button>';
+
+            document.body.appendChild(d);
+            reader.dock = d;
+            reader.dl = $('.md-dl', d);
+            setDl('idle', 'CBZ', 0);
+
+            d.addEventListener('click', e => {
+                const b = e.target.closest('button[data-act]');
+                if (!b || b.disabled) return;
+                const cur = chapterContext();
+                switch (b.dataset.act) {
+                    case 'prev': if (cur?.prev) location.href = cur.prev; break;
+                    case 'next': if (cur?.next) location.href = cur.next; break;
+                    case 'zoom-out': stepZoom(-1); break;
+                    case 'zoom-in': stepZoom(1); break;
+                    case 'zoom-reset': applyZoom(1); toast('Zoom: 100%', 1200); break;
+                    case 'bg': cycleBg(); break;
+                    case 'download': toggleDownload(); break;
+                }
+            });
+        }
+        const prevBtn = $('[data-act="prev"]', reader.dock);
+        const nextBtn = $('[data-act="next"]', reader.dock);
+        if (prevBtn) prevBtn.disabled = !context.prev;
+        if (nextBtn) nextBtn.disabled = !context.next;
+        paintBg();
+    }
+
+    function unmountReader() {
+        if (reader.job) reader.job.abort(CANCELLED);
+        if (reader.dock?.isConnected) reader.dock.remove();
+        reader.dock = null;
+        reader.dl = null;
+        delete root.dataset.mdBg;
+        delete root.dataset.mdNavhide;
+        root.style.removeProperty('--nb-reader-bg');
+    }
+
+    /* ====================================================================
+     *  SERIES PAGE BACKDROP & MULTI-CHAPTER BATCH DOWNLOADER (#md-sel-bar)
+     * ==================================================================== */
+    function setupCoverBackdrop(app) {
+        const hero = $('.mpage__hero', app);
+        if (!hero || $('.md-profile-bg', hero)) return;
+        const img = $('.mpage__poster img', hero);
+        const src = imageUrl(img?.currentSrc || img?.getAttribute('src'));
+        if (!src) return;
+        const bg = document.createElement('div');
+        bg.className = 'md-profile-bg';
+        bg.style.backgroundImage = 'url(' + JSON.stringify(src) + ')';
+        hero.prepend(bg);
+    }
+
+    let selection = null;
+    let batchJob = null;
 
     function mountSelection(chapters) {
         if (selection?.node.isConnected) return;
-        const node = element('div', 'nb-batch');
-        const selected = new Map();
-        const status = element('span', 'nb-status');
-        status.setAttribute('role', 'status');
-        const count = element('span', 'nb-status');
-        const download = button('Download ZIP', () => {
-            if (!selected.size) return;
-            const series = $('.mpage__title')?.textContent.trim() || 'Comix';
-            const chaptersToDownload = [...selected.values()];
-            startExport(download, status, 'Download ZIP', async (report, controller) => {
-                const usedNames = new Set();
-                const entries = [];
-                let size = 0;
-                for (const [index, item] of chaptersToDownload.entries()) {
-                    const context = { ...item, series };
-                    const archive = await chapterArchive(context, message => {
-                        report((index + 1) + '/' + chaptersToDownload.length + ' · ' + item.label + ' · ' + message);
-                    }, controller);
-                    size += archive.blob.size;
-                    if (size > MAX_ARCHIVE_BYTES) throw new Error('This batch exceeds 512 MB. Select fewer chapters.');
-                    const name = usedNames.has(archive.filename) ? archive.filename.replace(/\.cbz$/, ' (' + item.id + ').cbz') : archive.filename;
-                    usedNames.add(name);
-                    entries.push({ name, data: new Uint8Array(await archive.blob.arrayBuffer()) });
-                }
-                return { filename: safeName(series) + ' - Chapters.zip', blob: makeZip(entries) };
-            });
-        }, 'nb-button nb-button-primary');
 
-        function updateCount() {
-            count.textContent = selected.size + '/' + CONFIG.batchLimit + ' selected';
-            download.disabled = !selected.size && job?.control !== download;
+        const bar = document.createElement('div');
+        bar.id = 'md-sel-bar';
+        const selected = new Map();
+        let lastClickedIndex = -1;
+
+        const modeBtn = document.createElement('button');
+        modeBtn.type = 'button';
+        modeBtn.textContent = 'Select chapters';
+        modeBtn.setAttribute('aria-pressed', 'false');
+
+        const allBtn = document.createElement('button');
+        allBtn.type = 'button';
+        allBtn.textContent = 'Select first ' + CONFIG.batchLimit;
+        allBtn.hidden = true;
+
+        const zipBtn = document.createElement('button');
+        zipBtn.type = 'button';
+        zipBtn.className = 'md-sel-dl';
+        zipBtn.innerHTML = `${ICON.down}<span>Download ZIP</span>`;
+        zipBtn.hidden = true;
+
+        const pdfBtn = document.createElement('button');
+        pdfBtn.type = 'button';
+        pdfBtn.className = 'md-sel-dl';
+        pdfBtn.innerHTML = `${ICON.down}<span>Download PDF</span>`;
+        pdfBtn.hidden = true;
+
+        const countEl = document.createElement('span');
+        countEl.className = 'md-sel-count';
+        countEl.hidden = true;
+
+        const statusEl = document.createElement('span');
+        statusEl.className = 'md-sel-status';
+        statusEl.setAttribute('role', 'status');
+
+        function updateUi() {
+            const selecting = bar.hasAttribute('data-selecting');
+            allBtn.hidden = zipBtn.hidden = pdfBtn.hidden = countEl.hidden = !selecting;
+            countEl.textContent = selected.size + '/' + CONFIG.batchLimit + ' selected';
+            allBtn.textContent = selected.size > 0 ? 'Clear all' : 'Select first ' + CONFIG.batchLimit;
+            const busy = !!batchJob;
+            zipBtn.disabled = (!selected.size && (!busy || batchJob.fmt !== 'zip')) || (busy && batchJob.fmt !== 'zip');
+            pdfBtn.disabled = (!selected.size && (!busy || batchJob.fmt !== 'pdf')) || (busy && batchJob.fmt !== 'pdf');
         }
 
-        const mode = button('Select chapters', () => {
-            const selecting = !node.hasAttribute('data-selecting');
-            node.toggleAttribute('data-selecting', selecting);
-            mode.setAttribute('aria-pressed', String(selecting));
-            mode.textContent = selecting ? 'Clear selection' : 'Select chapters';
+        async function runBatch(fmt, btn) {
+            if (batchJob) {
+                if (batchJob.fmt === fmt) batchJob.ctl.abort(CANCELLED);
+                return;
+            }
+            if (!selected.size) return;
+            const series = $('.mpage__title')?.textContent.trim() || 'Comix';
+            const list = [...selected.values()];
+            const ctl = new AbortController();
+            batchJob = { fmt, ctl };
+            btn.dataset.state = 'busy';
+            btn.style.setProperty('--p', '2%');
+            btn.innerHTML = `${ICON.stop}<span>Cancel</span>`;
+            updateUi();
+
+            try {
+                if (fmt === 'zip') {
+                    const usedNames = new Set();
+                    const entries = [];
+                    let size = 0;
+                    for (const [i, item] of list.entries()) {
+                        const ctx = { ...item, series };
+                        const archive = await chapterArchive(ctx, (msg, p) => {
+                            const overall = Math.round(((i + (p || 0) / 100) / list.length) * 100);
+                            btn.style.setProperty('--p', overall + '%');
+                            statusEl.textContent = `${i + 1}/${list.length} · ${item.label} · ${msg}`;
+                        }, ctl);
+                        size += archive.blob.size;
+                        if (size > MAX_ARCHIVE_BYTES) throw new Error('Batch exceeds 512 MB. Select fewer chapters.');
+                        const name = usedNames.has(archive.filename)
+                            ? archive.filename.replace(/\.cbz$/, ' (' + item.id + ').cbz')
+                            : archive.filename;
+                        usedNames.add(name);
+                        entries.push({ name, data: new Uint8Array(await archive.blob.arrayBuffer()) });
+                    }
+                    const filename = safeName(series) + ' - Chapters.zip';
+                    storeDownload(makeZip(entries), filename);
+                    statusEl.textContent = 'ZIP ready.';
+                    toast('Downloaded ' + filename, 2800);
+                } else {
+                    const pdfChapters = [];
+                    for (const [i, item] of list.entries()) {
+                        const ctx = { ...item, series };
+                        const pages = await downloadChapterBytes(ctx, (msg, p) => {
+                            const overall = Math.round(((i + (p || 0) / 100) / list.length) * 100);
+                            btn.style.setProperty('--p', overall + '%');
+                            statusEl.textContent = `${i + 1}/${list.length} · ${item.label} · ${msg}`;
+                        }, ctl);
+                        const imgs = [];
+                        for (const p of pages) {
+                            ctl.signal.throwIfAborted();
+                            imgs.push(await toJpegPart(p.data));
+                        }
+                        pdfChapters.push({ label: item.label, imgs });
+                    }
+                    const filename = safeName(series) + ' - Chapters.pdf';
+                    storeDownload(buildPdf(pdfChapters, series), filename);
+                    statusEl.textContent = 'PDF ready.';
+                    toast('Downloaded ' + filename, 2800);
+                }
+            } catch (err) {
+                statusEl.textContent = err === CANCELLED ? 'Export cancelled.' : (err.message || 'Export failed.');
+                toast(statusEl.textContent, 2600);
+            } finally {
+                delete btn.dataset.state;
+                btn.style.removeProperty('--p');
+                btn.innerHTML = `${ICON.down}<span>Download ${fmt.toUpperCase()}</span>`;
+                if (batchJob?.ctl === ctl) batchJob = null;
+                updateUi();
+            }
+        }
+
+        modeBtn.addEventListener('click', () => {
+            const selecting = !bar.hasAttribute('data-selecting');
+            bar.toggleAttribute('data-selecting', selecting);
+            modeBtn.setAttribute('aria-pressed', String(selecting));
+            modeBtn.textContent = selecting ? 'Done selecting' : 'Select chapters';
             if (!selecting) {
-                if (job?.control === download) job.controller.abort(CANCELLED);
+                if (batchJob) batchJob.ctl.abort(CANCELLED);
                 selected.clear();
-                status.textContent = '';
+                lastClickedIndex = -1;
+                statusEl.textContent = '';
             }
             sync();
         });
-        mode.setAttribute('aria-pressed', 'false');
+
+        allBtn.addEventListener('click', () => {
+            if (selected.size > 0) {
+                selected.clear();
+            } else {
+                const rows = $$('.mchap-row', chapters);
+                for (const row of rows) {
+                    if (selected.size >= CONFIG.batchLimit) break;
+                    const info = extractRowInfo(row);
+                    if (info) selected.set(info.id, info);
+                }
+            }
+            sync();
+        });
+
+        zipBtn.addEventListener('click', () => runBatch('zip', zipBtn));
+        pdfBtn.addEventListener('click', () => runBatch('pdf', pdfBtn));
+
+        function extractRowInfo(row) {
+            const anchor = $('.mchap-row__primary[href]', row);
+            const url = route(anchor?.href, CHAPTER_PATH);
+            if (!url) return null;
+            const [, , id, slug] = url.pathname.match(CHAPTER_PATH);
+            const label = $('.mchap-row__ch', anchor)?.textContent.trim()?.replace(/^Ch\.?\s*/i, 'Chapter ') || 'Chapter ' + slug;
+            return { id, url: url.pathname, label, number: slug.match(/^\d+(?:\.\d+)?/)?.[0] };
+        }
+
+        function toggleRow(row, index, shiftKey) {
+            const rows = $$('.mchap-row', chapters);
+            const info = extractRowInfo(row);
+            if (!info) return;
+            const targetState = !selected.has(info.id);
+
+            if (shiftKey && lastClickedIndex >= 0 && lastClickedIndex < rows.length) {
+                const start = Math.min(lastClickedIndex, index);
+                const end = Math.max(lastClickedIndex, index);
+                for (let i = start; i <= end; i++) {
+                    const rInfo = extractRowInfo(rows[i]);
+                    if (!rInfo) continue;
+                    if (targetState) {
+                        if (selected.size < CONFIG.batchLimit) selected.set(rInfo.id, rInfo);
+                    } else {
+                        selected.delete(rInfo.id);
+                    }
+                }
+            } else {
+                if (targetState) {
+                    if (selected.size < CONFIG.batchLimit) {
+                        selected.set(info.id, info);
+                    } else {
+                        statusEl.textContent = 'Select up to ' + CONFIG.batchLimit + ' chapters per export.';
+                        toast(statusEl.textContent);
+                    }
+                } else {
+                    selected.delete(info.id);
+                }
+            }
+            lastClickedIndex = index;
+            sync();
+        }
+
+        if (!chapters.dataset.mdSelBound) {
+            chapters.dataset.mdSelBound = '1';
+            chapters.addEventListener('click', e => {
+                if (!bar.hasAttribute('data-selecting')) return;
+                const row = e.target.closest('.mchap-row');
+                if (!row) return;
+                if (e.target.classList.contains('md-ck')) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const rows = $$('.mchap-row', chapters);
+                toggleRow(row, rows.indexOf(row), e.shiftKey);
+            }, true);
+        }
 
         function sync() {
-            const selecting = node.hasAttribute('data-selecting');
-            count.hidden = download.hidden = !selecting;
-            for (const row of $$('.mchap-row', chapters)) {
-                const anchor = $('.mchap-row__primary[href]', row);
-                const url = route(anchor?.href, CHAPTER_PATH);
-                let check = $('.nb-chapter-check', row);
-                if (!selecting || !url) {
+            const selecting = bar.hasAttribute('data-selecting');
+            const rows = $$('.mchap-row', chapters);
+            rows.forEach((row, index) => {
+                const info = extractRowInfo(row);
+                let check = $('.md-ck', row);
+                if (!selecting || !info) {
                     check?.remove();
-                    row.closest('.mchap-item')?.removeAttribute('data-nb-selected');
-                    continue;
+                    row.closest('.mchap-item')?.removeAttribute('data-md-sel');
+                    return;
                 }
-                const [, , id, slug] = url.pathname.match(CHAPTER_PATH);
-                const label = $('.mchap-row__ch', anchor)?.textContent.trim()?.replace(/^Ch\.?\s*/i, 'Chapter ') || 'Chapter ' + slug;
-                if (check?.dataset.chapterId !== id) {
+                if (check?.dataset.chapterId !== info.id) {
                     check?.remove();
-                    check = element('input', 'nb-chapter-check');
+                    check = document.createElement('input');
                     check.type = 'checkbox';
-                    check.dataset.chapterId = id;
-                    check.setAttribute('aria-label', 'Select ' + label);
-                    check.addEventListener('change', () => {
-                        if (!check.checked) selected.delete(id);
-                        else if (selected.size < CONFIG.batchLimit) {
-                            selected.set(id, { id, url: url.pathname, label, number: slug.match(/^\d+(?:\.\d+)?/)?.[0] });
-                        } else {
-                            status.textContent = 'Select up to ' + CONFIG.batchLimit + ' chapters per ZIP.';
-                        }
-                        sync();
+                    check.className = 'md-ck';
+                    check.dataset.chapterId = info.id;
+                    check.setAttribute('aria-label', 'Select ' + info.label);
+                    check.addEventListener('click', e => {
+                        e.stopPropagation();
+                        toggleRow(row, index, e.shiftKey);
                     });
                     row.prepend(check);
                 }
-                check.checked = selected.has(id);
-                row.closest('.mchap-item')?.toggleAttribute('data-nb-selected', check.checked);
-            }
-            updateCount();
+                check.checked = selected.has(info.id);
+                row.closest('.mchap-item')?.toggleAttribute('data-md-sel', check.checked);
+            });
+            updateUi();
         }
 
-        node.append(mode, count, download, status);
+        bar.append(modeBtn, allBtn, zipBtn, pdfBtn, countEl, statusEl);
         const toolbar = $('.mchap-toolbar', chapters);
-        if (toolbar) toolbar.after(node);
-        else chapters.prepend(node);
-        selection = { node, sync };
+        if (toolbar) toolbar.after(bar);
+        else chapters.prepend(bar);
+        selection = { node: bar, sync };
         sync();
     }
 
-    let currentPath;
+    /* ====================================================================
+     *  EXTRAS: BACK TO TOP, SEARCH SHORTCUT (/), LAZY IMAGES
+     * ==================================================================== */
+    function addExtras() {
+        if (CONFIG.backToTop && document.body && !document.getElementById('md-top')) {
+            const b = document.createElement('button');
+            b.id = 'md-top';
+            b.type = 'button';
+            b.innerHTML = ICON.up;
+            b.title = 'Back to top';
+            b.setAttribute('aria-label', 'Back to top');
+            b.addEventListener('click', () => scrollTo({ top: 0, behavior: reducedMotion.matches ? 'instant' : 'smooth' }));
+            document.body.appendChild(b);
+            addEventListener('scroll', () => b.classList.toggle('show', scrollY > 700), { passive: true });
+        }
+    }
+
+    addEventListener('keydown', e => {
+        if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey) return;
+        const a = document.activeElement;
+        if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
+        const input = $('.search__form input[type="search"], .search__form input[type="text"], .search__form input');
+        if (input) {
+            e.preventDefault();
+            input.focus();
+            input.select();
+        }
+    });
+
+    function optimizeImages(scope) {
+        $$('.card__poster-wrap img, .lrow__poster img', scope).forEach(img => {
+            if (!img.getAttribute('loading')) img.loading = 'lazy';
+            if (!img.getAttribute('decoding')) img.decoding = 'async';
+        });
+    }
+
+    /* ====================================================================
+     *  MAIN SPA SYNC LOOP
+     * ==================================================================== */
+    let currentPath = null;
     let scheduled = false;
 
     function syncPage() {
         scheduled = false;
+        injectStyles();
         const app = $('#app-root');
         if (!app?.firstElementChild) return;
+
         const path = location.pathname;
+        const page = detectPage(path);
+        root.dataset.mdPage = page;
+
         if (path !== currentPath) {
-            if (job) job.controller.abort(CANCELLED);
+            if (batchJob) batchJob.ctl.abort(CANCELLED);
+            if (page !== 'chapter') unmountReader();
             currentPath = path;
             lastTracked = null;
-            if (!CHAPTER_PATH.test(path)) root.style.removeProperty('--nb-reader-bg');
         }
-        const nav = $('.topnav__right', app);
-        if (nav && themeButton.parentNode !== nav) nav.prepend(themeButton);
 
-        const column = /^\/(?:home\/?)?$/.test(path) && $('main.layout--top .main-col', app);
+        setupThemeToggle(app);
+        tagDropdowns(app);
+        purgeAuthUI(app);
+        addExtras();
+        optimizeImages(app);
+
+        const isHome = /^\/(?:home\/?)?$/.test(path);
+        const column = isHome && $('main.layout--top .main-col', app);
         if ((!column || !heroState?.node.isConnected) && heroState) {
             heroState.dispose();
             heroState = null;
+        }
+        if (!column && historyNode?.isConnected) {
+            historyNode.remove();
+            historyNode = null;
         }
         if (column) {
             if (!heroState) mountHero(column);
             mountHistory(column);
         }
-        const reader = CHAPTER_PATH.test(path) && $('.rpage', app);
-        if (reader) {
-            const context = chapterContext(location.href);
-            if (context) {
-                trackReading(context);
-                mountReader(context, reader);
+
+        if (page === 'overview') {
+            setupCoverBackdrop(app);
+            const chapters = $('.mpage__chapters', app);
+            if (chapters && ($('.mchap-row__primary[href]', chapters) || selection?.node.isConnected)) {
+                mountSelection(chapters);
+                selection?.sync();
             }
         }
-        if (reader) scheduleProgress();
-        const chapters = SERIES_PATH.test(path) && $('.mpage__chapters', app);
-        if (chapters && ($('.mchap-row__primary[href]', chapters) || selection?.node.isConnected)) {
-            mountSelection(chapters);
-            selection?.sync();
+
+        if (page === 'chapter') {
+            const readerEl = $('.rpage', app);
+            if (readerEl) {
+                const ctx = chapterContext(location.href);
+                if (ctx) {
+                    trackReading(ctx);
+                    mountReader(ctx);
+                }
+                scheduleProgress();
+            }
         }
     }
 
@@ -1076,23 +3877,15 @@ function startNeobrutalComix() {
         requestAnimationFrame(syncPage);
     }
 
-    // The site swaps its React views after navigation and lazily supplies reader and chapter content.
     new MutationObserver(records => {
-        if (records.some(record => !record.target.closest?.('.nb-hero,.nb-history,.nb-reader,.nb-batch'))) schedule();
+        if (records.some(r => !r.target.closest?.(UI_ZONES))) schedule();
     }).observe(root, { childList: true, subtree: true });
+
     new MutationObserver(records => {
-        if (records.some(record => record.target.classList.contains('rpage-progress__seg'))) scheduleProgress();
+        if (records.some(r => r.target.classList?.contains('rpage-progress__seg'))) scheduleProgress();
     }).observe(root, { attributes: true, attributeFilter: ['class'], subtree: true });
+
     window.addEventListener('popstate', schedule);
     window.addEventListener('pageshow', schedule);
     schedule();
-}
-
-if (window.top === window) {
-    if (document.documentElement) startNeobrutalComix();
-    else new MutationObserver((_, observer) => {
-        if (!document.documentElement) return;
-        observer.disconnect();
-        startNeobrutalComix();
-    }).observe(document, { childList: true });
-}
+})();
