@@ -15,6 +15,7 @@ const ROOT = path.resolve(__dirname, '..');
 const DEMONIC_PATH = path.join(ROOT, 'demonicscans.user.js');
 const ASURA_PATH = path.join(ROOT, 'asurascans.user.js');
 const MANGAREAD_PATH = path.join(ROOT, 'mangaread.user.js');
+const COMIX_PATH = path.join(ROOT, 'comix.user.js');
 const ARCHIVE_PATH = path.join(ROOT, 'archive', 'neobrutal-scans.user.js');
 const README_PATH = path.join(ROOT, 'README.md');
 
@@ -40,12 +41,14 @@ console.log('\x1b[36m[Group 1: File Existence & Readability]\x1b[0m');
 test('demonicscans.user.js exists', () => assert(fs.existsSync(DEMONIC_PATH)));
 test('asurascans.user.js exists', () => assert(fs.existsSync(ASURA_PATH)));
 test('mangaread.user.js exists', () => assert(fs.existsSync(MANGAREAD_PATH)));
+test('comix.user.js exists', () => assert(fs.existsSync(COMIX_PATH)));
 test('archive/neobrutal-scans.user.js exists', () => assert(fs.existsSync(ARCHIVE_PATH)));
 test('README.md exists', () => assert(fs.existsSync(README_PATH)));
 
 const demonicCode = fs.readFileSync(DEMONIC_PATH, 'utf8');
 const asuraCode = fs.readFileSync(ASURA_PATH, 'utf8');
 const mangareadCode = fs.readFileSync(MANGAREAD_PATH, 'utf8');
+const comixCode = fs.readFileSync(COMIX_PATH, 'utf8');
 const archiveCode = fs.readFileSync(ARCHIVE_PATH, 'utf8');
 const readmeCode = fs.readFileSync(README_PATH, 'utf8');
 
@@ -59,6 +62,9 @@ test('asurascans.user.js compiles cleanly without syntax errors', () => {
 });
 test('mangaread.user.js compiles cleanly without syntax errors', () => {
     new vm.Script(mangareadCode, { filename: 'mangaread.user.js' });
+});
+test('comix.user.js compiles cleanly without syntax errors', () => {
+    new vm.Script(comixCode, { filename: 'comix.user.js' });
 });
 test('archive/neobrutal-scans.user.js compiles cleanly without syntax errors', () => {
     new vm.Script(archiveCode, { filename: 'archive/neobrutal-scans.user.js' });
@@ -74,6 +80,7 @@ function getMeta(code, key) {
 const demonicVersion = getMeta(demonicCode, 'version');
 const asuraVersion = getMeta(asuraCode, 'version');
 const mangareadVersion = getMeta(mangareadCode, 'version');
+const comixVersion = getMeta(comixCode, 'version');
 
 test('demonicscans.user.js has a valid @version', () => {
     assert(demonicVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(demonicVersion), `Got ${demonicVersion}`);
@@ -83,6 +90,9 @@ test('asurascans.user.js has a valid @version', () => {
 });
 test('mangaread.user.js has a valid @version', () => {
     assert(mangareadVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(mangareadVersion), `Got ${mangareadVersion}`);
+});
+test('comix.user.js has a valid @version', () => {
+    assert(comixVersion && /^\d{4}-\d{2}-\d{2}\.\d+$/.test(comixVersion), `Got ${comixVersion}`);
 });
 test('README.md version badges match each dedicated script version', () => {
     const demonicMatch = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue\?style=for-the-badge\)]\(https:\/\/raw\.githubusercontent\.com\/17Arigato-jwd\/neobrutal-scans\/main\/demonicscans\.user\.js\)/);
@@ -96,9 +106,13 @@ test('README.md version badges match each dedicated script version', () => {
     const mangareadMatch = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue\?style=for-the-badge\)]\(https:\/\/raw\.githubusercontent\.com\/17Arigato-jwd\/neobrutal-scans\/main\/mangaread\.user\.js\)/);
     assert(mangareadMatch, 'MangaRead version badge not found in README.md');
     assert.strictEqual(mangareadMatch[1].replace(/--/g, '-'), mangareadVersion, 'MangaRead badge version mismatch');
+
+    const comixMatch = readmeCode.match(/version-(\d{4}--\d{2}--\d{2}\.\d+)-blue\?style=for-the-badge\)]\(https:\/\/raw\.githubusercontent\.com\/17Arigato-jwd\/neobrutal-scans\/main\/comix\.user\.js\)/);
+    assert(comixMatch, 'Comix version badge not found in README.md');
+    assert.strictEqual(comixMatch[1].replace(/--/g, '-'), comixVersion, 'Comix badge version mismatch');
 });
 test('Metadata contains essential Userscript headers in all scripts', () => {
-    for (const code of [demonicCode, asuraCode, archiveCode, mangareadCode]) {
+    for (const code of [demonicCode, asuraCode, archiveCode, mangareadCode, comixCode]) {
         assert(getMeta(code, 'name'), 'Missing @name');
         assert(getMeta(code, 'match'), 'Missing @match');
         assert(getMeta(code, 'run-at'), 'Missing @run-at');
@@ -117,6 +131,9 @@ test('mangaread.user.js matches MangaRead domains', () => {
 });
 test('mangaread.user.js declares @grant unsafeWindow for sandbox bypass', () => {
     assert(mangareadCode.includes('// @grant        unsafeWindow'), 'Missing @grant unsafeWindow in mangaread.user.js');
+});
+test('comix.user.js matches comix.to domain', () => {
+    assert(comixCode.includes('@match        https://comix.to/*'), 'Missing @match for comix.to');
 });
 
 // 4. CSS Integrity & Progress Bar Keyframes
