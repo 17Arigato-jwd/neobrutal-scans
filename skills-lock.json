@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "skills": {
+    "neobrutalism": {
+      "source": "bergside/awesome-design-skills",
+      "commit": "f631a09b4fcc0166f2e2c1a8c81906ef680c57e8",
+      "sourceType": "github",
+      "skillPath": "skills/neobrutalism/SKILL.md",
+      "computedHash": "c7d5049890f941f0f84897b2fbd3562f6f865c51dd97be00bbc3d2405b8f6ff8"
+    }
+  }
+}

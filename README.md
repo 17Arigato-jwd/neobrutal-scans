@@ -26,7 +26,7 @@ Choose the dedicated script for your site:
 - **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)**  
   *Dedicated script designed specifically for Asura Scans (comics and web novels).*
 
-[![Version](https://img.shields.io/badge/version-2026--11--20.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)  
+[![Version](https://img.shields.io/badge/version-2026--11--20.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)  
 - **[Install MangaRead Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)**  
   *Dedicated userscript designed specifically for MangaRead (mangaread.org).*
 
@@ -69,8 +69,11 @@ Your userscript manager will automatically detect the script and prompt you to c
 
 ### MangaRead Dedicated Features
 - **Featured Hero Carousel**: Full hero banner with falling progress bars, view counts, and latest chapter indicators ported to MangaRead homepage.
+- **Dynamic Mobile Hero Spacing**: Automatically calculates and trims excessive vertical margin gaps under `#md-hero` on mobile viewports ($\le 768\text{px}$) on load and resize.
+- **Unified Multi-Row Listing Grid**: Flattens nested row wrappers with `display: contents` into a single responsive grid container (3-columns on desktop $\ge 900\text{px}$, responsive 2-columns on mobile $\le 600\text{px}$), maintaining uniform spacing without ragged rows.
 - **Series Detail Page Overhaul**: Asura-style high-contrast layout with responsive metadata blocks, chapter buttons, and dynamic blurred cover backdrop (`div.profile-manga > .md-profile-bg`).
-- **Collapsible wpDiscuz Comments**: Nested comment threads feature interactive `+` / `−` collapse buttons (`setupCommentCollapse()`), allowing readers to fold long reply chains cleanly.
+- **Restructured wpDiscuz Comments**: Clean avatar-aligned votes/scores, author badges positioned inline beside names, and report flag + collapse button pinned top-right to prevent awkward text wrapping.
+- **Collapsible Comment Threads**: Nested comment trees feature interactive `+` / `−` collapse buttons (`setupCommentCollapse()`), allowing readers to fold long reply chains cleanly.
 - **Live Comment Loading Indicator**: Floating Neobrutalist indicator (`.md-cload`) providing real-time feedback during comment pagination and comment submission.
 - **Sticky Chapter Reader Bar**: Minimalist bottom reader bar with quick prev/next navigation, home shortcut, and automatic purging of intrusive related-manga clutter beneath the reader.
 - **Un-Clipped Action Buttons**: Clean, full-sized "Read First" and "Read Last" CTA buttons (`#btn-read-first`, `#btn-read-last`) on series pages with zero text overflow or link underlines.
