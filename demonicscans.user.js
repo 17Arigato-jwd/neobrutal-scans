@@ -608,13 +608,13 @@
             flex-wrap: nowrap !important;
             align-items: center !important;
             gap: 10px !important;
-            margin: 0 !important;
-            padding: 4px 6px 8px !important;
+            margin: 0 0 0 -18px !important;
+            padding: 4px 28px 8px 24px !important; /* left padding holds the 20px edge fade, so the first thumb is never masked */
             overflow-x: auto !important;
             overflow-y: hidden !important;
             scrollbar-width: none !important;
             -webkit-overflow-scrolling: touch !important;
-            max-width: 100% !important;
+            max-width: calc(100% + 18px) !important;
             position: relative !important;
             z-index: 4 !important;
             mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
@@ -687,44 +687,53 @@
             opacity: 1 !important;
             animation: mdProgressFall 5.5s linear forwards;
         }
-        #md-hero:hover .md-hero-thumb.is-active .md-thumb-fill {
-            animation-play-state: paused !important;
-        }
         @keyframes mdProgressFall {
             0% { height: 0%; }
             100% { height: 100%; }
         }
 
-        /* Tilted book card on the right, scaled up and clipped under the hero bottom edge */
+        /* Tilted book card on the right, scaled up and clipped under the hero bottom edge.
+           .md-hero-card is a STATIC hit box that is never transformed. The tilt and the hover lift live on
+           the inner .md-hero-card-art, so moving the art on hover can't move the thing the pointer is
+           testing (that feedback loop made the hover flicker at the card's edge). The art also clips its
+           image (overflow hidden + radius), so the cover is rounded like its border. */
         #md-hero .md-hero-card {
+            --mdc-w: 320px;
             position: absolute;
             z-index: 3;
             right: 150px;
             bottom: -75px;
-            width: 320px;
-            aspect-ratio: 2 / 3;
+            width: var(--mdc-w);
+            height: calc(var(--mdc-w) * 1.5);
+            display: block;
+            text-decoration: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #md-hero .md-hero-card-art {
+            position: absolute;
+            inset: 0;
+            display: block;
+            box-sizing: border-box;
             border: var(--bw) solid #000;
             border-radius: 14px;
+            overflow: hidden;
+            background: #111;
             box-shadow: 10px 10px 0 #000;
-            overflow: visible !important;
             transform: rotate(6.5deg);
             transform-origin: bottom center;
             transition: transform .22s ease-out, box-shadow .22s ease;
-            background: #111;
-            display: block;
-            text-decoration: none !important;
+            pointer-events: none;
         }
-        #md-hero .md-hero-card:hover {
+        #md-hero .md-hero-card:hover .md-hero-card-art {
             transform: rotate(5deg) translateY(-6px) scale(1.01);
             box-shadow: 14px 14px 0 #000;
         }
-        #md-hero .md-hero-card:hover::after,
+        /* static bridge: keeps the tilted art that pokes out past the right/top of the hit box clickable */
         #md-hero .md-hero-card::after {
             content: "";
             position: absolute;
-            inset: -16px -36px -16px -16px;
+            inset: -16px -64px -16px -16px;
             z-index: 10;
-            pointer-events: auto;
         }
         #md-hero .md-hero-card img {
             display: block;
@@ -732,13 +741,14 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
+            border-radius: 0;
             transition: opacity .25s ease;
         }
 
         @media (max-width: 1240px) {
             #md-hero .md-hero-card {
                 right: clamp(24px, 5vw, 100px);
-                width: clamp(240px, 24vw, 300px);
+                --mdc-w: clamp(240px, 24vw, 300px);
                 bottom: -65px;
             }
             #md-hero .md-hero-body { max-width: min(560px, 56%); }
@@ -766,20 +776,27 @@
                 justify-content: flex-start !important;
             }
             #md-hero .md-hero-card {
+                --mdc-w: clamp(120px, 38vw, 175px);
                 display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
                 position: absolute !important;
                 top: auto !important;
                 bottom: -40px !important;
-                right: clamp(16px, 4.5vw, 24px) !important;
-                width: clamp(135px, 39vw, 175px) !important;
-                aspect-ratio: 2 / 3 !important;
-                border-radius: 12px !important;
-                border: var(--bw) solid #000 !important;
-                box-shadow: 6px 6px 0 #000 !important;
-                transform: rotate(3.5deg) !important;
-                transform-origin: bottom center !important;
+                right: clamp(22px, 6vw, 32px) !important;
+                width: var(--mdc-w) !important;
+                height: calc(var(--mdc-w) * 1.5) !important;
                 z-index: 3 !important;
                 pointer-events: auto !important;
+            }
+            #md-hero .md-hero-card-art {
+                border-radius: 12px !important;
+                box-shadow: 6px 6px 0 #000 !important;
+                transform: rotate(3.5deg) !important;
+            }
+            #md-hero .md-hero-card:hover .md-hero-card-art {
+                transform: rotate(2.5deg) translateY(-4px) scale(1.01) !important;
+                box-shadow: 8px 8px 0 #000 !important;
             }
             #md-hero .md-hero-tag {
                 display: inline-block !important;
@@ -840,10 +857,11 @@
             #md-hero .md-hero-thumbs {
                 margin-top: auto !important;
                 margin-bottom: 0 !important;
-                width: 100% !important;
-                max-width: calc(100% - clamp(155px, 44vw, 200px)) !important;
+                margin-left: -20px !important;
+                width: calc(100% + 20px) !important;
+                max-width: calc(100% - clamp(155px, 44vw, 200px) + 20px) !important;
                 gap: 7px !important;
-                padding: 4px 0 2px !important;
+                padding: 4px 24px 2px 20px !important;
                 mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%) !important;
                 -webkit-mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%) !important;
             }
@@ -4249,7 +4267,7 @@
                 <div class="md-hero-thumbs" role="tablist" aria-label="Most viewed series"></div>
             </div>
             <a class="md-hero-card" title="Read now">
-                <img alt="Book cover">
+                <span class="md-hero-card-art"><img alt="Book cover"></span>
             </a>
         `;
 
@@ -4308,7 +4326,6 @@
             const fill = thumb.querySelector('.md-thumb-fill');
             fill.addEventListener('animationend', (e) => {
                 if (e.animationName === 'mdProgressFall' && thumb.classList.contains('is-active')) {
-                    if (hero.matches(':hover')) return;
                     showSlide((currentSlide + 1) % items.length);
                 }
             });
@@ -4323,16 +4340,12 @@
             }
         }, { passive: false });
 
-        // Hover: pause animation on active card cleanly
+        // Hover: slow the active card's progress bar to 0.1x (it keeps running, so the carousel still advances)
         hero.addEventListener('mouseenter', () => {
             clearTimeout(slideTimer);
-            const activeFill = hero.querySelector('.md-hero-thumb.is-active .md-thumb-fill');
-            if (activeFill) activeFill.style.animationPlayState = 'paused';
-            setProgressRate(0);
+            setProgressRate(0.1);
         });
         hero.addEventListener('mouseleave', () => {
-            const activeFill = hero.querySelector('.md-hero-thumb.is-active .md-thumb-fill');
-            if (activeFill) activeFill.style.animationPlayState = 'running';
             setProgressRate(1.0);
             restartTimer();
         });
@@ -4450,11 +4463,11 @@
                         void f.offsetWidth; // force reflow
                         f.style.animation = '';
                         if (hero.matches(':hover')) {
-                            f.style.animationPlayState = 'paused';
-                            requestAnimationFrame(() => setProgressRate(0));
+                            requestAnimationFrame(() => setProgressRate(0.1));
                         }
                     }
-                    const left = th.offsetLeft - thumbsContainer.offsetLeft - 12;
+                    // centre the selected thumb in the strip (offsetLeft is already relative to the strip)
+                    const left = th.offsetLeft - (thumbsContainer.clientWidth - th.offsetWidth) / 2;
                     thumbsContainer.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
                 } else {
                     th.classList.remove('is-active');

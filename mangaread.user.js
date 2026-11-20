@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-18.3
+// @version      2026-11-19.2
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -1921,13 +1921,13 @@
             flex-wrap: nowrap !important;
             align-items: center !important;
             gap: 10px !important;
-            margin: 0 !important;
-            padding: 4px 6px 8px !important;
+            margin: 0 0 0 -18px !important;
+            padding: 4px 28px 8px 24px !important; /* left padding holds the 20px edge fade, so the first thumb is never masked */
             overflow-x: auto !important;
             overflow-y: hidden !important;
             scrollbar-width: none !important;
             -webkit-overflow-scrolling: touch !important;
-            max-width: 100% !important;
+            max-width: calc(100% + 18px) !important;
             position: relative !important;
             z-index: 4 !important;
             mask-image: linear-gradient(to right, transparent 0%, black 20px, black calc(100% - 24px), transparent 100%);
@@ -2005,36 +2005,48 @@
             100% { height: 100%; }
         }
 
-        /* Tilted book card on the right, scaled up and clipped under the hero bottom edge */
+        /* Tilted book card on the right, scaled up and clipped under the hero bottom edge.
+           .md-hero-card is a STATIC hit box that is never transformed. The tilt and the hover lift live on
+           the inner .md-hero-card-art, so moving the art on hover can't move the thing the pointer is
+           testing (that feedback loop made the hover flicker at the card's edge). The art also clips its
+           image (overflow hidden + radius), so the cover is rounded like its border. */
         #md-hero .md-hero-card {
+            --mdc-w: 320px;
             position: absolute;
             z-index: 3;
             right: 150px;
             bottom: -75px;
-            width: 320px;
-            aspect-ratio: 2 / 3;
+            width: var(--mdc-w);
+            height: calc(var(--mdc-w) * 1.5);
+            display: block;
+            text-decoration: none !important;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #md-hero .md-hero-card-art {
+            position: absolute;
+            inset: 0;
+            display: block;
+            box-sizing: border-box;
             border: var(--bw) solid #000;
             border-radius: 14px;
+            overflow: hidden;
+            background: #111;
             box-shadow: 10px 10px 0 #000;
-            overflow: visible !important;
             transform: rotate(6.5deg);
             transform-origin: bottom center;
             transition: transform .22s ease-out, box-shadow .22s ease;
-            background: #111;
-            display: block;
-            text-decoration: none !important;
+            pointer-events: none;
         }
-        #md-hero .md-hero-card:hover {
+        #md-hero .md-hero-card:hover .md-hero-card-art {
             transform: rotate(5deg) translateY(-6px) scale(1.01);
             box-shadow: 14px 14px 0 #000;
         }
-        #md-hero .md-hero-card:hover::after,
+        /* static bridge: keeps the tilted art that pokes out past the right/top of the hit box clickable */
         #md-hero .md-hero-card::after {
             content: "";
             position: absolute;
-            inset: -16px -36px -16px -16px;
+            inset: -16px -64px -16px -16px;
             z-index: 10;
-            pointer-events: auto;
         }
         #md-hero .md-hero-card img {
             display: block;
@@ -2042,13 +2054,14 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
+            border-radius: 0;
             transition: opacity .25s ease;
         }
 
         @media (max-width: 1240px) {
             #md-hero .md-hero-card {
                 right: clamp(24px, 5vw, 100px);
-                width: clamp(240px, 24vw, 300px);
+                --mdc-w: clamp(240px, 24vw, 300px);
                 bottom: -65px;
             }
             #md-hero .md-hero-body { max-width: min(560px, 56%); }
@@ -2076,20 +2089,27 @@
                 justify-content: flex-start !important;
             }
             #md-hero .md-hero-card {
+                --mdc-w: clamp(120px, 38vw, 175px);
                 display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
                 position: absolute !important;
                 top: auto !important;
                 bottom: -40px !important;
-                right: clamp(16px, 4.5vw, 24px) !important;
-                width: clamp(135px, 39vw, 175px) !important;
-                aspect-ratio: 2 / 3 !important;
-                border-radius: 12px !important;
-                border: var(--bw) solid #000 !important;
-                box-shadow: 6px 6px 0 #000 !important;
-                transform: rotate(3.5deg) !important;
-                transform-origin: bottom center !important;
+                right: clamp(22px, 6vw, 32px) !important;
+                width: var(--mdc-w) !important;
+                height: calc(var(--mdc-w) * 1.5) !important;
                 z-index: 3 !important;
                 pointer-events: auto !important;
+            }
+            #md-hero .md-hero-card-art {
+                border-radius: 12px !important;
+                box-shadow: 6px 6px 0 #000 !important;
+                transform: rotate(3.5deg) !important;
+            }
+            #md-hero .md-hero-card:hover .md-hero-card-art {
+                transform: rotate(2.5deg) translateY(-4px) scale(1.01) !important;
+                box-shadow: 8px 8px 0 #000 !important;
             }
             #md-hero .md-hero-tag {
                 display: inline-block !important;
@@ -2150,10 +2170,11 @@
             #md-hero .md-hero-thumbs {
                 margin-top: auto !important;
                 margin-bottom: 0 !important;
-                width: 100% !important;
-                max-width: calc(100% - clamp(155px, 44vw, 200px)) !important;
+                margin-left: -20px !important;
+                width: calc(100% + 20px) !important;
+                max-width: calc(100% - clamp(155px, 44vw, 200px) + 20px) !important;
                 gap: 7px !important;
-                padding: 4px 0 2px !important;
+                padding: 4px 24px 2px 20px !important;
                 mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%) !important;
                 -webkit-mask-image: linear-gradient(to right, transparent 0%, black 16px, black calc(100% - 20px), transparent 100%) !important;
             }
@@ -2219,6 +2240,1240 @@
         html[data-md-theme="dark"] #md-hero .md-hero-chapter {
             background: var(--yellow) !important;
             color: #000 !important;
+        }
+
+        /* =====================================================================
+           SERIES / OVERVIEW PAGE REFRESH
+           Scoped to html[data-md-page="overview"]: out-ranks the site's own CSS and the generic rules above,
+           and never touches the home, list or reader pages.
+           ===================================================================== */
+
+        /* -- clearfix / decorative pseudo-elements would turn into stray flex / grid items -- */
+        html[data-md-page="overview"] div.tab-summary::before,
+        html[data-md-page="overview"] div.tab-summary::after,
+        html[data-md-page="overview"] div.summary_content_wrap::before,
+        html[data-md-page="overview"] div.summary_content_wrap::after,
+        html[data-md-page="overview"] div.summary_content::before,
+        html[data-md-page="overview"] div.summary_content::after,
+        html[data-md-page="overview"] div.summary_content .post-content_item::before,
+        html[data-md-page="overview"] div.summary_content .post-content_item::after,
+        html[data-md-page="overview"] div.summary_image a::before,
+        html[data-md-page="overview"] div.summary_image a::after,
+        html[data-md-page="overview"] .manga-action::before,
+        html[data-md-page="overview"] .manga-action::after,
+        html[data-md-page="overview"] .c-blog__heading::before,
+        html[data-md-page="overview"] .c-blog__heading::after,
+        html[data-md-page="overview"] .listing-chapters_wrap::before,
+        html[data-md-page="overview"] .listing-chapters_wrap::after,
+        html[data-md-page="overview"] .description-summary .summary__content::after,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter::before,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter::after,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter a::before,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter a::after,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter .chapter-release-date::before,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter .chapter-release-date::after,
+        html[data-md-page="overview"] .c-sidebar .widget-heading::before,
+        html[data-md-page="overview"] .c-sidebar .widget-heading::after,
+        html[data-md-page="overview"] .c-sidebar .widget .c-blog__heading::after,
+        html[data-md-page="overview"] .popular-item-wrap::before,
+        html[data-md-page="overview"] .popular-item-wrap::after,
+        html[data-md-page="overview"] .popular-content .chapter-item::before,
+        html[data-md-page="overview"] .popular-content .chapter-item::after {
+            content: none !important;
+            display: none !important;
+        }
+
+        /* -- breadcrumb: one light pill, not a full-width framed bar -- */
+        html[data-md-page="overview"] ol.breadcrumb {
+            display: inline-flex !important;
+            width: auto !important;
+            max-width: 100% !important;
+            margin: 0 0 18px !important;
+            padding: 6px 14px !important;
+            border-width: 2px !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+
+        /* -- header band: flat full-width strip, content on a clean 2-column grid -- */
+        html[data-md-page="overview"] div.profile-manga {
+            background: var(--card) !important;
+            background-image: none !important;
+            border-width: var(--bw) 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 12px 0 30px !important;
+            padding: 26px 0 30px !important;
+            min-height: 0 !important;
+            height: auto !important;
+        }
+        html[data-md-page="overview"] div.profile-manga::before,
+        html[data-md-page="overview"] div.profile-manga::after {
+            content: none !important;
+            display: none !important;
+        }
+        html[data-md-page="overview"] div.profile-manga .post-title h1 {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            margin: 0 0 22px !important;
+            font-size: clamp(24px, 3.4vw, 36px) !important;
+            line-height: 1.15 !important;
+            letter-spacing: -0.01em !important;
+        }
+        html[data-md-page="overview"] div.profile-manga .post-title h1 .manga-title-badges {
+            position: static !important;
+            flex: 0 0 auto !important;
+            margin: 0 !important;
+        }
+        html[data-md-page="overview"] div.tab-summary {
+            display: grid !important;
+            grid-template-columns: minmax(170px, 250px) minmax(0, 1fr) !important;
+            gap: 14px 34px !important;
+            align-items: start !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_image {
+            float: none !important;
+            width: auto !important;
+            max-width: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            height: auto !important;
+        }
+        html[data-md-page="overview"] div.summary_image a {
+            display: block !important;
+            float: none !important;
+            width: 100% !important;
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            line-height: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_image a img {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            height: auto !important;
+            aspect-ratio: 2 / 3 !important;
+            object-fit: cover !important;
+            margin: 0 !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            background: var(--soft) !important;
+        }
+        html[data-md-page="overview"] div.summary_content_wrap {
+            float: none !important;
+            width: auto !important;
+            max-width: none !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_content {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: flex-start !important;
+            align-content: flex-start !important;
+            gap: 16px 30px !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_content > .post-content {
+            float: none !important;
+            flex: 2 1 340px !important;
+            width: auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_content > .post-status {
+            float: none !important;
+            flex: 1 1 230px !important;
+            width: auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 6px 16px !important;
+            background: var(--soft) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        html[data-md-page="overview"] div.summary_content > .manga-action,
+        html[data-md-page="overview"] div.summary_content > #init-links,
+        html[data-md-page="overview"] div.summary_content > .nav-links {
+            float: none !important;
+            flex: 1 1 100% !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_content .post-rating {
+            float: none !important;
+            margin: 0 0 8px !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_content .post-content_item {
+            display: grid !important;
+            grid-template-columns: 108px minmax(0, 1fr) !important;
+            gap: 4px 12px !important;
+            align-items: center !important;
+            float: none !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 9px 0 !important;
+            border-bottom: 2px dotted rgba(128, 128, 128, 0.35) !important;
+            overflow: visible !important;
+        }
+        html[data-md-page="overview"] div.summary_content .post-content_item:last-child {
+            border-bottom: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_content > .post-status .post-content_item {
+            grid-template-columns: 74px minmax(0, 1fr) !important;
+        }
+        html[data-md-page="overview"] div.summary_content .post-content_item .summary-heading,
+        html[data-md-page="overview"] div.summary_content .post-content_item .summary-content {
+            float: none !important;
+            width: auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] div.summary_content .post-content_item .summary-heading h5 {
+            margin: 0 !important;
+            letter-spacing: 0.08em !important;
+            line-height: 1.2 !important;
+        }
+        html[data-md-page="overview"] div.summary_content .post-content_item .summary-content {
+            color: var(--ink) !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+            line-height: 1.35 !important;
+        }
+        /* tag lists: pills only, no stray commas */
+        html[data-md-page="overview"] .genres-content,
+        html[data-md-page="overview"] .author-content,
+        html[data-md-page="overview"] .artist-content {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 6px !important;
+            font-size: 0 !important;
+        }
+        html[data-md-page="overview"] .genres-content a,
+        html[data-md-page="overview"] .author-content a,
+        html[data-md-page="overview"] .artist-content a {
+            margin: 0 !important;
+            font-size: 11px !important;
+        }
+        /* comments + bookmark + read buttons: one tidy row */
+        html[data-md-page="overview"] .manga-action {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: stretch !important;
+            gap: 12px !important;
+        }
+        html[data-md-page="overview"] .manga-action .count-comment,
+        html[data-md-page="overview"] .manga-action .add-bookmark {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            float: none !important;
+            margin: 0 !important;
+        }
+        html[data-md-page="overview"] .manga-action .add-bookmark {
+            padding: 8px 14px !important;
+        }
+        html[data-md-page="overview"] div.summary_content #init-links {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+        }
+        html[data-md-page="overview"] div.summary_content #init-links a,
+        html[data-md-page="overview"] #btn-read-first,
+        html[data-md-page="overview"] #btn-read-last {
+            margin: 0 !important;
+        }
+
+        /* -- section headings: icon tile + title, no leftover decoration -- */
+        html[data-md-page="overview"] .c-blog__heading {
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+            margin: 30px 0 14px !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        html[data-md-page="overview"] .c-blog__heading h1,
+        html[data-md-page="overview"] .c-blog__heading h2,
+        html[data-md-page="overview"] .c-blog__heading h3,
+        html[data-md-page="overview"] .c-blog__heading h4,
+        html[data-md-page="overview"] .c-blog__heading h5 {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-weight: 900 !important;
+            font-size: 20px !important;
+            letter-spacing: 0.02em !important;
+            text-transform: uppercase !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-page="overview"] .c-blog__heading h1 i,
+        html[data-md-page="overview"] .c-blog__heading h2 i,
+        html[data-md-page="overview"] .c-blog__heading h3 i,
+        html[data-md-page="overview"] .c-blog__heading h4 i,
+        html[data-md-page="overview"] .c-blog__heading h5 i {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            width: 34px !important;
+            height: 34px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-size: 16px !important;
+            line-height: 1 !important;
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        html[data-md-page="overview"] .c-blog__heading h1 i::before,
+        html[data-md-page="overview"] .c-blog__heading h2 i::before,
+        html[data-md-page="overview"] .c-blog__heading h3 i::before,
+        html[data-md-page="overview"] .c-blog__heading h4 i::before,
+        html[data-md-page="overview"] .c-blog__heading h5 i::before {
+            background: none !important;
+            color: #ffffff !important;
+            line-height: 1 !important;
+        }
+        html[data-md-page="overview"] .c-blog__heading h1 i::after,
+        html[data-md-page="overview"] .c-blog__heading h2 i::after,
+        html[data-md-page="overview"] .c-blog__heading h3 i::after,
+        html[data-md-page="overview"] .c-blog__heading h4 i::after,
+        html[data-md-page="overview"] .c-blog__heading h5 i::after {
+            display: none !important;
+            content: none !important;
+        }
+
+        /* -- summary: a readable card -- */
+        html[data-md-page="overview"] .description-summary {
+            position: relative !important;
+            background: var(--card) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 18px 22px 16px !important;
+            margin: 0 0 8px !important;
+        }
+        html[data-md-page="overview"] .description-summary .summary__content {
+            max-width: 78ch !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] .description-summary .summary__content p {
+            text-align: left !important;
+            margin: 0 0 0.85em !important;
+            line-height: 1.7 !important;
+        }
+        html[data-md-page="overview"] .description-summary .summary__content p:first-child {
+            font-weight: 800 !important;
+        }
+        html[data-md-page="overview"] .description-summary .c-content-readmore,
+        html[data-md-page="overview"] .description-summary .c-chapter-readmore {
+            display: flex !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            padding: 22px 0 0 !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            background: linear-gradient(to bottom, transparent, var(--card) 70%) !important;
+        }
+        html[data-md-page="overview"] .description-summary .btn.btn-link.content-readmore {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            margin: 0 !important;
+            text-decoration: none !important;
+        }
+
+        /* -- chapter list: compact single-line rows in a scroll box, no leader line, no fade-cut -- */
+        html[data-md-page="overview"] a.btn-reverse-order,
+        html[data-md-page="overview"] .c-blog__heading .btn-reverse-order {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: auto !important;
+            height: auto !important;
+            min-width: 0 !important;
+            margin: 0 0 0 auto !important;
+            padding: 6px 10px !important;
+            line-height: 1 !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order i,
+        html[data-md-page="overview"] .c-blog__heading .btn-reverse-order i {
+            width: auto !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            color: var(--ink) !important;
+            font-size: 17px !important;
+            line-height: 1 !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order i::before {
+            background: none !important;
+            color: var(--ink) !important;
+        }
+        html[data-md-page="overview"] #md-sel-bar {
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 0 12px !important;
+        }
+        html[data-md-page="overview"] .page-content-listing.single-page,
+        html[data-md-page="overview"] div.listing-chapters_wrap,
+        html[data-md-page="overview"] div.listing-chapters_wrap.show-more {
+            max-height: none !important;
+            height: auto !important;
+            overflow: visible !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap {
+            max-height: min(62vh, 580px) !important;
+            overflow-x: hidden !important;
+            overflow-y: auto !important;
+            margin: 0 0 8px !important;
+            padding: 2px 10px 6px 2px !important;
+            scrollbar-width: thin !important;
+            scrollbar-color: var(--bd) transparent !important;
+            overscroll-behavior: contain !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap::-webkit-scrollbar {
+            width: 10px !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap::-webkit-scrollbar-track {
+            background: var(--soft) !important;
+            border-radius: 6px !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap::-webkit-scrollbar-thumb {
+            background: var(--bd) !important;
+            border-radius: 6px !important;
+            border: 2px solid var(--soft) !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter {
+            position: relative !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 14px !important;
+            float: none !important;
+            width: auto !important;
+            height: auto !important;
+            min-height: 0 !important;
+            margin: 0 0 8px !important;
+            padding: 10px 14px !important;
+            line-height: 1.3 !important;
+            background: var(--card) !important;
+            background-image: none !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .1s ease, box-shadow .1s ease, background .12s ease !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0 var(--bd) !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter a {
+            display: block !important;
+            flex: 1 1 auto !important;
+            float: none !important;
+            width: auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-weight: 800 !important;
+            font-size: 14px !important;
+            line-height: 1.3 !important;
+            text-decoration: none !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter .chapter-release-date,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter span.chapter-release-date i {
+            position: static !important;
+            float: none !important;
+            flex: 0 0 auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            white-space: nowrap !important;
+            line-height: 1.3 !important;
+        }
+
+        /* -- comments: one frame, readable cards -- */
+        html[data-md-page="overview"] #respond.comments-area {
+            padding: 20px 22px 8px !important;
+            margin-top: 30px !important;
+            background: var(--card) !important;
+        }
+        html[data-md-page="overview"] #respond.comments-area #wpdcom,
+        html[data-md-page="overview"] .comments-area #wpdcom {
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-form,
+        html[data-md-page="overview"] #wpdcom .wpd-form-wrap,
+        html[data-md-page="overview"] #wpdcom .wpd-main-form-wrapper {
+            margin: 0 !important;
+            padding: 0 !important;
+            min-height: 0 !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-thread-head {
+            margin: 0 0 16px !important;
+            padding: 0 !important;
+            border-bottom: 3px solid var(--bd) !important;
+            background: none !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-thread-info {
+            display: inline-block !important;
+            margin: 0 !important;
+            padding: 0 0 10px !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-weight: 900 !important;
+            font-size: 15px !important;
+            letter-spacing: 0.06em !important;
+            color: var(--ink) !important;
+            border-bottom: 5px solid var(--primary) !important;
+            margin-bottom: -3px !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-comment {
+            background: var(--cream) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            margin: 0 0 14px !important;
+            padding: 14px 16px !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-comment .wpd-comment {
+            box-shadow: none !important;
+            margin: 12px 0 0 !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-comment-wrap {
+            padding: 0 !important;
+            margin: 0 !important;
+            background: none !important;
+            border: 0 !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-avatar img,
+        html[data-md-page="overview"] #wpdcom img.avatar {
+            width: 44px !important;
+            height: 44px !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            box-shadow: none !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-comment-date,
+        html[data-md-page="overview"] #wpdcom .wpd-comment-date i {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 11px !important;
+            color: var(--muted) !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-comment-text {
+            margin: 6px 0 8px !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-comment-footer,
+        html[data-md-page="overview"] #wpdcom .wpd-comment-footer .wpd-vote,
+        html[data-md-page="overview"] #wpdcom .wpd-toggle {
+            color: var(--muted) !important;
+            font-size: 12px !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-toggle,
+        html[data-md-page="overview"] #wpdcom .wpd-toggle-parent {
+            font-weight: 700 !important;
+        }
+        html[data-md-page="overview"] #wpdcom .wpd-vote-up,
+        html[data-md-page="overview"] #wpdcom .wpd-vote-down,
+        html[data-md-page="overview"] #wpdcom .wpd-vote-result {
+            color: var(--muted) !important;
+        }
+
+        /* -- sidebar: single frame, tidy rows -- */
+        html[data-md-page="overview"] .c-sidebar .widget .widget-manga-recent,
+        html[data-md-page="overview"] .c-sidebar .widget .widget-content,
+        html[data-md-page="overview"] .c-sidebar .widget .c-widget-wrap {
+            background: transparent !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        html[data-md-page="overview"] .c-sidebar .widget {
+            padding: 18px 18px 16px !important;
+        }
+        html[data-md-page="overview"] .c-sidebar .widget-heading,
+        html[data-md-page="overview"] .widget-manga-recent h5.heading {
+            margin: 0 0 6px !important;
+            padding: 0 0 10px !important;
+            font-size: 17px !important;
+            letter-spacing: 0.04em !important;
+            border-bottom: 3px solid var(--bd) !important;
+            background: none !important;
+        }
+        html[data-md-page="overview"] .popular-item-wrap {
+            display: grid !important;
+            grid-template-columns: 56px minmax(0, 1fr) !important;
+            gap: 4px 12px !important;
+            align-items: start !important;
+            height: auto !important;
+            padding: 12px 0 !important;
+            margin: 0 !important;
+            border-bottom: 2px dotted rgba(128, 128, 128, 0.4) !important;
+        }
+        html[data-md-page="overview"] .popular-item-wrap:last-child {
+            border-bottom: 0 !important;
+        }
+        html[data-md-page="overview"] .popular-item-wrap .popular-img,
+        html[data-md-page="overview"] .popular-item-wrap .popular-content {
+            float: none !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            min-width: 0 !important;
+        }
+        html[data-md-page="overview"] .popular-img.widget-thumbnail a img {
+            display: block !important;
+            width: 56px !important;
+            height: auto !important;
+        }
+        html[data-md-page="overview"] .popular-content h5.widget-title {
+            margin: 0 0 4px !important;
+        }
+        html[data-md-page="overview"] .popular-content h5.widget-title a {
+            min-height: 0 !important;
+            max-height: 2.8em !important;
+            font-size: 13px !important;
+            text-decoration: none !important;
+        }
+        html[data-md-page="overview"] .popular-content .list-chapter {
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html[data-md-page="overview"] .popular-content .chapter-item {
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            gap: 4px 8px !important;
+            margin: 5px 0 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            float: none !important;
+            width: auto !important;
+        }
+        html[data-md-page="overview"] .popular-content .chapter-item .chapter,
+        html[data-md-page="overview"] .popular-content .chapter-item span.chapter {
+            display: inline-flex !important;
+            float: none !important;
+            width: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        html[data-md-page="overview"] .popular-content .chapter-item .chapter a {
+            display: inline-block !important;
+            padding: 2px 8px !important;
+            background: var(--cream) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 6px !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+            font: 700 11px 'JetBrains Mono', monospace !important;
+            text-decoration: none !important;
+            white-space: nowrap !important;
+        }
+        html[data-md-page="overview"] .popular-content .chapter-item .post-on,
+        html[data-md-page="overview"] .popular-content .chapter-item .post-on i {
+            float: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            font: 600 11px 'JetBrains Mono', monospace !important;
+            font-style: normal !important;
+            color: var(--muted) !important;
+            white-space: nowrap !important;
+        }
+        html[data-md-page="overview"] .c-sidebar .widget-view-more,
+        html[data-md-page="overview"] .c-sidebar .widget-view-more a {
+            display: block !important;
+            text-align: center !important;
+            text-decoration: none !important;
+        }
+        html[data-md-page="overview"] .c-sidebar .widget-view-more {
+            margin-top: 12px !important;
+        }
+
+        html[data-md-page="overview"] a.btn-reverse-order i::before,
+        html[data-md-page="overview"] a.btn-reverse-order i::after,
+        html[data-md-page="overview"] a.btn-reverse-order::before,
+        html[data-md-page="overview"] a.btn-reverse-order::after {
+            border: 0 !important;
+            width: auto !important;
+            height: auto !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order i::after {
+            content: none !important;
+            display: none !important;
+        }
+        html[data-md-page="overview"] .manga-action .add-bookmark a,
+        html[data-md-page="overview"] .manga-action .btn-bookmark {
+            border: 0 !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            color: inherit !important;
+        }
+
+        /* -- small screens -- */
+        @media (max-width: 760px) {
+            html[data-md-page="overview"] div.profile-manga {
+                padding: 18px 0 22px !important;
+            }
+            html[data-md-page="overview"] div.tab-summary {
+                grid-template-columns: minmax(0, 1fr) !important;
+                gap: 20px !important;
+                justify-items: stretch !important;
+            }
+            html[data-md-page="overview"] div.summary_image {
+                width: min(56%, 220px) !important;
+                margin: 0 auto !important;
+            }
+            html[data-md-page="overview"] div.summary_content > .post-content,
+            html[data-md-page="overview"] div.summary_content > .post-status {
+                flex: 1 1 100% !important;
+            }
+            html[data-md-page="overview"] div.summary_content .post-content_item {
+                grid-template-columns: 92px minmax(0, 1fr) !important;
+            }
+            html[data-md-page="overview"] .description-summary {
+                padding: 14px 16px 12px !important;
+            }
+            html[data-md-page="overview"] ul.main.version-chap {
+                max-height: min(58vh, 480px) !important;
+            }
+            html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter {
+                padding: 9px 12px !important;
+                gap: 10px !important;
+            }
+            html[data-md-page="overview"] #respond.comments-area {
+                padding: 16px 14px 6px !important;
+            }
+        }
+
+        /* =====================================================================
+           ROUND 2 FIXES
+           ===================================================================== */
+
+        /* -- chapter rows on the series page: hover keeps text readable in both themes -- */
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter:hover {
+            background: var(--yellow) !important;
+        }
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter:hover a,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter:hover .chapter-release-date,
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter:hover .chapter-release-date i,
+        html[data-md-theme="dark"][data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter:hover a {
+            color: #000000 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        /* long titles: ellipsis on the title only, the date never shrinks */
+        html[data-md-page="overview"] ul.main.version-chap li.wp-manga-chapter a {
+            max-width: 100% !important;
+        }
+
+        /* -- reverse-order button: one clean square with a single glyph -- */
+        html[data-md-page="overview"] a.btn-reverse-order,
+        html[data-md-page="overview"] .c-blog__heading .btn-reverse-order {
+            position: relative !important;
+            flex: 0 0 auto !important;
+            width: 40px !important;
+            height: 40px !important;
+            padding: 0 !important;
+            font-size: 0 !important;
+            line-height: 0 !important;
+            background: var(--card) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .1s ease, box-shadow .1s ease, background .12s ease !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order > *,
+        html[data-md-page="overview"] a.btn-reverse-order i {
+            display: none !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order::before {
+            content: "\\21C5" !important;
+            display: flex !important;
+            position: absolute !important;
+            inset: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            align-items: center !important;
+            justify-content: center !important;
+            font: 900 22px/1 'DM Sans', sans-serif !important;
+            color: var(--ink) !important;
+            border: 0 !important;
+            background: none !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order::after {
+            content: none !important;
+            display: none !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order:hover {
+            background: var(--yellow) !important;
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0 var(--bd) !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order:hover::before {
+            color: #000 !important;
+        }
+        html[data-md-page="overview"] a.btn-reverse-order:active {
+            transform: translate(1px, 1px) !important;
+            box-shadow: 0 0 0 var(--bd) !important;
+        }
+
+        /* -- status / comments / bookmark: one tidy stacked list -- */
+        html[data-md-page="overview"] .manga-action {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            width: 100% !important;
+            margin: 10px 0 8px !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        html[data-md-page="overview"] .manga-action .count-comment,
+        html[data-md-page="overview"] .manga-action .add-bookmark {
+            display: flex !important;
+            flex-direction: row !important;
+            align-items: center !important;
+            gap: 12px !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+            float: none !important;
+            margin: 0 !important;
+            padding: 9px 14px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-weight: 800 !important;
+            font-size: 13px !important;
+            line-height: 1.25 !important;
+            text-align: left !important;
+            transition: transform .1s ease, box-shadow .1s ease, background .12s ease !important;
+        }
+        html[data-md-page="overview"] .manga-action .add-bookmark:hover,
+        html[data-md-page="overview"] .manga-action .count-comment:hover {
+            background: var(--yellow) !important;
+            transform: translate(-1px, -1px) !important;
+            box-shadow: 3px 3px 0 var(--bd) !important;
+        }
+        html[data-md-page="overview"] .manga-action .add-bookmark:hover *,
+        html[data-md-page="overview"] .manga-action .count-comment:hover * {
+            color: #000 !important;
+        }
+        html[data-md-page="overview"] .manga-action .action_icon,
+        html[data-md-page="overview"] .manga-action .action_icon a {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            width: 30px !important;
+            height: 30px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            color: var(--primary) !important;
+        }
+        html[data-md-page="overview"] .manga-action .action_icon i,
+        html[data-md-page="overview"] .manga-action .action_icon svg,
+        html[data-md-page="overview"] .manga-action .action_icon img {
+            font-size: 24px !important;
+            width: 24px !important;
+            height: 24px !important;
+            color: var(--primary) !important;
+        }
+        html[data-md-page="overview"] .manga-action .action_detail,
+        html[data-md-page="overview"] .manga-action .action_detail span,
+        html[data-md-page="overview"] .manga-action .add-bookmark a,
+        html[data-md-page="overview"] .manga-action .count-comment a {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+            font-family: 'DM Sans', sans-serif !important;
+            font-size: 13px !important;
+            font-weight: 800 !important;
+            letter-spacing: 0 !important;
+            text-align: left !important;
+            color: var(--ink) !important;
+            text-decoration: none !important;
+        }
+        html[data-md-page="overview"] .manga-action .add-bookmark .action_icon a {
+            flex: 0 0 auto !important;
+        }
+
+        /* -- chapter pills on cards: one line, ellipsis, never clip the frame -- */
+        html body div.page-item-detail .list-chapter .chapter-item,
+        html body .popular-content .chapter-item {
+            overflow: hidden !important;
+            min-width: 0 !important;
+            padding: 0 3px 3px 0 !important;
+        }
+        html body div.page-item-detail .list-chapter .chapter-item span.chapter,
+        html body div.page-item-detail .list-chapter .chapter-item .chapter {
+            flex: 1 1 0 !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            overflow: visible !important;
+            display: block !important;
+        }
+        html body div.page-item-detail .list-chapter .chapter-item .chapter a,
+        html body .popular-content .chapter-item .chapter a {
+            display: block !important;
+            box-sizing: border-box !important;
+            max-width: 100% !important;
+            width: max-content !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            line-height: 1.35 !important;
+            height: auto !important;
+            margin: 0 !important;
+        }
+        html body div.page-item-detail.manga .chapter-item {
+            height: auto !important;
+            min-height: 30px !important;
+            align-items: center !important;
+            flex-wrap: wrap !important;
+            row-gap: 2px !important;
+        }
+        html body div.page-item-detail .list-chapter .chapter-item span.chapter,
+        html body div.page-item-detail .list-chapter .chapter-item .chapter {
+            flex: 1 1 auto !important;
+            min-width: 88px !important;
+        }
+        html body div.page-item-detail.manga .list-chapter {
+            max-height: none !important;
+            min-height: 72px !important;
+            overflow: visible !important;
+        }
+
+        /* -- popular manga leaderboard (home + any other page) -- */
+        html body .widget.c-popular,
+        html body .c-sidebar .widget.c-popular {
+            padding: 18px 18px 16px !important;
+            counter-reset: mdpop !important;
+        }
+        html body .widget.c-popular .widget-heading,
+        html body .widget.c-popular h5.heading {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            margin: 0 0 6px !important;
+            padding: 0 0 12px !important;
+            border-bottom: 3px solid var(--bd) !important;
+            font-size: 17px !important;
+            letter-spacing: 0.04em !important;
+            background: none !important;
+        }
+        html body .widget.c-popular .widget-heading::before,
+        html body .widget.c-popular h5.heading::before {
+            content: "\\2605" !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 30px !important;
+            height: 30px !important;
+            background: var(--yellow) !important;
+            color: #000 !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-size: 15px !important;
+            line-height: 1 !important;
+        }
+        html body .widget.c-popular .widget-heading::after,
+        html body .widget.c-popular h5.heading::after {
+            content: none !important;
+            display: none !important;
+        }
+        html body .widget.c-popular .popular-item-wrap {
+            position: relative !important;
+            counter-increment: mdpop !important;
+            display: grid !important;
+            grid-template-columns: 56px minmax(0, 1fr) !important;
+            gap: 4px 14px !important;
+            align-items: start !important;
+            height: auto !important;
+            padding: 13px 0 !important;
+            margin: 0 !important;
+            border-bottom: 2px dotted rgba(128, 128, 128, 0.4) !important;
+        }
+        html body .widget.c-popular .popular-item-wrap:last-child {
+            border-bottom: 0 !important;
+        }
+        html body .widget.c-popular .popular-item-wrap::before {
+            content: counter(mdpop) !important;
+            display: flex !important;
+            position: absolute !important;
+            z-index: 2 !important;
+            left: -6px !important;
+            top: 7px !important;
+            width: 24px !important;
+            height: 24px !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 7px !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+            font: 900 12px/1 'JetBrains Mono', monospace !important;
+        }
+        html body .widget.c-popular .popular-item-wrap:nth-of-type(1)::before {
+            background: var(--yellow) !important;
+            color: #000 !important;
+        }
+        html body .widget.c-popular .popular-item-wrap:nth-of-type(2)::before {
+            background: var(--blue, #5bc0de) !important;
+            color: #000 !important;
+        }
+        html body .widget.c-popular .popular-item-wrap:nth-of-type(3)::before {
+            background: var(--pink, #ff6b6b) !important;
+            color: #000 !important;
+        }
+        html body .widget.c-popular .popular-item-wrap::after {
+            content: none !important;
+            display: none !important;
+        }
+        html body .widget.c-popular .popular-img,
+        html body .widget.c-popular .popular-content {
+            float: none !important;
+            width: auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html body .widget.c-popular .popular-img.widget-thumbnail a img {
+            display: block !important;
+            width: 56px !important;
+            height: auto !important;
+        }
+        html body .widget.c-popular .popular-content h5.widget-title {
+            margin: 2px 0 4px !important;
+        }
+        html body .widget.c-popular .popular-content h5.widget-title a {
+            min-height: 0 !important;
+            max-height: 2.8em !important;
+            font-size: 13.5px !important;
+            text-decoration: none !important;
+        }
+        html body .popular-content .chapter-item {
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            float: none !important;
+            width: auto !important;
+            margin: 4px 0 0 !important;
+        }
+        html body .popular-content .chapter-item .chapter {
+            display: block !important;
+            flex: 0 1 auto !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: none !important;
+            border: 0 !important;
+            box-shadow: none !important;
+        }
+        html body .popular-content .chapter-item .chapter a {
+            padding: 2px 8px !important;
+            font-size: 11px !important;
+        }
+        html body .popular-content .chapter-item .post-on {
+            flex: 0 0 auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            white-space: nowrap !important;
+            font: 600 11px 'JetBrains Mono', monospace !important;
+            color: var(--muted) !important;
+        }
+
+        /* -- Load More: lift on hover, press on click, striped + spinner while loading -- */
+        nav.navigation-ajax a.load-ajax {
+            position: relative !important;
+            overflow: hidden !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 10px !important;
+            max-width: 300px !important;
+            color: #000 !important;
+            background: var(--yellow) !important;
+            transition: transform .16s cubic-bezier(.3, 1.6, .5, 1), box-shadow .16s ease, background .16s ease !important;
+        }
+        nav.navigation-ajax a.load-ajax::after {
+            content: "\\2193" !important;
+            display: inline-block !important;
+            font-size: 18px !important;
+            line-height: 1 !important;
+            animation: mdBob 1.4s ease-in-out infinite !important;
+        }
+        nav.navigation-ajax a.load-ajax::before {
+            content: "" !important;
+            position: absolute !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            left: -60% !important;
+            width: 40% !important;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .55), transparent) !important;
+            transform: skewX(-18deg) !important;
+            transition: none !important;
+            pointer-events: none !important;
+        }
+        nav.navigation-ajax a.load-ajax:hover::before {
+            animation: mdShine .75s ease-out !important;
+        }
+        nav.navigation-ajax a.load-ajax:hover {
+            background: var(--yellow) !important;
+            color: #000 !important;
+            transform: translate(-3px, -3px) !important;
+            box-shadow: 7px 7px 0 var(--bd) !important;
+        }
+        nav.navigation-ajax a.load-ajax:hover::after {
+            animation-duration: .7s !important;
+        }
+        nav.navigation-ajax a.load-ajax:active {
+            transform: translate(3px, 3px) !important;
+            box-shadow: 0 0 0 var(--bd) !important;
+        }
+        nav.navigation-ajax a.load-ajax.md-loading {
+            pointer-events: none !important;
+            background-image: repeating-linear-gradient(45deg, rgba(0, 0, 0, .12) 0 12px, transparent 12px 24px) !important;
+            background-size: 34px 34px !important;
+            animation: mdStripes .8s linear infinite !important;
+            transform: translate(3px, 3px) !important;
+            box-shadow: 1px 1px 0 var(--bd) !important;
+        }
+        nav.navigation-ajax a.load-ajax.md-loading::after {
+            content: "" !important;
+            width: 16px !important;
+            height: 16px !important;
+            border: 3px solid #000 !important;
+            border-right-color: transparent !important;
+            border-radius: 50% !important;
+            animation: mdSpin .7s linear infinite !important;
+        }
+        @keyframes mdBob { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
+        @keyframes mdShine { from { left: -60%; } to { left: 130%; } }
+        @keyframes mdStripes { from { background-position: 0 0; } to { background-position: 34px 0; } }
+        @keyframes mdSpin { to { transform: rotate(360deg); } }
+        /* freshly loaded cards pop in one after another */
+        .md-pop-in {
+            animation: mdPopIn .45s cubic-bezier(.2, .9, .3, 1.2) both !important;
+            animation-delay: calc(var(--md-i, 0) * 55ms) !important;
+        }
+        @keyframes mdPopIn {
+            from { opacity: 0; transform: translateY(22px) scale(.96); }
+            to { opacity: 1; transform: none; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            nav.navigation-ajax a.load-ajax, nav.navigation-ajax a.load-ajax::before, nav.navigation-ajax a.load-ajax::after, .md-pop-in { animation: none !important; transition: none !important; }
+        }
+
+        /* -- series header: blurred cover backdrop (same idea as the home hero) -- */
+        html[data-md-page="overview"] div.profile-manga {
+            position: relative !important;
+            overflow: hidden !important;
+            isolation: isolate !important;
+        }
+        html[data-md-page="overview"] div.profile-manga > .md-profile-bg {
+            position: absolute !important;
+            inset: -30px !important;
+            z-index: -2 !important;
+            background-size: cover !important;
+            background-position: center 25% !important;
+            filter: blur(24px) saturate(1.7) brightness(.8) !important;
+            opacity: .85 !important;
+            transform: scale(1.1) !important;
+            pointer-events: none !important;
+        }
+        html[data-md-page="overview"] div.profile-manga > .md-profile-bg::after {
+            content: none !important;
+        }
+        html[data-md-page="overview"] div.profile-manga::before {
+            content: "" !important;
+            display: block !important;
+            position: absolute !important;
+            inset: 0 !important;
+            z-index: -1 !important;
+            pointer-events: none !important;
+            background: linear-gradient(to top, rgba(255,255,255,.65) 0%, rgba(255,255,255,.12) 55%, transparent 100%),
+                        linear-gradient(to right, rgba(255,255,255,.78) 0%, rgba(255,255,255,.2) 60%, transparent 100%) !important;
+        }
+        html[data-md-theme="dark"][data-md-page="overview"] div.profile-manga {
+            background: #0b0813 !important;
+        }
+        html[data-md-theme="dark"][data-md-page="overview"] div.profile-manga > .md-profile-bg {
+            filter: blur(18px) brightness(.34) saturate(1.2) !important;
+            opacity: 1 !important;
+        }
+        html[data-md-theme="dark"][data-md-page="overview"] div.profile-manga::before {
+            background: linear-gradient(to top, rgba(0,0,0,.7) 0%, rgba(0,0,0,.2) 60%, transparent 100%),
+                        linear-gradient(to right, rgba(0,0,0,.8) 0%, rgba(0,0,0,.35) 60%, transparent 100%) !important;
         }
     `;
 
@@ -3334,7 +4589,7 @@
                 <div class="md-hero-thumbs" role="tablist" aria-label="Popular manga series"></div>
             </div>
             <a class="md-hero-card" title="Read now">
-                <img alt="Book cover">
+                <span class="md-hero-card-art"><img alt="Book cover"></span>
             </a>
         `;
 
@@ -3503,7 +4758,8 @@
                             requestAnimationFrame(() => setProgressRate(0.1));
                         }
                     }
-                    const left = th.offsetLeft - thumbsContainer.offsetLeft - 12;
+                    // centre the selected thumb in the strip (offsetLeft is already relative to the strip)
+                    const left = th.offsetLeft - (thumbsContainer.clientWidth - th.offsetWidth) / 2;
                     thumbsContainer.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
                 } else {
                     th.classList.remove('is-active');
@@ -3528,6 +4784,54 @@
     }
 
     /* ====================================================================
+     *  SERIES HEADER BACKDROP + LOAD-MORE FEEDBACK
+     * ==================================================================== */
+    function setupCoverBackdrop() {
+        const band = document.querySelector('div.profile-manga');
+        if (!band) return;
+        const img = band.querySelector('div.summary_image img');
+        if (!img) return;
+        const src = img.currentSrc || img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src') || '';
+        if (!src || src.startsWith('data:image/gif')) return;
+        let bg = band.querySelector(':scope > .md-profile-bg');
+        if (!bg) {
+            bg = document.createElement('div');
+            bg.className = 'md-profile-bg';
+            band.insertBefore(bg, band.firstChild);
+        }
+        if (bg.dataset.src !== src) {
+            bg.dataset.src = src;
+            bg.style.backgroundImage = 'url("' + src.replace(/"/g, '%22') + '")';
+        }
+    }
+
+    let loadMoreWired = false;
+    function setupLoadMore() {
+        if (loadMoreWired) return;
+        loadMoreWired = true;
+        const cardSel = 'div.page-item-detail, .popular-item-wrap';
+        document.addEventListener('click', e => {
+            const a = e.target.closest && e.target.closest('nav.navigation-ajax a.load-ajax');
+            if (!a) return;
+            a.classList.add('md-loading');
+            const known = new Set(document.querySelectorAll(cardSel));
+            const finish = () => { a.classList.remove('md-loading'); mo.disconnect(); clearTimeout(t); };
+            const mo = new MutationObserver(() => {
+                const fresh = [...document.querySelectorAll(cardSel)].filter(n => !known.has(n));
+                if (!fresh.length) return;
+                fresh.forEach((n, i) => {
+                    n.style.setProperty('--md-i', String(Math.min(i, 12)));
+                    n.classList.add('md-pop-in');
+                    setTimeout(() => n.classList.remove('md-pop-in'), 1600);
+                });
+                finish();
+            });
+            mo.observe(document.body, { childList: true, subtree: true });
+            const t = setTimeout(finish, 12000);
+        }, true);
+    }
+
+    /* ====================================================================
      *  RUN LOOP & LIFECYCLE
      * ==================================================================== */
     injectStyles();
@@ -3540,11 +4844,13 @@
             purgeAdContainers();
             cleanCardTitles();
             fixCommentImages();
+            try { setupLoadMore(); } catch (_) {}
             const page = PAGE();
             if (page === 'list') {
                 buildHero();
             } else if (page === 'overview') {
                 setupSelect(null, SEL_MANGAREAD);
+                try { setupCoverBackdrop(); } catch (_) {}
             } else if (page === 'chapter') {
                 setupReader();
             }
