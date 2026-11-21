@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.18
+// @version      2026-11-21.19
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -2940,6 +2940,14 @@
             #md-hero .md-hero-body { max-width: min(540px, 56%) !important; }
         }
         @media (max-width: 768px) {
+            /* Prevent horizontal overflow & iOS Safari input auto-zoom */
+            html[data-md-site="comix"] { --md-base: 100vw; }
+            html[data-md-site="comix"] body { overflow-x: clip; }
+            html[data-md-site="comix"] header.topnav .topnav__inner { min-height: 52px !important; gap: 6px !important; }
+            html[data-md-site="comix"] header.topnav .topnav__right { gap: 6px !important; }
+            html[data-md-site="comix"] header.topnav .icon-btn { width: 38px !important; height: 38px !important; min-width: 38px !important; min-height: 38px !important; }
+
+            /* Hero Carousel mobile ergonomics */
             #md-hero {
                 padding: 16px 14px 14px !important;
                 min-height: clamp(320px, 84vw, 390px) !important;
@@ -2947,21 +2955,83 @@
                 align-items: stretch !important;
                 justify-content: flex-start !important;
                 gap: 10px !important;
+                touch-action: pan-y;
             }
             #md-hero .md-hero-body { max-width: 100% !important; min-height: 0 !important; justify-content: flex-start !important; }
             #md-hero .md-hero-card { --mdc-w: clamp(118px, 36vw, 165px); bottom: -36px !important; right: clamp(16px, 5vw, 28px) !important; }
             #md-hero .md-hero-card-art { border-radius: 12px !important; box-shadow: 6px 6px 0 #000000 !important; transform: rotate(3.5deg) !important; }
             #md-hero .md-hero-meta, #md-hero .md-hero-cta { max-width: calc(100% - clamp(142px, 42vw, 190px)) !important; }
             #md-hero .md-hero-cta { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; margin-bottom: 14px !important; }
-            #md-hero .md-hero-btn { width: 100% !important; max-width: 170px !important; padding: 9px 14px !important; font-size: 12.5px !important; }
+            #md-hero .md-hero-btn { width: 100% !important; max-width: 176px !important; padding: 10px 14px !important; min-height: 40px !important; font-size: 12.5px !important; }
             #md-hero .md-hero-thumbs { margin-top: auto !important; max-width: calc(100% - clamp(142px, 42vw, 190px) + 18px) !important; gap: 7px !important; }
-            #md-hero .md-hero-thumb { flex: 0 0 38px !important; width: 38px !important; height: 56px !important; }
-            #md-rbar { padding: 6px 10px; gap: 6px; }
+            #md-hero .md-hero-thumb { flex: 0 0 40px !important; width: 40px !important; height: 58px !important; }
+
+            /* Continue Reading horizontal snap track */
+            #md-continue-reading .md-cr-track { gap: 12px !important; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; }
+            #md-continue-reading .md-cr-card { flex: 0 0 152px !important; width: 152px !important; scroll-snap-align: start; }
+            #md-continue-reading .md-cr-btn { min-height: 36px !important; }
+
+            /* Series chapters & selection bar mobile layout */
+            #md-sel-bar { gap: 6px; padding: 8px; }
+            #md-sel-bar button { min-height: 38px; padding: 6px 10px !important; font-size: 11.5px !important; }
+            #md-all-chaps .md-ch-head { gap: 8px; padding: 10px; }
+            #md-all-chaps .md-ch-search { flex: 1 0 100%; height: 40px; font-size: 16px; }
+            #md-all-chaps .md-ch-sort { height: 38px; }
+            #md-all-chaps .md-ch-reload { width: 38px; height: 38px; }
+            #md-all-chaps .md-ch-scroll { max-height: 62dvh; -webkit-overflow-scrolling: touch; }
+            #md-all-chaps .md-ch-row { flex-wrap: wrap; padding: 11px 12px; gap: 6px; }
+            #md-all-chaps .md-ch-meta { width: 100%; justify-content: space-between; }
+            #md-all-chaps .md-group-sel { height: 34px; max-width: 68%; font-size: 12.5px; }
+            #md-all-chaps .md-ch-morebtn { flex: 1 1 140px; height: 38px; }
+
+            /* Reader top bar & single-row scrollable bottom dock */
+            #md-rbar { padding: max(6px, env(safe-area-inset-top)) 8px 6px; gap: 5px; }
             #md-rbar .md-rb-lbl { display: none; }
-            #md-rbar .md-rb-btn { padding: 0 8px; }
-            #md-dock { gap: 4px; padding: 5px; }
-            #md-dock button { padding: 0 7px !important; height: 36px; min-width: 36px; }
+            #md-rbar .md-rb-btn { height: 38px; min-width: 38px; padding: 0 8px; }
+            #md-rbar .md-rb-title { gap: 6px; }
+            #md-rbar .md-rb-title b { font-size: 13px; }
+            #md-rbar .md-rb-chap { padding: 4px 8px; font-size: 11px; }
+            #md-dock {
+                flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none;
+                -webkit-overflow-scrolling: touch; max-width: calc(100vw - 14px);
+                gap: 5px; padding: 5px; bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            #md-dock::-webkit-scrollbar { display: none; }
+            #md-dock button { flex: 0 0 auto; padding: 0 8px !important; height: 38px; min-width: 38px; }
+            #md-dock .md-zoom { min-width: 50px; }
+            #md-dock .md-dl { min-width: 42px; }
             #md-dock .md-lbl { display: none !important; }
+            html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-progress--right { left: auto !important; right: 3px !important; width: 4px !important; }
+            html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-progress--left { right: auto !important; left: 3px !important; width: 4px !important; }
+
+            /* Comments: prevent deep nesting squish on phones */
+            html[data-md-site="comix"] ul.cm-items > li.cm-item { padding: 12px !important; }
+            html[data-md-site="comix"] ul.cm-item__replies { padding-left: 8px !important; }
+            html[data-md-site="comix"] .cm-item__content { font-size: 13.5px !important; }
+
+            /* Local Library & Save-to-List modals on mobile */
+            #md-lib-modal, #md-list-picker { padding: 8px; }
+            #md-lib-modal .md-lib-panel, #md-list-picker .md-pick-panel { width: calc(100vw - 16px); max-height: 90dvh; border-radius: 14px; }
+            .md-modal-head { padding: 12px 14px; }
+            .md-lib-tabs { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; padding: 10px 12px; gap: 6px; }
+            .md-lib-tabs::-webkit-scrollbar { display: none; }
+            .md-lib-tab { flex: 0 0 auto; padding: 8px 12px; }
+            .md-lib-newform { flex: 0 0 auto; margin-left: 4px; }
+            .md-lib-input { height: 38px; font-size: 16px; }
+            .md-lib-btn { height: 38px; }
+            .md-lib-body { padding: 12px; }
+            .md-lib-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+            .md-pick-row { min-height: 44px; padding: 11px 12px; }
+            #md-series-save { margin-left: 0; margin-top: 8px; min-height: 40px; }
+            #md-top { right: 14px; bottom: max(16px, env(safe-area-inset-bottom)); width: 44px; height: 44px; }
+        }
+        @media (hover: none) {
+            /* Touchscreens: keep card actions accessible without hover & avoid sticky hover lifts */
+            #md-continue-reading .md-cr-remove,
+            .md-lib-card-rm { opacity: 0.9 !important; }
+            html[data-md-site="comix"] :is(li.side-item, li.top-uploader, li.latest-post, ul.comments > li.comment, .mpage__side li.mrec-item, .mpage__side li.mcoll-item, [data-md-comm-card="1"], #md-continue-reading .md-cr-card, .md-lib-card):hover {
+                transform: none !important;
+            }
         }
         @media (max-width: 420px) {
             html[data-md-site="comix"] header.topnav .logo { width: 6.2rem; }
@@ -3452,6 +3522,23 @@
         thumbsContainer.addEventListener('wheel', e => {
             if (e.deltaY !== 0 && !e.deltaX) { e.preventDefault(); thumbsContainer.scrollLeft += e.deltaY; }
         }, { passive: false });
+
+        // Mobile touch swipe left/right to navigate Hero Carousel slides
+        let touchStartX = 0, touchStartY = 0;
+        hero.addEventListener('touchstart', e => {
+            if (e.touches.length !== 1 || e.target.closest('.md-hero-thumbs')) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+        hero.addEventListener('touchend', e => {
+            if (!touchStartX || !e.changedTouches.length) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            touchStartX = touchStartY = 0;
+            if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.4) {
+                showSlide(dx < 0 ? currentSlide + 1 : currentSlide - 1);
+            }
+        }, { passive: true });
 
         const onEnter = () => { clearTimeout(slideTimer); setProgressRate(0.1); };
         const onLeave = () => { setProgressRate(1.0); restartTimer(); };
