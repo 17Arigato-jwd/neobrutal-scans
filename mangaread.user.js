@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.9
+// @version      2026-11-21.10
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -7581,6 +7581,240 @@
                 overflow: hidden !important;
             }
         }
+        /* ================================================================
+         *  v2026-11-21.10 POLISH:
+         *  - Mobile-only dock: hide zoom & stretch, always 100vw chapter strip
+         *  - Clean compact Advanced Search cards on mobile
+         *  - Spacing between ADD TO LIST and bottom edge of .post-status
+         *  - Neobrutalist Custom Video Player controls (with download)
+         * ================================================================ */
+
+        /* 1. Breathing space between ADD TO LIST and bottom border of .post-status */
+        html[data-md-page="overview"] .summary_content_wrap .post-status,
+        html[data-md-page="overview"] .post-status {
+            padding-bottom: 16px !important;
+        }
+        #md-ov-lib-btn.md-ov-lib-btn {
+            margin-top: 12px !important;
+            margin-bottom: 2px !important;
+        }
+
+        /* 2. Custom Neobrutalist Comment Video Player (.md-vid-wrap) */
+        .md-vid-wrap {
+            position: relative;
+            width: 100%;
+            max-width: 540px;
+            margin: 10px 0;
+            background: #0b0b0c;
+            border: var(--bw, 3px) solid var(--bd);
+            border-radius: var(--r, 10px);
+            box-shadow: var(--sh);
+            overflow: hidden;
+        }
+        .md-vid-wrap video {
+            display: block !important;
+            width: 100% !important;
+            max-height: 440px !important;
+            object-fit: contain !important;
+            background: #0b0b0c !important;
+            cursor: pointer !important;
+        }
+        .md-vid-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 10px;
+            background: var(--card);
+            border-top: 2.5px solid var(--bd);
+        }
+        .md-vid-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            border-radius: 7px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+        }
+        .md-vid-btn:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .md-vid-btn:active { transform: scale(0.96); }
+        .md-vid-btn svg { width: 15px; height: 15px; }
+        .md-vid-seek {
+            flex: 1 1 auto;
+            min-width: 50px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            margin: 0 2px;
+        }
+        .md-vid-time {
+            font: 800 11px/1 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+            color: var(--ink);
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            /* 3. Mobile-only Chapter Reader: remove zoom & stretch from dock, always stretch images to 100vw */
+            html[data-md-page="chapter"] .reading-content,
+            html[data-md-page="chapter"] .reading-content .page-break,
+            html[data-md-page="chapter"] .reading-content img {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                min-width: 100vw !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+            }
+            html[data-md-page="chapter"] #md-dock [data-act="zoom-out"],
+            html[data-md-page="chapter"] #md-dock [data-act="zoom-reset"],
+            html[data-md-page="chapter"] #md-dock [data-act="zoom-in"],
+            html[data-md-page="chapter"] #md-dock [data-act="stretch"] {
+                display: none !important;
+            }
+            html[data-md-page="chapter"] #md-dock {
+                display: grid !important;
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+                gap: 6px !important;
+                width: calc(100vw - 16px) !important;
+                max-width: 380px !important;
+                padding: 8px !important;
+            }
+            html[data-md-page="chapter"] #md-dock button.md-dl {
+                grid-column: span 2 !important;
+            }
+
+            /* 4. Clean Compact Advanced Search Results Bar & Cards on Mobile */
+            .tab-wrap .c-blog__heading {
+                border: none !important;
+                box-shadow: none !important;
+                background: transparent !important;
+                background-image: none !important;
+                padding: 0 !important;
+                min-width: 0 !important;
+                overflow: hidden !important;
+            }
+            .tab-wrap .c-blog__heading h1,
+            .tab-wrap .c-blog__heading h2,
+            .tab-wrap .c-blog__heading h3,
+            .tab-wrap .c-blog__heading h4,
+            .tab-wrap .c-blog__heading .h4 {
+                font-size: 12.5px !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+            }
+            .search-lists .row.c-tabs-item__content,
+            .c-tabs-item__content.row {
+                display: grid !important;
+                grid-template-columns: 96px minmax(0, 1fr) !important;
+                gap: 10px 12px !important;
+                align-items: start !important;
+                padding: 12px !important;
+                margin: 0 0 12px !important;
+                background: var(--card) !important;
+                border: var(--bw) solid var(--bd) !important;
+                border-radius: var(--r) !important;
+                box-shadow: var(--sh) !important;
+            }
+            .c-tabs-item__content > [class*="col-"]:first-child {
+                grid-column: 1 !important;
+                width: 96px !important;
+                max-width: 96px !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .c-tabs-item__content .tab-thumb,
+            .c-tabs-item__content .c-image-hover {
+                width: 96px !important;
+                aspect-ratio: 2 / 3 !important;
+                border-radius: 8px !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+            }
+            .c-tabs-item__content .tab-thumb img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: cover !important;
+            }
+            .c-tabs-item__content > [class*="col-"]:nth-child(2) {
+                grid-column: 2 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .c-tabs-item__content .tab-summary {
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 6px !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .c-tabs-item__content .post-title h3,
+            .c-tabs-item__content .post-title h4 {
+                margin: 0 !important;
+                font: 800 14.5px/1.25 'DM Sans', sans-serif !important;
+                display: -webkit-box !important;
+                -webkit-line-clamp: 2 !important;
+                -webkit-box-orient: vertical !important;
+                overflow: hidden !important;
+            }
+            .c-tabs-item__content .post-content {
+                background: transparent !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 3px !important;
+            }
+            .c-tabs-item__content .post-content_item.md-search-verbose {
+                display: none !important;
+            }
+            .c-tabs-item__content .post-content_item {
+                display: flex !important;
+                align-items: baseline !important;
+                gap: 6px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                font-size: 12px !important;
+                line-height: 1.3 !important;
+            }
+            .c-tabs-item__content .post-content_item .summary-heading {
+                width: auto !important;
+                min-width: 0 !important;
+                flex: 0 0 auto !important;
+                font-weight: 800 !important;
+                color: var(--muted) !important;
+            }
+            .c-tabs-item__content .post-content_item .summary-content {
+                width: auto !important;
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+                padding: 0 !important;
+            }
+            .c-tabs-item__content .tab-meta {
+                grid-column: 1 / -1 !important;
+                display: flex !important;
+                flex-wrap: wrap !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 6px !important;
+                padding-top: 8px !important;
+                margin-top: 2px !important;
+                border-top: 1.5px dashed var(--bd) !important;
+            }
+        }
     `;
 
     function injectStyles() {
@@ -8431,22 +8665,31 @@
 
     let autoScrollRaf = 0;
     let autoScrollLast = 0;
+    let autoScrollCarry = 0;
+    let autoScrollSpeed = Number(store.get('autoScrollSpeed', 150)) || 150;
     function setAutoScroll(on) {
         const btn = reader.dock && $('[data-act="autoscroll"]', reader.dock);
         if (!on) {
             if (autoScrollRaf) cancelAnimationFrame(autoScrollRaf);
             autoScrollRaf = 0;
+            autoScrollCarry = 0;
             if (btn) btn.classList.remove('is-on');
             return;
         }
         if (btn) btn.classList.add('is-on');
+        autoScrollSpeed = Number(store.get('autoScrollSpeed', autoScrollSpeed)) || 150;
         autoScrollLast = performance.now();
+        autoScrollCarry = 0;
         const tick = now => {
             if (!autoScrollRaf) return;
-            const dt = Math.min(0.1, (now - autoScrollLast) / 1000);
+            const dt = Math.min(0.1, Math.max(0, (now - autoScrollLast) / 1000));
             autoScrollLast = now;
-            const speed = Number(store.get('autoScrollSpeed', 150)) || 150;
-            window.scrollBy(0, speed * dt);
+            autoScrollCarry += autoScrollSpeed * dt;
+            const step = Math.trunc(autoScrollCarry);
+            if (step !== 0) {
+                window.scrollBy(0, step);
+                autoScrollCarry -= step;
+            }
             if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) {
                 setAutoScroll(false);
                 return;
@@ -10013,11 +10256,14 @@
             }));
             const spInp = $('#md-set-speed', wrap);
             const spVal = $('#md-set-speed-val', wrap);
-            spInp.addEventListener('input', () => {
-                const v = Number(spInp.value) || 150;
+            const syncSpeed = () => {
+                const v = Math.max(60, Math.min(400, Number(spInp.value) || 150));
+                autoScrollSpeed = v;
                 store.set('autoScrollSpeed', v);
                 spVal.textContent = v + ' px/s';
-            });
+            };
+            spInp.addEventListener('input', syncSpeed);
+            spInp.addEventListener('change', syncSpeed);
             $$('[data-g="prog"] button', wrap).forEach(b => b.addEventListener('click', () => {
                 store.set('progSide', b.dataset.v);
                 const rail = document.getElementById('md-progress');
@@ -10325,6 +10571,128 @@
         }
     }
 
+    /* ====================================================================
+     *  CUSTOM NEOBRUTALIST VIDEO PLAYER CONTROLS (WITH DOWNLOAD)
+     * ==================================================================== */
+    const ICON_VOL = SVG('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a9.5 9.5 0 0 1 0 14"/>');
+    const ICON_MUTE = SVG('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>');
+
+    function fmtVidTime(s) {
+        if (!Number.isFinite(s) || s < 0) return '0:00';
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function downloadVideoUrl(url) {
+        if (!url) return;
+        const fname = safeName((url.split('/').pop() || 'video.mp4').split('?')[0]) || 'video.mp4';
+        toast('Downloading video…');
+        const gmReq = (typeof GM_xmlhttpRequest === 'function' && GM_xmlhttpRequest) || (typeof GM !== 'undefined' && GM.xmlHttpRequest);
+        if (gmReq) {
+            gmReq({
+                method: 'GET',
+                url,
+                responseType: 'blob',
+                onload: res => {
+                    if (res.status >= 200 && res.status < 300 && res.response) {
+                        saveBlob(res.response, fname);
+                        toast('Saved ' + fname);
+                    } else {
+                        window.open(url, '_blank', 'noopener');
+                    }
+                },
+                onerror: () => window.open(url, '_blank', 'noopener')
+            });
+        } else {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fname;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+        }
+    }
+
+    function setupCommentVideos() {
+        $$('#wpdcom video').forEach(vid => {
+            if (vid.dataset.mdVidInit) return;
+            vid.dataset.mdVidInit = '1';
+            vid.removeAttribute('controls');
+            vid.controls = false;
+            vid.playsInline = true;
+
+            const wrap = document.createElement('div');
+            wrap.className = 'md-vid-wrap';
+            vid.parentNode.insertBefore(wrap, vid);
+            wrap.appendChild(vid);
+
+            const bar = document.createElement('div');
+            bar.className = 'md-vid-bar';
+            bar.innerHTML = `<button type="button" class="md-vid-btn md-vid-play" aria-label="Play or pause">${ICON.scroll}</button>
+                <input type="range" class="md-vid-seek" min="0" max="1000" value="0" aria-label="Seek">
+                <span class="md-vid-time">0:00 / 0:00</span>
+                <button type="button" class="md-vid-btn md-vid-mute" aria-label="Mute or unmute">${ICON_VOL}</button>
+                <button type="button" class="md-vid-btn md-vid-dl" title="Download video" aria-label="Download video">${ICON.down}</button>
+                <button type="button" class="md-vid-btn md-vid-fs" title="Fullscreen" aria-label="Fullscreen">${ICON.expand}</button>`;
+            wrap.appendChild(bar);
+
+            const playBtn = $('.md-vid-play', bar);
+            const seek = $('.md-vid-seek', bar);
+            const timeEl = $('.md-vid-time', bar);
+            const muteBtn = $('.md-vid-mute', bar);
+            const dlBtn = $('.md-vid-dl', bar);
+            const fsBtn = $('.md-vid-fs', bar);
+
+            const syncPlay = () => { playBtn.innerHTML = vid.paused ? ICON.scroll : ICON.pause; };
+            const syncMute = () => { muteBtn.innerHTML = (vid.muted || vid.volume === 0) ? ICON_MUTE : ICON_VOL; };
+            const syncTime = () => {
+                const dur = Number.isFinite(vid.duration) ? vid.duration : 0;
+                const cur = vid.currentTime || 0;
+                if (dur > 0) seek.value = String(Math.round((cur / dur) * 1000));
+                timeEl.textContent = fmtVidTime(cur) + ' / ' + fmtVidTime(dur);
+            };
+
+            const togglePlay = () => { if (vid.paused) vid.play().catch(() => {}); else vid.pause(); };
+            vid.addEventListener('click', togglePlay);
+            playBtn.addEventListener('click', togglePlay);
+            vid.addEventListener('play', syncPlay);
+            vid.addEventListener('pause', syncPlay);
+            vid.addEventListener('timeupdate', syncTime);
+            vid.addEventListener('loadedmetadata', syncTime);
+            vid.addEventListener('volumechange', syncMute);
+
+            seek.addEventListener('input', () => {
+                if (Number.isFinite(vid.duration) && vid.duration > 0) {
+                    vid.currentTime = (Number(seek.value) / 1000) * vid.duration;
+                }
+            });
+            muteBtn.addEventListener('click', () => { vid.muted = !vid.muted; syncMute(); });
+            dlBtn.addEventListener('click', () => {
+                const src = vid.currentSrc || vid.getAttribute('src') || (vid.querySelector('source')?.src) || '';
+                downloadVideoUrl(src);
+            });
+            fsBtn.addEventListener('click', () => {
+                if (document.fullscreenElement === wrap) (document.exitFullscreen || (() => {})).call(document);
+                else (wrap.requestFullscreen || vid.webkitEnterFullscreen || (() => {})).call(wrap.requestFullscreen ? wrap : vid);
+            });
+            syncPlay();
+            syncMute();
+            syncTime();
+        });
+    }
+
+    function tagVerboseSearchMeta() {
+        $$('.c-tabs-item__content .post-content_item').forEach(row => {
+            if (row.dataset.mdMetaTagged) return;
+            row.dataset.mdMetaTagged = '1';
+            const heading = (row.querySelector('.summary-heading')?.textContent || '').trim().toLowerCase();
+            if (/alternative|author|artist/.test(heading)) row.classList.add('md-search-verbose');
+        });
+    }
+
     function setupSortDropdown() {
         const wrap = $('.tab-wrap');
         if (!wrap || wrap.querySelector('.md-sort-select')) return;
@@ -10400,7 +10768,7 @@
                 try { setupCommentSortBar(); } catch (_) {}
             }
             setupThemeToggle();
-            try { setupHeaderControls(); setupSortDropdown(); } catch (_) {}
+            try { setupHeaderControls(); setupSortDropdown(); setupCommentVideos(); tagVerboseSearchMeta(); } catch (_) {}
             addExtras();
             const bar = $('#md-sel-bar');
             if (bar && bar.__sync) bar.__sync();
