@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.17
+// @version      2026-11-21.18
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -1459,13 +1459,14 @@
         html[data-md-site="comix"][data-md-theme="light"][data-md-page="community"] [data-md-comm-tabs="1"] :is(a, button):is(.is-active, .active, [aria-selected="true"], [aria-current="page"], [aria-pressed="true"]) {
             color: #111111 !important;
         }
-        html[data-md-site="comix"][data-md-page="community"] :is([data-md-comm-card="1"], main article, main [class*="post-card" i], main [class*="post-item" i], main [class*="cpost" i]:not(.cpost-cat):not(.cpost-tag)) {
+        /* Single clean Neobrutalist surface per Community post card — ZERO nested box-in-box borders */
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-card="1"] {
             background: var(--card) !important;
             color: var(--ink) !important;
             border: var(--bw) solid var(--bd) !important;
             border-radius: 12px !important;
             box-shadow: var(--sh) !important;
-            padding: 16px 18px !important;
+            padding: 14px 16px !important;
             margin-bottom: 12px !important;
             transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
         }
@@ -1474,9 +1475,18 @@
             box-shadow: var(--sh-hover) !important;
             background: var(--cream) !important;
         }
+        /* Keep all inner elements inside a Community card flat & clean (no redundant inner borders/shadows) */
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-card="1"] :is(div, section, header, footer, p, span):not(.cpost-cat):not(.cpost-tag):not(.uavatar) {
+            box-shadow: none !important;
+        }
         html[data-md-site="comix"][data-md-page="community"] [data-md-comm-card="1"] .uavatar {
             border: 2px solid var(--bd) !important;
             border-radius: 50% !important;
+            overflow: hidden !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-card="1"] img {
+            outline: 1px solid var(--img-outline);
+            outline-offset: -1px;
         }
 
         /* ===== USER PROFILE PAGE OPTIMIZATION (/u/<id>) ===== */
@@ -3189,8 +3199,8 @@
         }
         for (const postLink of $$('a[href^="/community/post/"]', main)) {
             if (postLink.closest(UI_ZONES) || postLink.closest('.cm-widget')) continue;
-            const card = postLink.closest('li, article, [class*="post" i], [class*="item" i], [class*="row" i]');
-            if (card && card !== main && !card.dataset.mdCommCard) {
+            const card = postLink.closest('li, article');
+            if (card && card !== main && !card.dataset.mdCommCard && !card.parentElement?.closest('[data-md-comm-card="1"]')) {
                 card.dataset.mdCommCard = '1';
             }
         }
