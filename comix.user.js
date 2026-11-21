@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.2
+// @version      2026-11-21.3
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -70,6 +70,7 @@
     neutralizePopups();
 
     const sniffedChapterApi = { templateUrl: null, byHid: new Map() };
+    const sniffedCommentCounts = new Map();
     function extractApiChapterItems(json) {
         if (!json || typeof json !== 'object') return [];
         const r = json.result || json.data || json;
@@ -89,14 +90,25 @@
                 const p = origFetch(input, init);
                 try {
                     const reqUrl = typeof input === 'string' ? input : (input && input.url ? input.url : '');
-                    if (reqUrl && /\/chapters\b/i.test(reqUrl)) {
+                    if (reqUrl) {
                         const u = new URL(reqUrl, location.href);
-                        const m = u.origin === location.origin && u.pathname.match(/\/manga\/([^/]+)\/chapters/i);
-                        if (m) {
-                            sniffedChapterApi.templateUrl = u.pathname + u.search;
+                        if (u.origin === location.origin && /\/chapters\b/i.test(u.pathname)) {
+                            const m = u.pathname.match(/\/manga\/([^/]+)\/chapters/i);
+                            if (m) {
+                                sniffedChapterApi.templateUrl = u.pathname + u.search;
+                                p.then(res => res && res.ok && res.clone().json().then(json => {
+                                    if (extractApiChapterItems(json).length) {
+                                        sniffedChapterApi.byHid.set(m[1], { url: u.href, json });
+                                    }
+                                }).catch(() => {})).catch(() => {});
+                            }
+                        } else if (u.origin === location.origin && /comment/i.test(u.pathname)) {
+                            const curPath = location.pathname;
                             p.then(res => res && res.ok && res.clone().json().then(json => {
-                                if (extractApiChapterItems(json).length) {
-                                    sniffedChapterApi.byHid.set(m[1], { url: u.href, json });
+                                const total = json?.result?.pagination?.total ?? json?.pagination?.total ?? json?.total ?? json?.count ?? json?.data?.total;
+                                if (typeof total === 'number' && total >= 0) {
+                                    sniffedCommentCounts.set(curPath, total);
+                                    try { if (reader.rbar) syncReaderBars(chapterContext()); } catch (_) {}
                                 }
                             }).catch(() => {})).catch(() => {});
                         }
@@ -120,7 +132,7 @@
         hideUserCollections: true,
         hideHomeAnnouncements: true,
         historyLimit: 16,
-        themeDefault: 'dark',
+        themeDefault: 'main',
         reader: {
             baseWidth: 800,
             zoomSteps: [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2],
@@ -211,10 +223,11 @@
     const savedTheme = (() => {
         if (initialNativeTheme === 'custom') return 'custom';
         if (initialNativeTheme === 'light') return 'light';
-        if (initialNativeTheme === 'dark' || initialNativeTheme === 'main') return 'dark';
+        if (initialNativeTheme === 'dark') return 'dark';
+        if (initialNativeTheme === 'main') return 'main';
         const t = store.get('theme', CONFIG.themeDefault);
-        if (t === 'light' || t === 'dark' || t === 'custom') return t;
-        return prefersDark.matches ? 'dark' : 'light';
+        if (t === 'main' || t === 'light' || t === 'dark' || t === 'custom') return t;
+        return 'main';
     })();
     root.dataset.mdTheme = savedTheme;
     root.dataset.mdTone = root.getAttribute('data-tone') === 'light' ? 'light' : 'dark';
@@ -350,7 +363,7 @@
     let syncingTheme = false;
 
     function setTheme(t, persist = true) {
-        const val = (t === 'light' || t === 'dark' || t === 'custom') ? t : 'dark';
+        const val = (t === 'main' || t === 'light' || t === 'dark' || t === 'custom') ? t : 'main';
         syncingTheme = true;
         try {
             root.dataset.mdTheme = val;
@@ -370,7 +383,8 @@
             root.dataset.mdTone = tone === 'light' ? 'light' : 'dark';
             if (dt === 'custom') setTheme('custom', true);
             else if (dt === 'light') setTheme('light', true);
-            else if (dt === 'dark' || dt === 'main') setTheme('dark', true);
+            else if (dt === 'dark') setTheme('dark', true);
+            else if (dt === 'main') setTheme('main', true);
         };
 
         new MutationObserver(syncFromHtml).observe(root, {
@@ -386,8 +400,10 @@
                 setTimeout(() => setTheme('custom', true), 0);
             } else if (txt === 'light') {
                 setTimeout(() => setTheme('light', true), 0);
-            } else if (txt === 'dark' || txt === 'main') {
+            } else if (txt === 'dark') {
                 setTimeout(() => setTheme('dark', true), 0);
+            } else if (txt === 'main') {
+                setTimeout(() => setTheme('main', true), 0);
             } else {
                 setTimeout(syncFromHtml, 20);
             }
@@ -414,6 +430,64 @@
             --f-mono: 'JetBrains Mono', ui-monospace, monospace;
             --md-zoom: 1;
             --md-base: ${CONFIG.reader.baseWidth}px;
+        }
+
+        /* ===== MAIN THEME: CRIMSON NEOBRUTAL (#1c1416, #ead7da, #e5484d) ===== */
+        html[data-md-site="comix"][data-md-site="comix"][data-md-theme="main"] {
+            --bg: #1c1416 !important;
+            --bg-rgb: 28 20 22 !important;
+            --page-bg: #1c1416;
+            --card: #281e21;
+            --surface: #281e21 !important;
+            --surface-rgb: 40 30 33 !important;
+            --bg-2: #35282c !important;
+            --bg-2-rgb: 53 40 44 !important;
+            --surface-2: #35282c !important;
+            --surface-2-rgb: 53 40 44 !important;
+            --surface-3: #402f34 !important;
+            --surface-3-rgb: 64 47 52 !important;
+            --ink: #ead7da;
+            --text: #ead7da !important;
+            --text-rgb: 234 215 218 !important;
+            --text-emphasis: #ead7da !important;
+            --text-emphasis-rgb: 234 215 218 !important;
+            --muted: #b59da1;
+            --text-2: #b59da1 !important;
+            --text-2-rgb: 181 157 161 !important;
+            --text-3: #b59da1 !important;
+            --text-3-rgb: 181 157 161 !important;
+            --text-4: #b59da1 !important;
+            --text-4-rgb: 181 157 161 !important;
+            --bd: #000000;
+            --border: #000000 !important;
+            --border-2: #000000 !important;
+            --sh: 4px 4px 0 #000000;
+            --sh-hover: 6px 6px 0 #000000;
+            --sh-sm: 2px 2px 0 #000000;
+            --yellow: #e5484d;
+            --pink: #ff4d6d;
+            --blue: #d9465f;
+            --lime: #e5484d;
+            --mint: #3a2328;
+            --cream: #3b2b30;
+            --soft: #35282c;
+            --violet: #f06e72;
+            --accent: #e5484d !important;
+            --accent-rgb: 229 72 77 !important;
+            --accent-2: #c9373d !important;
+            --accent-2-rgb: 201 55 61 !important;
+            --accent-ink: #ffffff !important;
+            --ink-bg: #e5484d;
+            --on-ink: #ffffff;
+            --grid: rgba(234, 215, 218, 0.04);
+            --img-outline: oklch(1 0 0 / 0.1);
+            --header-bg: linear-gradient(135deg, #2d1e22 0%, #1c1416 100%);
+            color-scheme: dark !important;
+        }
+        /* Hide Crimson from Custom presets since it is now the Main theme */
+        html[data-md-site="comix"] .settings-custom__preset[title="Crimson"],
+        html[data-md-site="comix"] .settings-custom__preset[aria-label="Crimson preset"] {
+            display: none !important;
         }
 
         /* ===== NEOBRUTAL LIGHT PALETTE ===== */
@@ -695,14 +769,32 @@
             from { opacity: 1; transform: translateX(0); }
             to   { opacity: 0; transform: translateX(28px); }
         }
-        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast), [aria-modal="true"]:not(.settings-dialog), dialog[open]) {
+        /* Keep [role="dialog"] full-screen backdrop transparent/dimmed; style its inner panel as the centered card */
+        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast), [aria-modal="true"]:not(.settings-dialog)) {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 16px !important;
+            box-sizing: border-box !important;
+            background: rgba(0, 0, 0, 0.62) !important;
+            backdrop-filter: blur(3px) !important;
+            border: 0 !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            max-height: none !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast), [aria-modal="true"]:not(.settings-dialog)) > :first-child,
+        html[data-md-site="comix"] dialog[open] {
             background: var(--card) !important;
             color: var(--ink) !important;
             border: var(--bw) solid var(--bd) !important;
             border-radius: 14px !important;
             box-shadow: 6px 6px 0 var(--bd) !important;
             font-family: var(--f-sans) !important;
-            max-height: min(88dvh, 760px) !important;
+            max-height: min(86dvh, 740px) !important;
+            max-width: min(560px, calc(100vw - 32px)) !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
             animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
         }
         html[data-md-site="comix"] .settings-dialog__panel {
@@ -1574,6 +1666,18 @@
         }
         #md-all-chaps .md-ch-time { min-width: 56px; text-align: right; font: 700 11px/1 var(--f-mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
         #md-all-chaps .md-ch-empty { padding: 24px 16px; text-align: center; font: 700 13px var(--f-mono); color: var(--muted); }
+        @keyframes mdSpin { to { transform: rotate(360deg); } }
+        #md-all-chaps .md-ch-loader {
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            padding: 12px 14px; background: var(--soft); color: var(--ink);
+            border-top: 2px solid var(--bd); font: 800 12px/1.2 var(--f-mono);
+        }
+        #md-all-chaps .md-ch-loader[hidden] { display: none !important; }
+        #md-all-chaps .md-ch-spinner {
+            width: 15px; height: 15px; border: 2.5px solid var(--bd);
+            border-top-color: var(--yellow); border-radius: 50%;
+            animation: mdSpin .75s linear infinite; flex-shrink: 0;
+        }
         html[data-md-site="comix"] .mchap-toolbar { padding: 10px; border-radius: 14px !important; }
         html[data-md-site="comix"] .mchap-list {
             background: var(--card) !important;
@@ -1861,22 +1965,29 @@
             outline-offset: -1px;
             transition: opacity .22s ease-out;
         }
+        html[data-md-theme="main"] #md-hero,
         html[data-md-theme="dark"] #md-hero,
-        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero { background: #0b0813 !important; }
+        html[data-md-theme="custom"][data-md-tone="dark"] #md-hero { background: #140e10 !important; }
+        html[data-md-theme="main"] #md-hero .md-hero-bg,
         html[data-md-theme="dark"] #md-hero .md-hero-bg,
         html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-bg { filter: blur(16px) brightness(0.32) saturate(1.2) !important; opacity: 1 !important; }
+        html[data-md-theme="main"] #md-hero::after,
         html[data-md-theme="dark"] #md-hero::after,
         html[data-md-theme="custom"][data-md-tone="dark"] #md-hero::after {
             background:
                 linear-gradient(to top, rgba(0, 0, 0, .78) 0%, rgba(0, 0, 0, .24) 60%, transparent 100%),
                 linear-gradient(to right, rgba(0, 0, 0, .86) 0%, rgba(0, 0, 0, .42) 55%, transparent 100%) !important;
         }
+        html[data-md-theme="main"] #md-hero .md-hero-body,
+        html[data-md-theme="main"] #md-hero .md-hero-title,
         html[data-md-theme="dark"] #md-hero .md-hero-body,
         html[data-md-theme="dark"] #md-hero .md-hero-title,
         html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-body,
         html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-title { color: #ffffff !important; }
+        html[data-md-theme="main"] #md-hero .md-hero-title,
         html[data-md-theme="dark"] #md-hero .md-hero-title,
         html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-title { text-shadow: 2px 2px 0 #000000 !important; }
+        html[data-md-theme="main"] #md-hero .md-hero-views,
         html[data-md-theme="dark"] #md-hero .md-hero-views,
         html[data-md-theme="custom"][data-md-tone="dark"] #md-hero .md-hero-views {
             background: rgba(0, 0, 0, 0.58) !important;
@@ -1884,9 +1995,15 @@
             color: #ffffff !important;
             box-shadow: none !important;
         }
+        html[data-md-theme="main"] #md-hero .md-hero-tag,
+        html[data-md-theme="main"] #md-hero .md-hero-chapter,
+        html[data-md-theme="main"] #md-hero .md-hero-play,
         html[data-md-theme="dark"] #md-hero .md-hero-tag,
         html[data-md-theme="dark"] #md-hero .md-hero-chapter,
         html[data-md-theme="dark"] #md-hero .md-hero-play { color: #ffffff !important; }
+        html[data-md-theme="main"] :is(.mpage__read, .useg__btn.is-on, .side-col .panel__tab-inline.is-active, #md-continue-reading .md-cr-btn, #md-continue-reading .md-cr-page, #md-top, #md-sel-bar .md-sel-dl, #md-rbar .md-rb-title b) { color: #ffffff !important; }
+        html[data-md-theme="main"] :is(.nav-btn, .filter-action, .npager__num, .npager__nav, .mpage__read, .mchap-toolbar .ubtn, .view-more, .see-all, .cm-foot__btn, .useg__btn, #md-rbar .md-rb-btn, #md-dock button, #md-sel-bar button, #md-all-chaps .md-ch-sort):hover { color: #ffffff !important; }
+        html[data-md-theme="main"] #md-all-chaps .md-ch-row[data-md-sel="1"] { background: rgba(229, 72, 77, 0.28); }
 
         /* ===== CONTINUE READING SHELF (#md-continue-reading) ===== */
         #md-continue-reading { display: block !important; width: 100% !important; margin: 0 0 24px !important; box-sizing: border-box !important; }
@@ -1987,12 +2104,41 @@
             opacity: 0 !important;
             pointer-events: none !important;
         }
-        html[data-md-site="comix"] .rpage-cmpanel {
+        /* Keep closed comments panel completely off-screen (fixes vertical black line covering right side) */
+        html[data-md-site="comix"] .rpage-cmpanel[aria-hidden="true"] {
+            display: none !important;
+            border-left: 0 !important;
+            box-shadow: none !important;
+            animation: none !important;
+            pointer-events: none !important;
+        }
+        html[data-md-site="comix"] .rpage-cmpanel:not([aria-hidden="true"]) {
             background: var(--card) !important;
             color: var(--ink) !important;
             border-left: var(--bw) solid var(--bd) !important;
             box-shadow: -6px 0 0 var(--bd) !important;
             animation: mdDrawerIn .22s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        /* Dynamically anchor page progress bar to the right edge of the manga images; hide in fullscreen */
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage-progress {
+            position: fixed !important;
+            left: calc(50% + min(calc(50vw - 14px), calc((var(--md-base) * var(--md-zoom)) / 2 + 10px))) !important;
+            right: auto !important;
+            top: 64px !important;
+            bottom: 18px !important;
+            width: 6px !important;
+            z-index: 90 !important;
+            border-radius: 999px !important;
+            transition: left .22s cubic-bezier(0.2, 0, 0, 1), opacity .18s ease-out !important;
+        }
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-progress {
+            left: auto !important;
+            right: 6px !important;
+        }
+        html[data-md-site="comix"]:fullscreen .rpage-progress,
+        html[data-md-site="comix"][data-md-fs="1"] .rpage-progress {
+            display: none !important;
+            opacity: 0 !important;
         }
         .md-iswap { position: relative; display: inline-grid; place-items: center; width: 18px; height: 18px; }
         .md-iswap .md-i {
@@ -2063,6 +2209,18 @@
         }
         html[data-md-theme="dark"] #md-rbar .md-rb-btn:hover { color: #ffffff; }
         #md-rbar .md-rb-btn:active { transform: scale(0.96); }
+        #md-rbar .md-rb-btn[aria-pressed="true"] { background: var(--yellow); color: var(--on-ink); }
+        html[data-md-theme="light"] #md-rbar .md-rb-btn[aria-pressed="true"] { color: #111111; }
+        #md-rbar .md-rb-count {
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: var(--soft);
+            color: var(--ink);
+            border: 1.5px solid var(--bd);
+            font: 800 10.5px/1 var(--f-mono);
+            font-variant-numeric: tabular-nums;
+        }
+        #md-rbar .md-rb-count:empty { display: none; }
         #md-rbar .md-rb-title {
             flex: 1 1 auto;
             min-width: 0;
@@ -2403,6 +2561,53 @@
             }, 150);
         }, true);
     })();
+
+    const EXTRA_PRESETS = [
+        { name: 'Cyberpunk', bg: '#0f1021', text: '#e6e8ff', accent: '#ff2a85' },
+        { name: 'Matcha', bg: '#162019', text: '#e3f0e5', accent: '#84cc16' },
+        { name: 'Amber Noir', bg: '#181410', text: '#f2e8dc', accent: '#f59e0b' },
+        { name: 'Sakura Light', bg: '#fdf2f5', text: '#2b1720', accent: '#db2777' },
+        { name: 'Glacier', bg: '#0e1726', text: '#e2eefc', accent: '#38bdf8' },
+    ];
+
+    function setReactInputValue(input, value) {
+        if (!input) return;
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+        if (setter) setter.call(input, value);
+        else input.value = value;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function enhanceSettingsPresets() {
+        const panel = $('.settings-custom');
+        if (!panel) return;
+        const firstPreset = $('.settings-custom__preset', panel);
+        const grid = firstPreset?.parentElement;
+        if (!grid || grid.dataset.mdExtraPresets === '1') return;
+        grid.dataset.mdExtraPresets = '1';
+
+        for (const p of EXTRA_PRESETS) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'settings-custom__preset md-extra-preset';
+            btn.title = p.name;
+            btn.setAttribute('aria-label', p.name + ' preset');
+            btn.setAttribute('aria-pressed', 'false');
+            btn.style.background = `linear-gradient(135deg, ${p.bg} 50%, ${p.accent} 50%)`;
+            btn.addEventListener('click', () => {
+                const hexInputs = $$('.settings-color__hex', panel);
+                if (hexInputs.length >= 3) {
+                    setReactInputValue(hexInputs[0], p.bg);
+                    setReactInputValue(hexInputs[1], p.text);
+                    setReactInputValue(hexInputs[2], p.accent);
+                }
+                $$('.settings-custom__preset', grid).forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+                setTheme('custom', true);
+            });
+            grid.appendChild(btn);
+        }
+    }
 
     function tagDropdowns(app) {
         const browseWrap = $('.topnav .browse', app);
@@ -3323,8 +3528,11 @@
         }
 
         document.addEventListener('fullscreenchange', () => {
+            const isFs = !!document.fullscreenElement;
+            if (isFs) root.dataset.mdFs = '1';
+            else delete root.dataset.mdFs;
             const fsBtn = reader.dock && $('[data-act="fullscreen"]', reader.dock);
-            if (fsBtn) fsBtn.setAttribute('aria-pressed', String(!!document.fullscreenElement));
+            if (fsBtn) fsBtn.setAttribute('aria-pressed', String(isFs));
         });
 
         addEventListener('scroll', () => {
@@ -3366,14 +3574,39 @@
         });
     }
 
+    function getReaderCommentCount() {
+        const titleTxt = $('.rpage-cmpanel .cm-widget__title')?.textContent || '';
+        const m = titleTxt.match(/(\d[\d,]*)/);
+        if (m) return m[1];
+        const btnTxt = nativeBtn('.rpage-floatctl button[aria-label*="comments" i]')?.textContent?.trim() || '';
+        const m2 = btnTxt.match(/(\d[\d,]*)/);
+        if (m2) return m2[1];
+        const sniffed = sniffedCommentCounts.get(location.pathname);
+        if (typeof sniffed === 'number') return String(sniffed);
+        return '';
+    }
+
+    function isCommentsOpen() {
+        const panel = $('.rpage-cmpanel');
+        return !!(panel && panel.getAttribute('aria-hidden') !== 'true');
+    }
+
     function syncReaderBars(context) {
         if (reader.rbar) {
-            const ser = $('[data-k="series"]', reader.rbar);
-            if (ser && context.seriesPath) ser.href = context.seriesPath;
-            const titleB = $('.md-rb-title b', reader.rbar);
-            if (titleB) titleB.textContent = toTitleCase(context.series);
-            const chapBtn = $('.md-rb-chap', reader.rbar);
-            if (chapBtn) chapBtn.textContent = context.chapPill;
+            if (context) {
+                const ser = $('[data-k="series"]', reader.rbar);
+                if (ser && context.seriesPath) ser.href = context.seriesPath;
+                const titleB = $('.md-rb-title b', reader.rbar);
+                if (titleB) titleB.textContent = toTitleCase(context.series);
+                const chapBtn = $('.md-rb-chap', reader.rbar);
+                if (chapBtn) chapBtn.textContent = context.chapPill;
+            }
+            const cmBtn = $('[data-act="comments"]', reader.rbar);
+            if (cmBtn) {
+                cmBtn.setAttribute('aria-pressed', String(isCommentsOpen()));
+                const cntEl = $('.md-rb-count', cmBtn);
+                if (cntEl) cntEl.textContent = getReaderCommentCount();
+            }
         }
         if (reader.dock) {
             const nPrev = nativeBtn('.rpage-floatctl button[aria-label="Previous chapter"]');
@@ -3418,14 +3651,24 @@
                 `<a class="md-rb-btn" data-k="home" href="/" title="Home">${ICON.home}<span class="md-rb-lbl">Home</span></a>` +
                 `<a class="md-rb-btn" data-k="series" href="${context.seriesPath || '/'}" title="Series page">${ICON.book}<span class="md-rb-lbl">Series</span></a>` +
                 `<div class="md-rb-title"><b></b><button type="button" class="md-rb-chap" data-act="chapters" title="Chapter list"></button></div>` +
-                `<button type="button" class="md-rb-btn" data-act="comments" title="Comments (M)">${ICON.chat}<span class="md-rb-lbl">Comments</span></button>` +
+                `<button type="button" class="md-rb-btn" data-act="comments" title="Comments (M)" aria-pressed="false">${ICON.chat}<span class="md-rb-lbl">Comments</span><span class="md-rb-count"></span></button>` +
                 `<button type="button" class="md-rb-btn" data-act="settings" title="Reader settings">${ICON.gear}<span class="md-rb-lbl">Settings</span></button>`;
             bar.addEventListener('click', e => {
                 const b = e.target.closest('button[data-act]');
                 if (!b) return;
                 switch (b.dataset.act) {
                     case 'chapters': nativeBtn('.rpage-floatctl .rpage-floatctl__chap, .rpage-floatctl button[aria-label="Chapter list"]')?.click(); break;
-                    case 'comments': nativeBtn('.rpage-floatctl button[aria-label="Toggle comments"]')?.click(); break;
+                    case 'comments': {
+                        if (isCommentsOpen()) {
+                            const closeBtn = $('.rpage-cmpanel__close');
+                            if (closeBtn) closeBtn.click();
+                            else nativeBtn('.rpage-floatctl button[aria-label*="comments" i]')?.click();
+                        } else {
+                            nativeBtn('.rpage-floatctl button[aria-label*="comments" i]')?.click();
+                        }
+                        setTimeout(() => syncReaderBars(context), 180);
+                        break;
+                    }
                     case 'settings': nativeBtn('.rpage-floatctl button[aria-label="Settings"]')?.click(); break;
                 }
             });
@@ -3739,7 +3982,13 @@
 
         const scrollWrap = document.createElement('div');
         scrollWrap.className = 'md-ch-scroll';
-        box.append(head, scrollWrap);
+
+        const loaderEl = document.createElement('div');
+        loaderEl.className = 'md-ch-loader';
+        loaderEl.hidden = true;
+        loaderEl.innerHTML = '<span class="md-ch-spinner" aria-hidden="true"></span><span class="md-ch-loader-txt">Loading all chapters…</span>';
+
+        box.append(head, scrollWrap, loaderEl);
 
         function visibleGroups() {
             const q = filterQuery.trim().toLowerCase();
@@ -4022,15 +4271,78 @@
         seriesState = { path: seriesPath, bar, box };
         renderRows();
 
+        const setLoader = (show, msg) => {
+            loaderEl.hidden = !show;
+            const t = $('.md-ch-loader-txt', loaderEl);
+            if (t && msg) t.textContent = msg;
+        };
+
+        async function crawlHiddenPagination() {
+            const footTxt = $('.mchap-foot', chaptersSection)?.textContent || '';
+            const totalMatch = footTxt.match(/of\s+(\d+)\s+items/i);
+            const totalItems = totalMatch ? Number(totalMatch[1]) : 0;
+            const estPages = totalItems > 20 ? Math.min(40, Math.ceil(totalItems / 20)) : 0;
+            const hasPager = !!$('nav.npager button[aria-label="Next page"], nav.npager .npager__num', chaptersSection);
+            if (!hasPager) return;
+
+            const collected = [...scrapeDomChapters(chaptersSection)];
+            let pageNum = 1;
+            const maxPages = Math.max(estPages, 30);
+
+            setLoader(true, estPages ? `Loading all chapters (page 1 / ${estPages})…` : 'Loading all chapters…');
+
+            while (pageNum < maxPages) {
+                if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
+                if (!nextBtn || nextBtn.disabled || nextBtn.getAttribute('aria-disabled') === 'true') break;
+
+                const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                pageNum++;
+                setLoader(true, estPages ? `Loading all chapters (page ${pageNum} / ${estPages})…` : `Loading page ${pageNum}…`);
+                nextBtn.click();
+
+                const changed = await new Promise(resolve => {
+                    let done = false;
+                    const finish = val => { if (!done) { done = true; obs.disconnect(); clearTimeout(tm); resolve(val); } };
+                    const check = () => {
+                        const sig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                        if (sig && sig !== prevSig) finish(true);
+                    };
+                    const obs = new MutationObserver(check);
+                    obs.observe(chaptersSection, { childList: true, subtree: true, attributes: true });
+                    const tm = setTimeout(() => finish(false), 3500);
+                    check();
+                });
+
+                if (!changed || seriesState?.path !== seriesPath || !box.isConnected) break;
+                const pageRows = scrapeDomChapters(chaptersSection);
+                if (!pageRows.length) break;
+                collected.push(...pageRows);
+                groups = groupChaptersByNumber(collected);
+                renderRows();
+            }
+
+            const page1Btn = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
+            if (page1Btn && !page1Btn.classList.contains('is-active')) page1Btn.click();
+        }
+
         const hid = extractSeriesHid(seriesPath);
-        fetchAllChaptersApi(hid, seriesPath).then(allChapters => {
+        setLoader(true, 'Loading all chapters…');
+        fetchAllChaptersApi(hid, seriesPath).then(async allChapters => {
+            if (seriesState?.path !== seriesPath || !box.isConnected) return;
+            if (allChapters.length > 20) {
+                groups = groupChaptersByNumber(allChapters);
+                renderRows();
+            } else {
+                await crawlHiddenPagination();
+            }
+        }).catch(async () => {
+            if (seriesState?.path !== seriesPath || !box.isConnected) return;
+            await crawlHiddenPagination();
+        }).finally(() => {
             if (seriesState?.path !== seriesPath || !box.isConnected) return;
             loadingAll = false;
-            groups = groupChaptersByNumber(allChapters.length ? allChapters : scrapeDomChapters(chaptersSection));
-            renderRows();
-        }).catch(() => {
-            if (seriesState?.path !== seriesPath || !box.isConnected) return;
-            loadingAll = false;
+            setLoader(false);
             renderRows();
         });
     }
@@ -4092,6 +4404,7 @@
         }
 
         tagDropdowns(app);
+        enhanceSettingsPresets();
         tagUserProfile(app);
         purgeAuthUI(app);
         renderCommentScores(app);
