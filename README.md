@@ -22,8 +22,13 @@ A high-contrast **Neobrutalist skin and debloater suite** for **DemonicScans / M
   - [Comix Dedicated Features](#comix-dedicated-features)
 - [Supercharged Reader Dock & Offline Tools](#supercharged-reader-dock--offline-tools)
 - [Configuration](#configuration)
+- [Supported Domains](#supported-domains)
 - [Userscript Permissions](#userscript-permissions)
 - [Roadmap & Progress](#roadmap--progress)
+  - [Asura Scans Edition](#asura-scans-edition-roadmap)
+  - [Demonic Scans Edition](#demonic-scans-edition-roadmap)
+  - [MangaRead Dedicated Edition](#mangaread-dedicated-edition-roadmap)
+  - [Comix Dedicated Edition](#comix-dedicated-edition-roadmap)
 - [Testing & Quality Assurance](#testing--quality-assurance)
 - [License](#license)
 
@@ -91,7 +96,7 @@ Your userscript manager will automatically detect the script and prompt you to c
 - **Advanced Search Overlay Cards**: Bottom-to-mid black gradient overlays between text and cover art for enhanced readability.
 - **Full Title Restoration**: Un-truncates all titles on `translationlist.php` and eliminates redundant headers.
 - **Novel Reader Formatting**: Clean typography, readable paragraph spacing, and `.epub` novel export.
-- **Comic ↔ Novel Switch**: One-click toggle between comic and novel formats for series available in both.
+- **Comic / Novel Format Switch**: One-click toggle between comic and novel formats for series available in both.
 
 ---
 
@@ -194,7 +199,7 @@ To modify settings, open your userscript manager's dashboard, select your instal
 
 ---
 
-## Permissions Explained
+## Userscript Permissions
 
 - `@run-at document-start`: Injected early to neutralize ad listeners, poison membership popup triggers, and apply theme datasets before initial paint, eliminating white flashes.
 - `@grant unsafeWindow`: Bypasses sandbox boundaries to neutralize malicious ad network globals, hook dialog prototypes, and mirror theme sync directly in the page window.
@@ -205,28 +210,51 @@ To modify settings, open your userscript manager's dashboard, select your instal
 
 ## Roadmap & Progress
 
-- [x] **Multi-Site Expansion**
-  - [x] Dedicated edition for `mangaread.org` with 4-layer ad purging, hero carousel, dynamic comments, batch downloader, modal contrast fixes, and static page support.
-  - [x] Dedicated edition for `comix.to` & `comix.ws` with offline library, custom lists, deduplicated scanlation group chapter lists, PDF & batch ZIP exports, and stretch-to-width reader tools.
-  - [x] Separate version control and dedicated install links for each site.
-- [x] **Homepage & Browsing Overhaul**
-  - [x] **Netflix-style Featured Hero**: Full banner with falling progress bar, pause-on-hover, view pills, and stationary title box.
-  - [x] **Continue Reading Section**: Persistent shelf for tracking reading progress and resuming chapters on DemonicScans and Comix.
-  - [x] **Offline Library & Lists**: Client-side library modal (`#md-lib-modal`) and custom collections with synced badges for Comix.
-  - [x] **Standardized 2:3 Card Geometry**: Zero height variance, clamped 2-line titles, and uniform grid sizing.
-  - [x] **3-Tier Podium Leaderboard**: Elevated gold/silver/bronze podium design on DemonicScans leaderboard.
-  - [x] **Advanced Search Poster Cards**: High-contrast bottom black gradient overlay for enhanced readability.
-- [x] **Reader & Anti-Ad Hardening**
-  - [x] **Reader Membership Popup Immunity**: Neutralized `#subpanel` dialog, scroll locking, and 700px PayPal promotion box.
-  - [x] **Global Popup & Ad Neutralizer**: Neutralized cross-origin popups, tracker globals, and intrusive sign-in/rate overlays on Comix.
-  - [x] **Immersive Auto-Hiding Navigation**: Header and dock slide away while reading down and return on upward scroll.
-  - [x] **Bottom Dock Chapter Selector**: Interactive chapter selection dropdown directly inside `#md-dock`.
-  - [x] **Smart Comments & Read-Only Scores**: Automatic "Top" sorting and media reactions on DemonicScans; stripped thread lines and clean read-only scores on Comix.
-- [x] **Visual Polish & Animations**
-  - [x] **Sliding Pill & Settings Theme Sync**: Smooth knob sliding animation with persistent theme storage and native 4-theme Settings sync on Comix.
-  - [x] **Mobile Ergonomics & Touchscreen Hardening**: Safe-area insets, horizontal scroll-snap tracks, touch target expansion (38px–44px), and single-row reader dock for mobile displays.
-  - [x] **Staggered AJAX Animations**: Pop-in animation for newly loaded cards on MangaRead.
-  - [x] **Dynamic Blurred Series Backdrop**: Elevated series header with background cover blur on MangaRead.
+Development progress and planned milestones are tracked independently for each dedicated edition:
+
+### Asura Scans Edition Roadmap
+- [x] **Neobrutalism UI Overhaul**: High-contrast black borders, hard drop shadows, and zero-flash Dark/Light theme toggle with persistent storage.
+- [x] **Minimalist Floating Reader Dock**: Auto-hiding reader controls with dynamic zoom (50% to 200%), contrast background selector, and chapter navigation.
+- [x] **Novel Reader Typography**: Typography and line-spacing optimization tailored for Asura web novels.
+- [x] **Batch Chapter Downloader**: Multi-chapter ZIP archiver with concurrent image downloading.
+- [x] **Ad Slot Collapsing & Debloat**: Automatic elimination of empty ad blocks and promotional clutter.
+- [ ] **Netflix-Style Featured Hero Banner**: Port the auto-cycling hero carousel with falling progress timer to the Asura homepage.
+- [ ] **Reading Progress Tracking**: Persistent continue-reading shelf tracking chapter history and read positions.
+
+### Demonic Scans Edition Roadmap
+- [x] **Anti-Ad & Membership Protection**: Suppression of `#subpanel` promo popups, scroll-lock immunity, and neutralization of PubAdX / Onclicka networks.
+- [x] **Netflix-Style Featured Hero Carousel**: 10-slide banner with falling progress timer, pause-on-hover, and flicker-free art hover decoupling.
+- [x] **Persistent Continue Reading Shelf**: Local cookie-backed shelf tracking recent series, chapter milestones, and direct jump buttons.
+- [x] **Competitive Leaderboard Podium**: Elevated Gold/Silver/Bronze podium ranking display on `/leaderboard.php`.
+- [x] **Poster Search Card Styling**: Mid-to-bottom dark gradient overlays between cover artwork and metadata typography.
+- [x] **Smart Comments & Media Support**: Automatic "Top" tab sorting, low-effort comment filtering, and preservation of GIF reactions.
+- [x] **Bimodal Reader Architecture**: Format switching between comic and novel layouts, with single-chapter `.cbz` and novel `.epub` export.
+- [ ] **Client-Side Reading Lists**: Custom shelves (Plan to Read, Completed, Dropped) with synchronized badge counts.
+- [ ] **Multi-Chapter PDF Exporter**: In-browser document compilation for offline chapter reading.
+
+### MangaRead Dedicated Edition Roadmap
+- [x] **Multi-Tier Adware Shield**: Complete elimination of PubAdX, Yandex RTB, Onclicka popunders, and WordPress ad inserter scripts.
+- [x] **Responsive Hero Banner & Margin Adaptation**: Full hero carousel with automatic margin gap trimming on mobile devices.
+- [x] **Standalone Continue Reading Section**: Dedicated progress shelf between Hero and Updates with horizontal edge fade indicators.
+- [x] **Local Library & Custom Collections**: Client-side library modal (`#md-lib-modal`), overview "Add to List" button, and synchronized badge tallies.
+- [x] **2-Row Touch-Friendly Reader Dock**: Thumb-reachable 2-row grid dock on mobile viewports with auto-scroll, zoom, and `.cbz` packaging.
+- [x] **Immersive Chapter Reader**: Suppressed native browser scrollbars (`scrollbar-width: none`), removed redundant headings, and centered floating bottom dock.
+- [x] **Interactive Search Card Info Overlay**: Clickable "INFO" trigger expanding into animated Neobrutalist overlays with tags and dynamic expansion.
+- [x] **Custom Comment Video Player**: Integrated media controls with seek bar, duration timer, volume mute, and one-click direct video downloader.
+- [x] **Modal Contrast Hardening & Static Route Theming**: High-contrast text fixes across all dialogs, plus full theme coverage on Privacy, Terms, and DMCA pages.
+- [ ] **Multi-Chapter Batch PDF Downloader**: Direct PDF document assembly from series chapter listings.
+- [ ] **Cross-Device Library Portability**: Import/export capabilities for reading progress and custom list configurations.
+
+### Comix Dedicated Edition Roadmap
+- [x] **Full-Site Neobrutalism & 4-Theme Settings Sync**: Real-time bidirectional synchronization with site settings across Main, Dark, Light, and Custom palettes with live RGB color bindings.
+- [x] **Client-Side Local Library Modal**: Dedicated `#md-lib-modal` accessible via top navigation, featuring custom collections and series page quick-save pickers.
+- [x] **Deduplicated Series Chapter View**: Unified chapter rows grouping multiple scanlation releases with group dropdown selectors (`#md-all-chaps`).
+- [x] **High-Capacity Batch Exporter (ZIP & PDF)**: Deduplicated "Select All" downloader supporting up to 500 chapters per batch in consolidated ZIP or PDF formats.
+- [x] **Synchronized Reader Navigation & Floating Dock**: Reader top bar (`#md-rbar`) with live comment counts, paired with auto-hiding dock (`#md-dock`) featuring stretch-to-width mode and zoom controls.
+- [x] **Sign-In & Banner Debloat**: Elimination of sign-in nags, rating prompts, home announcements, and distraction-free comment threads with read-only scores.
+- [x] **Mobile Ergonomics Hardening**: Constrained viewport overflow (`overflow-x: clip`), safe-area insets (`env(safe-area-inset-*)`), and `@media (hover: none)` touchscreen adaptations.
+- [ ] **Offline Library Data Backup**: JSON import and export for local library collections and read states.
+- [ ] **Custom Keyboard Shortcut Remapping**: Configurable keybindings for chapter jumping, zoom scaling, and dock toggles.
 
 ---
 
