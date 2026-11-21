@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.7
+// @version      2026-11-21.9
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -857,6 +857,38 @@
             border-color: var(--bd) !important;
             box-shadow: 0 0 0 2.5px var(--card), 0 0 0 5px var(--yellow) !important;
             transform: scale(1.06);
+        }
+        /* Clean Neobrutalist framing for Cloudflare Turnstile verification prompt (never obscures iframe) */
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):has(iframe[src*="cloudflare"]) {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 16px !important;
+            background: rgba(0, 0, 0, 0.72) !important;
+            backdrop-filter: blur(5px) !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):has(iframe[src*="cloudflare"]) > :not(:empty):not([class*="backdrop" i]):not([class*="overlay" i]):not([class*="scrim" i]) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 16px !important;
+            box-shadow: 8px 8px 0 var(--bd) !important;
+            padding: 20px 22px !important;
+            max-width: min(410px, calc(100vw - 32px)) !important;
+            font-family: var(--f-sans) !important;
+            animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):has(iframe[src*="cloudflare"]) > :not(:empty):not([class*="backdrop" i]) > div:not(:has(button[aria-label*="close" i])) {
+            background: var(--soft) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 10px !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):has(iframe[src*="cloudflare"]) :is(h1, h2, h3, strong) {
+            color: var(--ink) !important;
+            font-weight: 900 !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):has(iframe[src*="cloudflare"]) p {
+            color: var(--muted) !important;
         }
         html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) input[type="range"] {
             accent-color: var(--yellow) !important;
@@ -2768,12 +2800,12 @@
         }, true);
     })();
 
+    // 4 fixed extra presets + 20th dynamic saved-custom circle = 20 circles (2 clean rows of 10)
     const EXTRA_PRESETS = [
         { name: 'Cyberpunk', bg: '#0f1021', text: '#e6e8ff', accent: '#ff2a85' },
         { name: 'Matcha', bg: '#162019', text: '#e3f0e5', accent: '#84cc16' },
         { name: 'Amber Noir', bg: '#181410', text: '#f2e8dc', accent: '#f59e0b' },
         { name: 'Sakura Light', bg: '#fdf2f5', text: '#2b1720', accent: '#db2777' },
-        { name: 'Glacier', bg: '#0e1726', text: '#e2eefc', accent: '#38bdf8' },
     ];
 
     function setReactInputValue(input, value) {
@@ -2783,6 +2815,23 @@
         else input.value = value;
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+
+    function applyCustomPaletteToInputs(panel, colors) {
+        if (!panel || !colors) return;
+        const hexInputs = $$('.settings-color__hex', panel);
+        const colorInputs = $$('input[type="color"]', panel);
+        const vals = [colors.bg, colors.text, colors.accent];
+        vals.forEach((v, i) => {
+            if (!v) return;
+            if (hexInputs[i]) setReactInputValue(hexInputs[i], v);
+            if (colorInputs[i]) setReactInputValue(colorInputs[i], v);
+        });
+        // Also sync CSS vars directly so the preview updates immediately even if React defers one tick
+        if (colors.bg) root.style.setProperty('--bg', colors.bg);
+        if (colors.text) { root.style.setProperty('--text', colors.text); root.style.setProperty('--text-emphasis', colors.text); }
+        if (colors.accent) root.style.setProperty('--accent', colors.accent);
+        setTheme('custom', true);
     }
 
     function enhanceSettingsPresets() {
@@ -2803,47 +2852,51 @@
             btn.setAttribute('aria-pressed', 'false');
             btn.style.background = `linear-gradient(135deg, ${p.bg} 50%, ${p.accent} 50%)`;
             btn.addEventListener('click', () => {
-                const hexInputs = $$('.settings-color__hex', panel);
-                if (hexInputs.length >= 3) {
-                    setReactInputValue(hexInputs[0], p.bg);
-                    setReactInputValue(hexInputs[1], p.text);
-                    setReactInputValue(hexInputs[2], p.accent);
-                }
+                applyCustomPaletteToInputs(panel, p);
                 $$('.settings-custom__preset', grid).forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
                 customSwatch.dataset.active = '0';
                 customSwatch.setAttribute('aria-pressed', 'false');
-                setTheme('custom', true);
             });
             grid.appendChild(btn);
             extraBtns.push(btn);
         }
 
-        // Dedicated last circle: mirrors user's manual custom hex colors ONLY when not matching a preset theme
+        // 20th circle: dynamically reflects & saves the user's own custom colors in localStorage (never overwritten by preset themes)
+        const savedCustom = store.get('saved-custom', { bg: '#0e1726', text: '#e2eefc', accent: '#38bdf8' });
         const customSwatch = document.createElement('button');
         customSwatch.type = 'button';
         customSwatch.className = 'settings-custom__preset md-custom-swatch';
-        customSwatch.title = 'Custom colour';
-        customSwatch.setAttribute('aria-label', 'Custom colour swatch');
+        customSwatch.title = 'Your Saved Custom Theme';
+        customSwatch.setAttribute('aria-label', 'Saved custom theme');
         customSwatch.setAttribute('aria-pressed', 'false');
         customSwatch.dataset.active = '0';
-        customSwatch.style.background = 'linear-gradient(135deg, var(--bg, #1c1416) 50%, var(--accent, #e5484d) 50%)';
+        customSwatch.style.background = `linear-gradient(135deg, ${savedCustom.bg} 50%, ${savedCustom.accent} 50%)`;
+        customSwatch.addEventListener('click', () => {
+            const cur = store.get('saved-custom', savedCustom);
+            applyCustomPaletteToInputs(panel, cur);
+            $$('.settings-custom__preset', grid).forEach(b => b.setAttribute('aria-pressed', 'false'));
+            customSwatch.dataset.active = '1';
+            customSwatch.setAttribute('aria-pressed', 'true');
+        });
         grid.appendChild(customSwatch);
 
-        const syncCustomSwatch = (isManualEdit = false) => {
+        const saveManualCustom = () => {
             const hexInputs = $$('.settings-color__hex', panel);
-            const bg = hexInputs[0]?.value?.trim() || '';
-            const ac = hexInputs[2]?.value?.trim() || '';
-            if (/^#[0-9a-f]{3,8}$/i.test(bg) && /^#[0-9a-f]{3,8}$/i.test(ac)) {
-                customSwatch.style.background = `linear-gradient(135deg, ${bg} 50%, ${ac} 50%)`;
-            }
-            if (isManualEdit) {
+            const colorInputs = $$('input[type="color"]', panel);
+            const bg = (hexInputs[0]?.value || colorInputs[0]?.value || '').trim();
+            const text = (hexInputs[1]?.value || colorInputs[1]?.value || '').trim();
+            const accent = (hexInputs[2]?.value || colorInputs[2]?.value || '').trim();
+            if (/^#[0-9a-f]{3,8}$/i.test(bg) && /^#[0-9a-f]{3,8}$/i.test(accent)) {
+                const payload = { bg, text: /^#[0-9a-f]{3,8}$/i.test(text) ? text : '#ffffff', accent };
+                store.set('saved-custom', payload);
+                customSwatch.style.background = `linear-gradient(135deg, ${bg} 50%, ${accent} 50%)`;
                 $$('.settings-custom__preset', grid).forEach(b => b.setAttribute('aria-pressed', 'false'));
                 customSwatch.dataset.active = '1';
                 customSwatch.setAttribute('aria-pressed', 'true');
             }
         };
 
-        // Clicking any native preset clears our extra presets and deactivates the custom swatch
+        // Clicking any native preset clears extra presets + deactivates the 20th circle WITHOUT changing its saved custom split colors
         grid.addEventListener('click', e => {
             const clicked = e.target instanceof Element ? e.target.closest('.settings-custom__preset') : null;
             if (!clicked || clicked.classList.contains('md-extra-preset') || clicked === customSwatch) return;
@@ -2852,13 +2905,12 @@
             customSwatch.setAttribute('aria-pressed', 'false');
         }, true);
 
-        // Typing or picking custom hex colors activates ONLY the last custom swatch circle
+        // Only direct user edits in the Background / Text / Accent pickers update & save the 20th circle
         panel.addEventListener('input', e => {
-            if (e.target instanceof Element && e.target.closest('.settings-color__hex, input[type="color"]')) {
-                syncCustomSwatch(true);
+            if (e.isTrusted && e.target instanceof Element && e.target.closest('.settings-color__hex, input[type="color"]')) {
+                saveManualCustom();
             }
         });
-        syncCustomSwatch(false);
     }
 
     function tagDropdowns(app) {
@@ -4583,7 +4635,7 @@
 
     function readChapCache(seriesPath) {
         try {
-            const raw = sessionStorage.getItem('md-comix-chaps-v2:' + seriesPath);
+            const raw = sessionStorage.getItem('md-comix-chaps-v3:' + seriesPath);
             if (!raw) return null;
             const parsed = JSON.parse(raw);
             if (!parsed || !Array.isArray(parsed.items) || !parsed.items.length) return null;
@@ -4594,142 +4646,23 @@
 
     function writeChapCache(seriesPath, items, complete) {
         try {
-            sessionStorage.setItem('md-comix-chaps-v2:' + seriesPath, JSON.stringify({ ts: Date.now(), complete: !!complete, items }));
+            sessionStorage.setItem('md-comix-chaps-v3:' + seriesPath, JSON.stringify({ ts: Date.now(), complete: !!complete, items }));
         } catch (_) {}
     }
 
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-    async function fetchAllChaptersApi(hid, seriesPath, onProgress, opts = {}) {
-        const startPage = opts.startPage || 1;
-        const existingRaw = Array.isArray(opts.existingRaw) ? opts.existingRaw.slice() : [];
-        if (!hid || isTurnstileVisible()) {
-            return { items: existingRaw, complete: false, blocked: isTurnstileVisible(), nextPage: startPage, lastPage: opts.lastPage || 0, workingTpl: opts.workingTpl || null };
-        }
-        if (!opts.workingTpl && !sniffedChapterApi.byHid.has(hid)) await sleep(250);
-
-        const cached = sniffedChapterApi.byHid.get(hid);
-        const baseTemplates = [];
-        if (opts.workingTpl) baseTemplates.push(opts.workingTpl);
-        if (cached?.url) baseTemplates.push(cached.url);
-        if (sniffedChapterApi.templateUrl) {
-            baseTemplates.push(sniffedChapterApi.templateUrl.replace(/\/(?:manga|title|comic|series)\/[^/]+\/chapters/i, `/manga/${hid}/chapters`));
-        }
-        baseTemplates.push(`/api/v2/manga/${hid}/chapters?limit=100&per_page=100&order[number]=desc&page=1`);
-
-        const buildPageUrl = (tpl, pageNum) => {
-            const u = new URL(tpl, location.origin);
-            u.searchParams.set('limit', '100');
-            u.searchParams.set('per_page', '100');
-            u.searchParams.set('page', String(pageNum));
-            return u.href;
-        };
-
-        async function fetchJsonWithBackoff(url, pNum, totalEst) {
-            const delays = [0, 5500, 11000];
-            for (let attempt = 0; attempt < delays.length; attempt++) {
-                if (delays[attempt] > 0) {
-                    onProgress?.(pNum, totalEst, null, `Rate limit hit at page ${pNum} — retrying in ${Math.round(delays[attempt] / 1000)}s…`);
-                    await sleep(delays[attempt]);
-                }
-                if (isTurnstileVisible()) return { status: 403, json: null };
-                try {
-                    const res = await fetch(url, { credentials: 'same-origin' });
-                    if (res.status === 429) continue;
-                    if (res.status === 403) return { status: 403, json: null };
-                    if (!res.ok) return { status: res.status, json: null };
-                    return { status: 200, json: await res.json() };
-                } catch (_) {
-                    if (attempt === delays.length - 1) return { status: 0, json: null };
-                }
-            }
-            return { status: 429, json: null };
-        }
-
-        let workingTpl = opts.workingTpl || null;
-        let firstJson = null;
-        let lastPage = opts.lastPage || 1;
-        let pStart = startPage;
-
-        if (startPage === 1) {
-            for (const tpl of baseTemplates) {
-                const { status, json } = await fetchJsonWithBackoff(buildPageUrl(tpl, 1), 1, 1);
-                if (status === 403 || status === 429) {
-                    return { items: existingRaw, complete: false, blocked: true, nextPage: 1, lastPage: 0, workingTpl: tpl };
-                }
-                if (status === 200 && json && extractApiChapterItems(json).length) {
-                    workingTpl = tpl;
-                    firstJson = json;
-                    break;
-                }
-            }
-            if (!workingTpl || !firstJson) {
-                return { items: existingRaw, complete: false, blocked: false, nextPage: 1, lastPage: 0, workingTpl: null };
-            }
-            const page1Items = extractApiChapterItems(firstJson);
-            existingRaw.push(...page1Items.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
-            const pag = firstJson.result?.pagination || firstJson.pagination || firstJson.meta || {};
-            const perPage = Number(pag.limit || pag.per_page || page1Items.length || 20);
-            const totalItems = Number(pag.total || 0);
-            lastPage = Math.min(120, Math.max(
-                Number(pag.last_page || pag.total_pages || 1),
-                totalItems > 0 && perPage > 0 ? Math.ceil(totalItems / perPage) : 1
-            ));
-            onProgress?.(1, lastPage, existingRaw);
-            pStart = 2;
-        }
-
-        let complete = true;
-        let blocked = false;
-        let nextPage = lastPage + 1;
-
-        for (let p = pStart; p <= lastPage; p++) {
-            await sleep(lastPage > 20 ? 550 : 350);
-            const { status, json } = await fetchJsonWithBackoff(buildPageUrl(workingTpl, p), p, lastPage);
-            if (status === 403 || status === 429) {
-                complete = false;
-                blocked = true;
-                nextPage = p;
-                break;
-            }
-            if (status !== 200 || !json) {
-                complete = false;
-                nextPage = p;
-                break;
-            }
-            const items = extractApiChapterItems(json);
-            if (!items.length) break;
-            existingRaw.push(...items.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
-            onProgress?.(p, lastPage, existingRaw);
-        }
-
-        // Reverse-order bottom-up fill: if descending pagination stopped above Ch. 1 (e.g. server capped at page 32),
-        // fetch ascending from page 1 so Ch. 1, Ch. 2, etc. are ALWAYS present!
-        if (workingTpl && !blocked && existingRaw.length) {
-            const nums = existingRaw.map(x => x.sortNum).filter(n => n > 0);
-            const minNum = nums.length ? Math.min(...nums) : 0;
-            if (minNum > 1) {
-                for (let ap = 1; ap <= 5; ap++) {
-                    await sleep(420);
-                    const u = new URL(workingTpl, location.origin);
-                    u.searchParams.set('limit', '100');
-                    u.searchParams.set('per_page', '100');
-                    u.searchParams.set('order[number]', 'asc');
-                    u.searchParams.set('page', String(ap));
-                    onProgress?.(lastPage + ap, lastPage + ap, existingRaw, `Fetching earliest chapters (Ch. 1–${Math.floor(minNum)})…`);
-                    const { status, json } = await fetchJsonWithBackoff(u.href, ap, 5);
-                    if (status !== 200 || !json) break;
-                    const ascItems = extractApiChapterItems(json).map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean);
-                    if (!ascItems.length) break;
-                    existingRaw.push(...ascItems);
-                    onProgress?.(lastPage + ap, lastPage + ap, existingRaw);
-                    const maxAsc = Math.max(...ascItems.map(x => x.sortNum).filter(n => n >= 0));
-                    if (maxAsc >= minNum) { complete = true; break; }
-                }
+    async function waitForTurnstileClear(maxWaitMs = 90000) {
+        if (!isTurnstileVisible()) return true;
+        const start = Date.now();
+        while (Date.now() - start < maxWaitMs) {
+            await sleep(450);
+            if (!isTurnstileVisible()) {
+                await sleep(500);
+                return true;
             }
         }
-
-        return { items: existingRaw, complete, blocked, nextPage, lastPage, workingTpl };
+        return false;
     }
 
     let seriesState = null;
@@ -5119,32 +5052,32 @@
         let collectedRaw = [...scrapeDomChapters(chaptersSection)];
         let isComplete = false;
         let isCrawling = false;
-        let apiResumeState = null;
 
-        function hasMoreHiddenPages() {
+        function getPagerMeta() {
+            const footTxt = $('.mchap-foot', chaptersSection)?.textContent || '';
+            const totalMatch = footTxt.match(/of\s+(\d+)\s+items/i);
+            const totalItems = totalMatch ? Number(totalMatch[1]) : 0;
+            const estPages = totalItems > 0 ? Math.ceil(totalItems / 20) : 0;
+            const curPage = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
             const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
-            return !!(nextBtn && !nextBtn.disabled && nextBtn.getAttribute('aria-disabled') !== 'true');
+            const hasNext = !!(nextBtn && !nextBtn.disabled && nextBtn.getAttribute('aria-disabled') !== 'true');
+            return { totalItems, estPages, curPage, nextBtn, hasNext };
         }
 
         function refreshMoreBar(pausedForChallenge = false) {
-            if (isComplete || isCrawling) {
-                moreBar.hidden = true;
-                return;
-            }
-            if (!apiResumeState && !hasMoreHiddenPages()) {
+            const { totalItems, estPages, curPage, hasNext } = getPagerMeta();
+            const moreRemaining = !isComplete && (hasNext || (totalItems > 0 && collectedRaw.length < totalItems));
+            if (!moreRemaining || isCrawling) {
                 moreBar.hidden = true;
                 return;
             }
             moreBar.hidden = false;
-            if (apiResumeState) {
-                loadMoreBtn.textContent = pausedForChallenge
-                    ? `Resume from page ${apiResumeState.nextPage}/${apiResumeState.lastPage}`
-                    : `Continue loading (${apiResumeState.nextPage}/${apiResumeState.lastPage})`;
-                loadAllBtn.hidden = true;
-            } else {
-                loadMoreBtn.textContent = pausedForChallenge ? 'Resume loading' : 'Load next page';
-                loadAllBtn.hidden = false;
-            }
+            const remPages = estPages > curPage ? (estPages - curPage) : 0;
+            loadMoreBtn.textContent = pausedForChallenge
+                ? `Resume (page ${curPage + 1}${estPages ? '/' + estPages : ''})`
+                : `Load next 5 pages`;
+            loadAllBtn.hidden = false;
+            loadAllBtn.textContent = remPages ? `Load all remaining (${remPages} pages)` : 'Load all chapters';
         }
 
         function restoreCleanUrl() {
@@ -5157,7 +5090,7 @@
             } catch (_) {}
         }
 
-        async function waitForDomPageChange(prevSig) {
+        async function waitForDomPageChange(prevSig, timeoutMs = 8000) {
             return new Promise(resolve => {
                 let done = false;
                 const finish = val => { if (!done) { done = true; obs.disconnect(); clearTimeout(tm); resolve(val); } };
@@ -5168,73 +5101,13 @@
                 };
                 const obs = new MutationObserver(check);
                 obs.observe(chaptersSection, { childList: true, subtree: true, attributes: true });
-                const tm = setTimeout(() => finish('timeout'), 4500);
+                const tm = setTimeout(() => finish('timeout'), timeoutMs);
                 check();
             });
         }
 
-        async function runApiLoad(resumeOpts = {}) {
-            if (isCrawling) return;
-            isCrawling = true;
-            loadingAll = true;
-            moreBar.hidden = true;
-            const hid = extractSeriesHid(seriesPath);
-            setLoader(true, resumeOpts.startPage ? `Resuming chapters (${resumeOpts.startPage}/${resumeOpts.lastPage})…` : 'Loading all chapters…');
-            try {
-                const result = await fetchAllChaptersApi(hid, seriesPath, (p, total, partial, customMsg) => {
-                    if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                    if (partial) {
-                        collectedRaw = partial;
-                        groups = groupChaptersByNumber(collectedRaw);
-                        renderRows();
-                    }
-                    setLoader(true, customMsg || `Loading all chapters (${p}/${total})…`);
-                }, resumeOpts);
-
-                if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                if (result.items.length) {
-                    collectedRaw = result.items;
-                    groups = groupChaptersByNumber(collectedRaw);
-                    isComplete = result.complete;
-                    apiResumeState = result.complete ? null : (result.workingTpl && result.lastPage > 1 ? {
-                        startPage: result.nextPage,
-                        nextPage: result.nextPage,
-                        lastPage: result.lastPage,
-                        workingTpl: result.workingTpl,
-                    } : null);
-                    if (isComplete || collectedRaw.length >= 20) {
-                        writeChapCache(seriesPath, collectedRaw, isComplete);
-                    }
-                }
-                restoreCleanUrl();
-                isCrawling = false;
-                loadingAll = false;
-                setLoader(false);
-                renderRows();
-                refreshMoreBar(result.blocked);
-                if (result.blocked) toast('Paused for verification/rate-limit — click Resume to load remaining chapters.', 3500);
-            } catch (_) {
-                if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                isCrawling = false;
-                loadingAll = false;
-                setLoader(false);
-                restoreCleanUrl();
-                renderRows();
-                refreshMoreBar(false);
-            }
-        }
-
-        async function stepHiddenPages(maxSteps = 1) {
-            if (apiResumeState) {
-                await runApiLoad({ ...apiResumeState, existingRaw: collectedRaw });
-                return;
-            }
+        async function stepHiddenPages(maxSteps = 5) {
             if (isCrawling || isComplete) return;
-            if (isTurnstileVisible()) {
-                refreshMoreBar(true);
-                toast('Complete the Cloudflare check, then click Resume loading.', 3000);
-                return;
-            }
             isCrawling = true;
             loadingAll = true;
             moreBar.hidden = true;
@@ -5242,12 +5115,13 @@
             let steps = 0;
 
             try {
-                const activeNum = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
-                if (activeNum > 1 && collectedRaw.length <= 20) {
+                // If user landed on ?page=N (N>1), jump back to page 1 first so we never miss recent chapters
+                const initMeta = getPagerMeta();
+                if (initMeta.curPage > 1 && collectedRaw.length <= 20) {
                     const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
                     if (p1) {
                         const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
-                        setLoader(true, 'Jumping back to page 1…');
+                        setLoader(true, 'Returning to page 1…');
                         p1.click();
                         const st = await waitForDomPageChange(prevSig);
                         if (st === 'ok') {
@@ -5258,26 +5132,48 @@
                     }
                 }
 
-                const footTxt = $('.mchap-foot', chaptersSection)?.textContent || '';
-                const totalMatch = footTxt.match(/of\s+(\d+)\s+items/i);
-                const estPages = totalMatch ? Math.ceil(Number(totalMatch[1]) / 20) : 0;
-
                 while (steps < maxSteps) {
                     if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                    if (isTurnstileVisible()) { blocked = true; break; }
-                    const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
-                    if (!nextBtn || nextBtn.disabled || nextBtn.getAttribute('aria-disabled') === 'true') {
+
+                    if (isTurnstileVisible()) {
+                        const { curPage, estPages } = getPagerMeta();
+                        setLoader(true, `Waiting for Cloudflare check… (page ${curPage}${estPages ? '/' + estPages : ''})`);
+                        const cleared = await waitForTurnstileClear(90000);
+                        if (!cleared || seriesState?.path !== seriesPath || !box.isConnected) { blocked = true; break; }
+                    }
+
+                    const { estPages, curPage, nextBtn, hasNext } = getPagerMeta();
+                    if (!hasNext || !nextBtn) {
                         isComplete = true;
                         break;
                     }
-                    const curPage = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
+
                     const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
                     setLoader(true, estPages ? `Loading chapters (page ${curPage + 1} / ${estPages})…` : `Loading page ${curPage + 1}…`);
                     nextBtn.click();
 
-                    const st = await waitForDomPageChange(prevSig);
-                    if (st === 'blocked') { blocked = true; break; }
-                    if (st !== 'ok' || seriesState?.path !== seriesPath || !box.isConnected) break;
+                    let st = await waitForDomPageChange(prevSig, 8000);
+                    if (st === 'blocked') {
+                        setLoader(true, `Waiting for Cloudflare check… (page ${curPage + 1}${estPages ? '/' + estPages : ''})`);
+                        const cleared = await waitForTurnstileClear(90000);
+                        if (!cleared || seriesState?.path !== seriesPath || !box.isConnected) { blocked = true; break; }
+                        // After Cloudflare clears, check if the page already updated; if not, click Next again
+                        const nowSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                        if (!nowSig || nowSig === prevSig) {
+                            const retryBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
+                            if (retryBtn && !retryBtn.disabled) {
+                                retryBtn.click();
+                                st = await waitForDomPageChange(prevSig, 8000);
+                            }
+                        } else {
+                            st = 'ok';
+                        }
+                    }
+
+                    if (st !== 'ok' || seriesState?.path !== seriesPath || !box.isConnected) {
+                        if (st === 'blocked') blocked = true;
+                        break;
+                    }
 
                     const pageRows = scrapeDomChapters(chaptersSection);
                     if (!pageRows.length) break;
@@ -5286,11 +5182,16 @@
                     renderRows();
                     steps++;
 
-                    if (steps < maxSteps) await sleep(650);
+                    if (steps < maxSteps) await sleep(720);
                 }
 
-                if (!hasMoreHiddenPages()) isComplete = true;
-                if (isComplete || collectedRaw.length >= 20) writeChapCache(seriesPath, collectedRaw, isComplete);
+                const finalMeta = getPagerMeta();
+                if (!finalMeta.hasNext && (!finalMeta.totalItems || collectedRaw.length >= finalMeta.totalItems)) {
+                    isComplete = true;
+                }
+                if (isComplete || collectedRaw.length >= 20) {
+                    writeChapCache(seriesPath, collectedRaw, isComplete);
+                }
                 if (isComplete) {
                     const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
                     if (p1 && !p1.classList.contains('is-active')) p1.click();
@@ -5302,21 +5203,20 @@
                 setLoader(false);
                 renderRows();
                 refreshMoreBar(blocked);
-                if (blocked) toast('Paused for Cloudflare check — click Resume after verifying.', 3200);
+                if (blocked) toast('Paused for Cloudflare verification — click Resume after verifying.', 3200);
             }
         }
 
-        loadMoreBtn.addEventListener('click', () => stepHiddenPages(3));
+        loadMoreBtn.addEventListener('click', () => stepHiddenPages(5));
         loadAllBtn.addEventListener('click', () => stepHiddenPages(Infinity));
 
         scrollWrap.addEventListener('scroll', () => {
             if (isComplete || isCrawling || isTurnstileVisible()) return;
             if (scrollWrap.scrollTop + scrollWrap.clientHeight >= scrollWrap.scrollHeight - 80) {
-                stepHiddenPages(1);
+                stepHiddenPages(2);
             }
         }, { passive: true });
 
-        // Always strip stale ?page=N from URL on mount
         restoreCleanUrl();
 
         const cachedData = readChapCache(seriesPath);
@@ -5328,13 +5228,8 @@
             renderRows();
             refreshMoreBar(false);
         } else {
-            // If DOM started on page > 1 (from an old ?page=32 bookmark), click page 1 immediately
-            const activeNum = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
-            if (activeNum > 1) {
-                const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
-                if (p1) p1.click();
-            }
-            runApiLoad({ startPage: 1, existingRaw: [] });
+            // Auto-load first 6 extra pages gently (7 pages = ~140 rows, zero Turnstile risk), then let user scroll or click Load All
+            stepHiddenPages(6);
         }
     }
 
