@@ -23,8 +23,8 @@ Choose the dedicated script for your site:
 | **Asura Scans Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js) | **Comix Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--21.19-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js) |
 | **High-contrast Neobrutalism skin** with zero-flash dark/light toggle, minimalist floating reader dock with zoom (50%–200%) & contrast switcher, novel reader overhaul, and multi-chapter batch ZIP downloader.<br>*Domains:* `asurascans.com`, `*.asurascans.com` | **Full-site Neobrutalism & 4-theme Settings sync**, offline Local Library & custom lists, sign-in nag removal & ad neutralizer, hero banner carousel with 3D tilt, single scrollable chapter list with scanlation-group dropdowns, deduplicated batch ZIP & PDF exporter (up to 500 chapters), floating reader dock with stretch-to-width, and mobile ergonomics (safe-area insets, touch-friendly docks & horizontal snap tracks).<br>*Domains:* `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` |
 | 👉 **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)** | 👉 **[Install Comix Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)** |
-| **Demonic Scans Dedicated** *(MangaDemon)*<br>[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **MangaRead Dedicated** *(mangaread.org)*<br>[![Version](https://img.shields.io/badge/version-2026--11--21.1-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) |
-| **Popunder killer & membership popup immunity**, Netflix-style hero carousel with falling progress timer, cookie-stored Continue Reading shelf, 3-tier podium leaderboard, single-chapter `.cbz` export, and comic ↔ novel reader formatting.<br>*Domains:* `demonicscans.org`, `mangademon.org`, & mirrors | **4-layer ad & popunder debloater**, hero carousel, series cover blur backdrop, restructured wpDiscuz comments with collapsible trees & live indicators, sticky bottom reader bar, `.cbz` export, and multi-chapter batch ZIP downloader.<br>*Domains:* `mangaread.org`, `*.mangaread.org` |
+| **Demonic Scans Dedicated** *(MangaDemon)*<br>[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **MangaRead Dedicated** *(mangaread.org)*<br>[![Version](https://img.shields.io/badge/version-2026--11--21.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) |
+| **Popunder killer & membership popup immunity**, Netflix-style hero carousel with falling progress timer, cookie-stored Continue Reading shelf, 3-tier podium leaderboard, single-chapter `.cbz` export, and comic ↔ novel reader formatting.<br>*Domains:* `demonicscans.org`, `mangademon.org`, & mirrors | **4-layer ad & popunder debloater**, hero carousel, Continue Reading edge fade, Save to List prompt, high-contrast modal fixes, single-row sub-nav, centered chapter comments, static page support, `.cbz` export, and batch ZIP downloader.<br>*Domains:* `mangaread.org`, `*.mangaread.org` |
 | 👉 **[Install DemonicScans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** | 👉 **[Install MangaRead Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)** |
 
 *(Note: The legacy monolithic combined script has been archived to [`archive/neobrutal-scans.user.js`](archive/neobrutal-scans.user.js)).*
@@ -79,6 +79,12 @@ Your userscript manager will automatically detect the script and prompt you to c
 - **Smooth AJAX Load-More Animations**: Staggered pop-in animation (`.md-pop-in`) for newly loaded series cards when clicking "Load More" (`nav.navigation-ajax a.load-ajax`).
 - **Complete De-Bloat**: Eliminates top/bottom ad blocks, PubAdX sticky units, Yandex RTB, Onclicka popunders, chat widgets (Minnit/Cbox/RumbleTalk), and social sharing bars.
 - **Multi-Chapter Batch ZIP Downloader**: Select multiple chapters from the series overview and download them together in a consolidated `.zip`.
+- **Modal Contrast Hardening**: Neutralized white-on-white and dark-on-dark contrast bugs with explicit Neobrutalist background, text, and border styling on modals and inputs (`.md-modal`, `.md-modal-bd`, `.md-modal-hd`, `input[type="search"]`).
+- **Continue Reading with Edge Fade & Save to List**: Enhanced `#md-continue-reading` matching Latest Manga Updates card styles with horizontal edge fade indicators and an integrated Save to List prompt.
+- **Site-Wide Header & Single-Row Sub-Nav**: Consolidated navigation header with uniform spacing, icon buttons, and streamlined single-row sub-nav layout.
+- **Viewport-Centered Chapter Comments**: True viewport-centered chapter comments section with high-contrast sort bar and gradient-morphing "Load More Comments" button.
+- **Privacy Policy & Static Page Support**: Extended Neobrutalist container layout and typography styling to static pages (`/privacy-policy`, `/terms`, `/dmca`, `/contact`, `/about`).
+- **Full-Site Mobile Ergonomics**: Responsive optimizations across mobile viewports (≤ 768px) with touch-friendly controls, uncluttered listings, and optimized modal sizing.
 
 ---
 
@@ -160,7 +166,7 @@ To modify settings, open your userscript manager's dashboard, select your instal
 ## Roadmap & Progress
 
 - [x] **Multi-Site Expansion**
-  - [x] Dedicated edition for `mangaread.org` with 4-layer ad purging, hero carousel, dynamic comments, and batch downloader.
+  - [x] Dedicated edition for `mangaread.org` with 4-layer ad purging, hero carousel, dynamic comments, batch downloader, modal contrast fixes, and static page support.
   - [x] Dedicated edition for `comix.to` & `comix.ws` with offline library, custom lists, deduplicated scanlation group chapter lists, PDF & batch ZIP exports, and stretch-to-width reader tools.
   - [x] Separate version control and dedicated install links for each site.
 - [x] **Homepage & Browsing Overhaul**

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.1
+// @version      2026-11-21.3
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -261,6 +261,7 @@
         if (/^\/manga\/page\/\d+/i.test(p) || /^\/page\/\d+/i.test(p) || /^\/genres\//i.test(p) || /^\/manga\/?$/i.test(p) || p === '/' || (s && s.includes('s='))) return 'list';
         if (/^\/manga\/[^/]+\/[^/]+\/?$/i.test(p)) return 'chapter';
         if (/^\/manga\/[^/]+\/?$/i.test(p)) return 'overview';
+        if (/^\/(privacy-policy|terms|dmca|contact|about)/i.test(p) || (b && b.classList.contains('page') && !b.classList.contains('home'))) return 'static';
         return 'other';
     }
     const PAGE = () => root.dataset.mdPage || detectPage();
@@ -5701,6 +5702,581 @@
             }
             .md-cr-card { flex: 0 0 132px; }
         }
+        /* ================================================================
+         *  v2026-11-21.3 POLISH:
+         *  - White-on-white modal/input text fixes (!important)
+         *  - Site-wide header & single-row sub-nav layout
+         *  - Flattened, readable Total Results bar
+         *  - Header-gradient morphing Load More Comments button
+         *  - Continue Reading matching Latest Manga Updates + edge fade
+         *  - @better-ui Save to List prompt
+         *  - True viewport-centered chapter comments + Sort bar
+         *  - Privacy Policy / Static page support
+         *  - Full-site mobile optimization
+         * ================================================================ */
+
+        /* 1. Modal contrast hardening (fix white-on-white & dark-on-dark) */
+        .md-modal,
+        .md-modal-bd {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+        }
+        .md-modal-hd {
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+        }
+        .md-modal-hd h3 {
+            color: var(--ink) !important;
+            background: transparent !important;
+        }
+        .md-modal-title-wrap {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .md-modal-sub {
+            font: 600 12.5px/1.25 'DM Sans', sans-serif !important;
+            color: var(--muted) !important;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 360px;
+        }
+        .md-modal .md-search-input,
+        .md-modal input[type="search"],
+        .md-modal input[type="text"] {
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 9px 12px !important;
+            font: 700 16px/1.3 'DM Sans', sans-serif !important;
+            opacity: 1 !important;
+        }
+        .md-modal .md-search-input::placeholder,
+        .md-modal input[type="search"]::placeholder,
+        .md-modal input[type="text"]::placeholder {
+            color: var(--muted) !important;
+            opacity: 0.85 !important;
+        }
+        .md-modal .md-set-lbl { color: var(--muted) !important; }
+        .md-modal .md-range-val { color: var(--ink) !important; }
+        .md-modal .md-seg button {
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+        }
+        .md-modal .md-seg button.active {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border-color: var(--bd) !important;
+        }
+        .md-modal .md-modal-close {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            flex-shrink: 0;
+        }
+        .md-modal .md-modal-close:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+
+        /* 2. @better-ui Save to List prompt */
+        .md-picker-modal { border-radius: 12px !important; }
+        .md-picker-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .md-picker-row {
+            position: relative;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 12px !important;
+            padding: 10px 12px !important;
+            border-radius: 8px !important;
+            border: 2px solid var(--bd) !important;
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            cursor: pointer !important;
+            margin: 0 !important;
+            transition: transform 0.14s ease, background-color 0.14s ease, box-shadow 0.14s ease !important;
+        }
+        .md-picker-row:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh) !important;
+        }
+        .md-picker-row:active { transform: scale(0.98) !important; }
+        .md-picker-row.is-checked {
+            background: color-mix(in srgb, var(--primary) 16%, var(--bg)) !important;
+        }
+        .md-picker-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .md-picker-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 5px;
+            border: 2px solid var(--bd);
+            background: var(--card);
+            color: #ffffff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background-color 0.14s ease, transform 0.14s ease;
+        }
+        .md-picker-box svg { width: 13px; height: 13px; stroke-width: 3; }
+        .md-picker-row.is-checked .md-picker-box {
+            background: var(--primary);
+        }
+        .md-picker-name {
+            font: 800 13.5px/1.2 'DM Sans', sans-serif !important;
+            color: var(--ink) !important;
+        }
+        .md-picker-cnt {
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 1.5px solid var(--bd);
+            background: var(--card);
+            color: var(--muted);
+            font: 800 11.5px/1.2 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+        .md-picker-cb {
+            position: absolute !important;
+            opacity: 0 !important;
+            width: 1px !important;
+            height: 1px !important;
+            pointer-events: none !important;
+        }
+
+        /* 3. Site-wide Header & Sub-Nav Layout (@design-an-interface + @better-ui) */
+        header.site-header .search-navigation__wrap,
+        header.site-header .search-navigation {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+        }
+        header.site-header .search-navigation .main-menu-search {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            flex-wrap: nowrap !important;
+        }
+        header.site-header .search-navigation .main-menu-search li.menu-theme {
+            order: 99 !important;
+        }
+        header.site-header .search-navigation .main-menu-search li.menu-md-act {
+            order: 50 !important;
+            margin: 0 !important;
+        }
+        header.site-header a.btn-search-adv,
+        header.site-header .adv-search-link,
+        header.site-header .search-navigation > a,
+        header.site-header .search-navigation .adv-search {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 36px !important;
+            padding: 0 12px !important;
+            border-radius: 8px !important;
+            border: var(--bw) solid var(--bd) !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            text-decoration: none !important;
+            white-space: nowrap !important;
+            order: 20 !important;
+            transition: transform 0.14s ease, background-color 0.14s ease, color 0.14s ease !important;
+        }
+        header.site-header a.btn-search-adv:hover,
+        header.site-header .adv-search-link:hover,
+        header.site-header .search-navigation > a:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+        header.site-header a.open-search-main-menu {
+            width: 36px !important;
+            height: 36px !important;
+        }
+        /* Single-row sub-header nav (no orphan SCHOOL LIFE row) */
+        .c-sub-header-nav .sub-nav_content,
+        .c-sub-header-nav .sub-nav_list {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 4px !important;
+            overflow-x: auto !important;
+            scrollbar-width: none !important;
+        }
+        .c-sub-header-nav .sub-nav_list::-webkit-scrollbar { display: none; }
+        .c-sub-header-nav .sub-nav_list > li {
+            flex: 0 0 auto !important;
+            white-space: nowrap !important;
+        }
+
+        /* 4. Continue Reading matching Latest Manga Updates + Left-to-Right + Edge Fade */
+        #md-continue-reading {
+            max-width: var(--maxw, 1280px) !important;
+            margin: 18px auto 26px !important;
+            padding: 0 15px !important;
+            box-sizing: border-box !important;
+        }
+        .md-cr-hd {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 12px !important;
+            padding: 10px 14px !important;
+            margin-bottom: 14px !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+        }
+        .md-cr-hd-left {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .md-cr-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: var(--primary);
+            color: #ffffff;
+            border: 2px solid var(--bd);
+            box-shadow: var(--sh-sm);
+            flex-shrink: 0;
+        }
+        .md-cr-badge svg { width: 15px; height: 15px; }
+        .md-cr-wrap {
+            position: relative;
+        }
+        .md-cr-wrap[data-fade="r"] .md-cr-row {
+            -webkit-mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 56px), transparent 100%);
+            mask-image: linear-gradient(to right, #000 0%, #000 calc(100% - 56px), transparent 100%);
+        }
+        .md-cr-wrap[data-fade="l"] .md-cr-row {
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 56px, #000 100%);
+            mask-image: linear-gradient(to right, transparent 0%, #000 56px, #000 100%);
+        }
+        .md-cr-wrap[data-fade="lr"] .md-cr-row {
+            -webkit-mask-image: linear-gradient(to right, transparent 0%, #000 56px, #000 calc(100% - 56px), transparent 100%);
+            mask-image: linear-gradient(to right, transparent 0%, #000 56px, #000 calc(100% - 56px), transparent 100%);
+        }
+        .md-cr-row {
+            display: flex !important;
+            flex-direction: row !important;
+            gap: 14px !important;
+            overflow-x: auto !important;
+            padding: 2px 4px 10px 2px !important;
+            scrollbar-width: none !important;
+        }
+        .md-cr-row::-webkit-scrollbar { display: none; }
+        .md-cr-card {
+            flex: 0 0 172px !important;
+        }
+        .md-cr-thumb {
+            aspect-ratio: 2 / 3 !important;
+        }
+
+        /* 5. Flatten & Fix Total Results Bar (no nested boxes, crisp text) */
+        .tab-wrap {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 12px !important;
+            flex-wrap: wrap !important;
+            padding: 10px 14px !important;
+            margin-bottom: 18px !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+        }
+        .tab-wrap .c-blog__heading {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        .tab-wrap .c-blog__heading h1,
+        .tab-wrap .c-blog__heading h2,
+        .tab-wrap .c-blog__heading h3,
+        .tab-wrap .c-blog__heading h4,
+        .tab-wrap .c-blog__heading .h4 {
+            color: var(--ink) !important;
+            margin: 0 !important;
+            font: 800 13.5px/1.2 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            white-space: nowrap !important;
+        }
+        .tab-wrap .c-nav-tabs,
+        .tab-wrap ul.c-tabs-content {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            gap: 6px !important;
+            overflow-x: auto !important;
+            scrollbar-width: none !important;
+        }
+        .tab-wrap .c-nav-tabs::-webkit-scrollbar,
+        .tab-wrap ul.c-tabs-content::-webkit-scrollbar { display: none; }
+        .tab-wrap .c-nav-tabs > span,
+        .tab-wrap .c-nav-tabs .c-tabs-heading {
+            display: none !important;
+        }
+        .tab-wrap .c-tabs-item {
+            flex: 0 0 auto !important;
+            margin: 0 !important;
+        }
+        .tab-wrap .c-tabs-item a {
+            white-space: nowrap !important;
+            color: var(--ink) !important;
+            background: var(--bg) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 7px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 6px 11px !important;
+            font: 800 12px/1 'JetBrains Mono', monospace !important;
+        }
+        .tab-wrap .c-tabs-item.active a,
+        .tab-wrap .c-tabs-item a:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border-color: var(--bd) !important;
+        }
+        .tab-wrap .c-tabs-item a::after { display: none !important; }
+
+        /* 6. Load More Comments Button -> Header Gradient + In-Place Loading Morph */
+        html body #wpdcom .md-cload { display: none !important; }
+        html body #wpdcom .wpd-load-more-submit,
+        html body #wpdcom .wpd-load-comments {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 10px !important;
+            background: var(--header-gradient) !important;
+            color: #ffffff !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh) !important;
+            padding: 11px 22px !important;
+            font: 800 13px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35) !important;
+            cursor: pointer !important;
+            transition: transform 0.14s ease, box-shadow 0.14s ease, opacity 0.16s ease !important;
+        }
+        html body #wpdcom .wpd-load-more-submit:hover,
+        html body #wpdcom .wpd-load-comments:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh-hover) !important;
+        }
+        html body #wpdcom .wpd-load-more-submit:active,
+        html body #wpdcom .wpd-load-comments:active {
+            transform: scale(0.96) !important;
+        }
+        html body #wpdcom .wpd-load-more-submit.md-lm-loading,
+        html body #wpdcom .wpd-load-comments.md-lm-loading {
+            opacity: 0.92 !important;
+            pointer-events: none !important;
+        }
+        .md-lm-spin {
+            width: 15px;
+            height: 15px;
+            border: 2.5px solid rgba(255, 255, 255, 0.95);
+            border-right-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            animation: mdSpin 0.7s linear infinite;
+        }
+
+        /* 7. True Viewport-Centered Comments in Chapter Reader + Comment Sort Bar */
+        html[data-md-page="chapter"] .c-page-content .container,
+        html[data-md-page="chapter"] .site-content .container,
+        html[data-md-page="chapter"] .main-col,
+        html[data-md-page="chapter"] .main-col.col-12,
+        html[data-md-page="chapter"] .main-col.col-md-8,
+        html[data-md-page="chapter"] .main-col.col-sm-8 {
+            width: 100% !important;
+            max-width: 100% !important;
+            flex: 0 0 100% !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            float: none !important;
+        }
+        html[data-md-page="chapter"] .manga-discussion,
+        html[data-md-page="chapter"] #respond.comments-area,
+        html[data-md-page="chapter"] #comments,
+        html[data-md-page="chapter"] #wpdcom {
+            width: 100% !important;
+            max-width: min(820px, calc(100vw - 24px)) !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            float: none !important;
+            box-sizing: border-box !important;
+        }
+        #md-csort-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin: 0 0 14px;
+            padding: 8px 10px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            box-shadow: var(--sh-sm);
+        }
+        .md-csort-lbl {
+            font: 800 11.5px/1 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-right: 4px;
+        }
+        #md-csort-bar button {
+            padding: 6px 12px;
+            border-radius: 7px;
+            border: 2px solid var(--bd);
+            background: var(--card);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            font: 800 12px/1 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: transform 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+        }
+        #md-csort-bar button:active { transform: scale(0.96); }
+        #md-csort-bar button.active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        /* 8. Privacy Policy & Static Info Pages */
+        html[data-md-page="static"] .sidebar-col,
+        html[data-md-page="static"] .c-sidebar {
+            display: none !important;
+        }
+        html[data-md-page="static"] .main-col,
+        html[data-md-page="static"] .c-page-content .container {
+            max-width: 900px !important;
+            width: 100% !important;
+            flex: 0 0 100% !important;
+            margin: 0 auto !important;
+            float: none !important;
+        }
+        html[data-md-page="static"] .entry-content,
+        html[data-md-page="static"] .c-blog-post,
+        html[data-md-page="static"] article.page {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            padding: 28px 32px !important;
+            margin: 20px auto 36px !important;
+            line-height: 1.7 !important;
+            font-family: 'DM Sans', system-ui, sans-serif !important;
+        }
+        html[data-md-page="static"] .entry-content h1,
+        html[data-md-page="static"] .entry-content h2,
+        html[data-md-page="static"] .entry-content h3,
+        html[data-md-page="static"] .entry-header h1,
+        html[data-md-page="static"] .entry-title {
+            color: var(--ink) !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            font-weight: 800 !important;
+            margin-top: 22px !important;
+            margin-bottom: 10px !important;
+        }
+        html[data-md-page="static"] .entry-content p,
+        html[data-md-page="static"] .entry-content li {
+            color: var(--ink) !important;
+            font-size: 15px !important;
+        }
+        html[data-md-page="static"] .entry-content a {
+            color: var(--primary) !important;
+            font-weight: 700 !important;
+            text-decoration: underline !important;
+        }
+
+        /* 9. Full-Site Mobile Optimization */
+        @media (max-width: 768px) {
+            header.site-header .main-navigation_wrap {
+                flex-wrap: wrap !important;
+                gap: 8px !important;
+                padding: 8px 12px !important;
+            }
+            header.site-header a.btn-search-adv,
+            header.site-header .adv-search-link {
+                padding: 0 9px !important;
+                font-size: 11px !important;
+            }
+            .tab-wrap {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 10px !important;
+                padding: 10px 12px !important;
+            }
+            .tab-wrap .c-nav-tabs,
+            .tab-wrap ul.c-tabs-content {
+                width: 100% !important;
+            }
+            .md-cr-card { flex: 0 0 142px !important; }
+            html[data-md-page="static"] .entry-content,
+            html[data-md-page="static"] article.page {
+                padding: 18px 16px !important;
+                margin: 12px auto 24px !important;
+            }
+            html[data-md-page="chapter"] #respond.comments-area,
+            html[data-md-page="chapter"] #wpdcom {
+                max-width: calc(100vw - 16px) !important;
+                padding: 12px !important;
+            }
+        }
+        @media (max-width: 640px) {
+            .page-listing-item .row,
+            .c-tabs-item__content .row {
+                display: grid !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 10px !important;
+                margin: 0 !important;
+            }
+            .page-listing-item .row > [class*="col-"],
+            .c-tabs-item__content .row > [class*="col-"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                flex: none !important;
+            }
+        }
     `;
 
     function injectStyles() {
@@ -6797,16 +7373,7 @@
                 libBtn.innerHTML = ICON.bookmark;
                 libBtn.addEventListener('click', () => openLibraryModal());
 
-                const setBtn = document.createElement('button');
-                setBtn.id = 'md-set-btn';
-                setBtn.type = 'button';
-                setBtn.className = 'md-hdr-btn';
-                setBtn.title = 'Settings & Themes';
-                setBtn.setAttribute('aria-label', 'Open Settings');
-                setBtn.innerHTML = ICON.gear;
-                setBtn.addEventListener('click', () => openSettingsModal());
-
-                actLi.append(libBtn, setBtn);
+                actLi.append(libBtn);
                 searchUl.appendChild(actLi);
             }
             let li = searchUl.querySelector('li.menu-theme');
@@ -7382,17 +7949,27 @@
     function setupCommentLoading() {
         const w = $('#wpdcom');
         if (!w) return;
-        let ind = w.querySelector(':scope > .md-cload');
-        if (!ind) {
-            ind = document.createElement('div');
-            ind.className = 'md-cload';
-            ind.textContent = 'Loading comments';
-            w.appendChild(ind);
-        }
+        const oldInd = w.querySelector(':scope > .md-cload');
+        if (oldInd) oldInd.remove();
+
+        const bindLoadMore = () => {
+            $$('.wpd-load-more-submit, .wpd-load-comments', w).forEach(btn => {
+                if (btn.dataset.mdLmInit) return;
+                btn.dataset.mdLmInit = '1';
+                btn.dataset.mdOrigLabel = (btn.textContent || 'Load More Comments').trim();
+                btn.addEventListener('click', () => {
+                    btn.classList.add('md-lm-loading');
+                    btn.innerHTML = '<span class="md-lm-spin" aria-hidden="true"></span><span>Loading comments…</span>';
+                });
+            });
+        };
+        bindLoadMore();
+
         if (w.__mdCL) return;
+        let wasLoading = false;
         w.__mdCL = setInterval(() => {
             if (!w.isConnected) { clearInterval(w.__mdCL); w.__mdCL = null; return; }
-            if (ind.parentNode !== w) w.appendChild(ind);
+            bindLoadMore();
             const bar = document.getElementById('wpdiscuz-loading-bar') || $('.wpdiscuz-loading-bar');
             let on = false;
             if (bar) {
@@ -7400,10 +7977,25 @@
                 on = cs.display !== 'none' && parseFloat(cs.opacity || '1') > 0.05;
             }
             if (!on) on = !!w.querySelector('.wpd-loading, .wpd_loading');
-            if (on !== w.hasAttribute('data-md-cload')) {
-                if (on) w.setAttribute('data-md-cload', '1'); else w.removeAttribute('data-md-cload');
+            if (on !== wasLoading) {
+                wasLoading = on;
+                $$('.wpd-load-more-submit, .wpd-load-comments', w).forEach(btn => {
+                    if (on) {
+                        if (!btn.classList.contains('md-lm-loading')) {
+                            btn.dataset.mdOrigLabel = btn.dataset.mdOrigLabel || (btn.textContent || 'Load More Comments').trim();
+                            btn.classList.add('md-lm-loading');
+                            btn.innerHTML = '<span class="md-lm-spin" aria-hidden="true"></span><span>Loading comments…</span>';
+                        }
+                    } else if (btn.classList.contains('md-lm-loading')) {
+                        btn.classList.remove('md-lm-loading');
+                        btn.textContent = btn.dataset.mdOrigLabel || 'Load More Comments';
+                    }
+                });
+                if (!on && PAGE() === 'chapter') {
+                    try { applyCommentSort(); } catch (_) {}
+                }
             }
-        }, 250);
+        }, 220);
     }
 
     function lazyImages() {
@@ -7626,9 +8218,13 @@
         }).join('');
 
         shelf.innerHTML = `<div class="md-cr-hd">
-            <h3 class="md-cr-title">Continue Reading</h3>
+            <div class="md-cr-hd-left">
+                <span class="md-cr-badge" aria-hidden="true">${ICON.bookmarkFill}</span>
+                <h3 class="md-cr-title">Continue Reading</h3>
+            </div>
             <button type="button" class="md-cr-clear">Clear history</button>
-        </div><div class="md-cr-row">${cards}</div>`;
+        </div>
+        <div class="md-cr-wrap" data-fade="none"><div class="md-cr-row">${cards}</div></div>`;
 
         if (!existing) {
             const hero = document.getElementById('md-hero');
@@ -7637,6 +8233,21 @@
                 const main = $('.site-content') || document.body;
                 main.prepend(shelf);
             }
+        }
+
+        const crWrap = $('.md-cr-wrap', shelf);
+        const crRow = $('.md-cr-row', shelf);
+        if (crWrap && crRow) {
+            const syncFade = () => {
+                const maxScroll = crRow.scrollWidth - crRow.clientWidth;
+                if (maxScroll <= 4) { crWrap.dataset.fade = 'none'; return; }
+                const left = crRow.scrollLeft > 8;
+                const right = crRow.scrollLeft < maxScroll - 8;
+                crWrap.dataset.fade = left && right ? 'lr' : right ? 'r' : left ? 'l' : 'none';
+            };
+            crRow.addEventListener('scroll', syncFade, { passive: true });
+            addEventListener('resize', syncFade, { passive: true });
+            requestAnimationFrame(syncFade);
         }
 
         const clearBtn = $('.md-cr-clear', shelf);
@@ -7729,18 +8340,25 @@
             const lib = getLibrary();
             const rows = Object.keys(lib).map(name => {
                 const has = lib[name].some(x => x.slug === item.slug);
-                return `<label class="md-picker-row">
-                    <span>${name.replace(/</g, '&lt;')} <small style="opacity:.6">(${lib[name].length})</small></span>
-                    <input type="checkbox" data-list="${name.replace(/"/g, '&quot;')}" ${has ? 'checked' : ''}>
+                return `<label class="md-picker-row${has ? ' is-checked' : ''}">
+                    <span class="md-picker-left">
+                        <span class="md-picker-box" aria-hidden="true">${has ? ICON.check : ''}</span>
+                        <span class="md-picker-name">${name.replace(/</g, '&lt;')}</span>
+                    </span>
+                    <span class="md-picker-cnt">${lib[name].length}</span>
+                    <input type="checkbox" class="md-picker-cb" data-list="${name.replace(/"/g, '&quot;')}" ${has ? 'checked' : ''}>
                 </label>`;
             }).join('');
-            wrap.innerHTML = `<div class="md-modal" role="dialog" aria-label="Save to list">
+            wrap.innerHTML = `<div class="md-modal md-picker-modal" role="dialog" aria-label="Save to list">
                 <div class="md-modal-hd">
-                    <h3>Save "${item.title.replace(/</g, '&lt;')}"</h3>
+                    <div class="md-modal-title-wrap">
+                        <h3>Save to List</h3>
+                        <span class="md-modal-sub" title="${item.title.replace(/"/g, '&quot;')}">${item.title.replace(/</g, '&lt;')}</span>
+                    </div>
                     <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
                 </div>
                 <div class="md-modal-bd">
-                    ${rows}
+                    <div class="md-picker-list">${rows}</div>
                     <div class="md-lib-new-row">
                         <input type="text" class="md-search-input" placeholder="New list name…">
                         <button type="button">Add</button>
@@ -7748,12 +8366,13 @@
                 </div>
             </div>`;
             $('.md-modal-close', wrap).addEventListener('click', () => wrap.classList.remove('open'));
-            $$('input[type="checkbox"]', wrap).forEach(cb => {
+            $$('input.md-picker-cb', wrap).forEach(cb => {
                 cb.addEventListener('change', () => {
                     const ln = cb.dataset.list;
                     if (cb.checked) upsertInList(ln, { ...item, addedAt: Date.now() });
                     else removeFromList(ln, item.slug);
                     if (onChange) onChange();
+                    render();
                 });
             });
             const inp = $('.md-lib-new-row input', wrap);
@@ -8034,6 +8653,91 @@
     }
 
     /* ====================================================================
+     *  CHAPTER READER COMMENT SORTING (TOP / NEWEST / OLDEST)
+     * ==================================================================== */
+    let currentCommentSort = 'top';
+
+    function parseCommentScore(el) {
+        const v = el.querySelector('.wpd-vote-result');
+        if (!v) return 0;
+        const n = parseInt((v.textContent || '').replace(/[^\d-]/g, ''), 10);
+        return Number.isFinite(n) ? n : 0;
+    }
+
+    function parseCommentAgeSec(el) {
+        const d = el.querySelector('.wpd-comment-date');
+        if (!d) return Number.MAX_SAFE_INTEGER;
+        const title = (d.getAttribute('title') || '').trim();
+        if (title) {
+            const ts = Date.parse(title);
+            if (!Number.isNaN(ts)) return Math.max(0, (Date.now() - ts) / 1000);
+        }
+        const txt = (d.textContent || '').toLowerCase().trim();
+        if (/just\s*now|moment/.test(txt)) return 1;
+        const m = txt.match(/(\d+)\s*(sec|second|min|minute|hour|hr|day|week|wk|month|mo|year|yr)/);
+        if (m) {
+            const val = parseInt(m[1], 10);
+            const u = m[2];
+            const mult = u.startsWith('sec') ? 1
+                : u.startsWith('min') ? 60
+                : (u.startsWith('hour') || u.startsWith('hr')) ? 3600
+                : u.startsWith('day') ? 86400
+                : (u.startsWith('week') || u.startsWith('wk')) ? 604800
+                : (u.startsWith('month') || u.startsWith('mo')) ? 2592000
+                : 31536000;
+            return val * mult;
+        }
+        const ts2 = Date.parse(txt);
+        if (!Number.isNaN(ts2)) return Math.max(0, (Date.now() - ts2) / 1000);
+        return Number.MAX_SAFE_INTEGER;
+    }
+
+    function applyCommentSort(mode) {
+        if (mode) currentCommentSort = mode;
+        const list = $('#wpdcom .wpd-thread-list');
+        if (!list) return;
+        const items = [...list.children].filter(el => el.classList && el.classList.contains('wpd-comment'));
+        if (items.length <= 1) return;
+        items.sort((a, b) => {
+            if (currentCommentSort === 'top') {
+                const diff = parseCommentScore(b) - parseCommentScore(a);
+                if (diff !== 0) return diff;
+                return parseCommentAgeSec(a) - parseCommentAgeSec(b);
+            }
+            if (currentCommentSort === 'newest') return parseCommentAgeSec(a) - parseCommentAgeSec(b);
+            return parseCommentAgeSec(b) - parseCommentAgeSec(a);
+        });
+        items.forEach(el => list.appendChild(el));
+        const bar = document.getElementById('md-csort-bar');
+        if (bar) {
+            $$('button[data-sort]', bar).forEach(b => b.classList.toggle('active', b.dataset.sort === currentCommentSort));
+        }
+    }
+
+    function setupCommentSortBar() {
+        if (PAGE() !== 'chapter') return;
+        const w = $('#wpdcom');
+        const list = w && w.querySelector('.wpd-thread-list');
+        if (!w || !list) return;
+        let bar = document.getElementById('md-csort-bar');
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = 'md-csort-bar';
+            bar.innerHTML = `<span class="md-csort-lbl">Sort</span>
+                <button type="button" data-sort="top" class="active">Top</button>
+                <button type="button" data-sort="newest">Newest</button>
+                <button type="button" data-sort="oldest">Oldest</button>`;
+            list.parentNode.insertBefore(bar, list);
+            bar.addEventListener('click', e => {
+                const b = e.target.closest('button[data-sort]');
+                if (!b) return;
+                applyCommentSort(b.dataset.sort);
+            });
+            applyCommentSort('top');
+        }
+    }
+
+    /* ====================================================================
      *  RUN LOOP & LIFECYCLE
      * ==================================================================== */
     injectStyles();
@@ -8060,6 +8764,7 @@
                 setupReader();
                 buildReaderBar();
                 removeRelated();
+                try { setupCommentSortBar(); } catch (_) {}
             }
             setupThemeToggle();
             addExtras();
