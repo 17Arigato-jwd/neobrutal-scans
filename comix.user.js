@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.6
+// @version      2026-11-21.7
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -772,8 +772,8 @@
             from { opacity: 1; transform: translateX(0); }
             to   { opacity: 0; transform: translateX(28px); }
         }
-        /* Keep [role="dialog"] full-screen backdrop clean; style only non-empty content panel (skip backdrops & Turnstile) */
-        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(:has(iframe[src*="cloudflare"]))) {
+        /* Keep [role="dialog"] full-screen backdrop clean; style only non-empty content panel (skip our own dialogs, backdrops & Turnstile) */
+        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(.md-own-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(.md-own-dialog):not(:has(iframe[src*="cloudflare"]))) {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -786,7 +786,7 @@
             box-shadow: none !important;
             max-height: none !important;
         }
-        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(:has(iframe[src*="cloudflare"]))) > :not(:empty):not([class*="backdrop" i]):not([class*="overlay" i]):not([class*="scrim" i]),
+        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(.md-own-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(.md-own-dialog):not(:has(iframe[src*="cloudflare"]))) > :not(:empty):not([class*="backdrop" i]):not([class*="overlay" i]):not([class*="scrim" i]),
         html[data-md-site="comix"] dialog[open]:not(:has(iframe[src*="cloudflare"])) {
             background: var(--card) !important;
             color: var(--ink) !important;
@@ -816,7 +816,7 @@
         html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(p, small, .muted, [class*="hint" i], [class*="desc" i], [class*="sub" i]) {
             color: var(--muted) !important;
         }
-        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) button:not(.settings-custom__preset):not(.md-no-style) {
+        html[data-md-site="comix"] :is([role="dialog"]:not(.md-own-dialog), [aria-modal="true"]:not(.md-own-dialog), dialog[open]) button:not(.settings-custom__preset):not(.md-no-style) {
             background: var(--soft) !important;
             color: var(--ink) !important;
             border: 2px solid var(--bd) !important;
@@ -826,22 +826,37 @@
             font-weight: 700 !important;
             transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
         }
-        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) button:not(.settings-custom__preset):not(.md-no-style):hover:not(:disabled) {
+        html[data-md-site="comix"] :is([role="dialog"]:not(.md-own-dialog), [aria-modal="true"]:not(.md-own-dialog), dialog[open]) button:not(.settings-custom__preset):not(.md-no-style):hover:not(:disabled) {
             background: var(--cream) !important;
             transform: translate(-1px, -1px);
             box-shadow: var(--sh) !important;
         }
-        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) button:not(.settings-custom__preset):not(.md-no-style):active:not(:disabled) {
+        html[data-md-site="comix"] :is([role="dialog"]:not(.md-own-dialog), [aria-modal="true"]:not(.md-own-dialog), dialog[open]) button:not(.settings-custom__preset):not(.md-no-style):active:not(:disabled) {
             transform: scale(0.96) !important;
         }
-        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(button, a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) {
+        html[data-md-site="comix"] :is([role="dialog"]:not(.md-own-dialog), [aria-modal="true"]:not(.md-own-dialog), dialog[open]) :is(button:not(.settings-custom__preset), a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) {
             background: var(--yellow) !important;
             color: var(--on-ink) !important;
             border-color: var(--bd) !important;
             font-weight: 900 !important;
         }
-        html[data-md-site="comix"][data-md-theme="light"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(button, a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) {
+        html[data-md-site="comix"][data-md-theme="light"] :is([role="dialog"]:not(.md-own-dialog), [aria-modal="true"]:not(.md-own-dialog), dialog[open]) :is(button:not(.settings-custom__preset), a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) {
             color: #111111 !important;
+        }
+        /* Keep preset color circles showing their diagonal 2-color split; use a crisp ring for active state */
+        html[data-md-site="comix"] .settings-custom__preset[aria-pressed="true"] {
+            box-shadow: 0 0 0 2.5px var(--card), 0 0 0 5px var(--yellow) !important;
+            transform: scale(1.06);
+        }
+        html[data-md-site="comix"] .md-custom-swatch {
+            border: 2px dashed var(--muted) !important;
+            position: relative;
+        }
+        html[data-md-site="comix"] .md-custom-swatch[data-active="1"] {
+            border-style: solid !important;
+            border-color: var(--bd) !important;
+            box-shadow: 0 0 0 2.5px var(--card), 0 0 0 5px var(--yellow) !important;
+            transform: scale(1.06);
         }
         html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) input[type="range"] {
             accent-color: var(--yellow) !important;
@@ -1005,18 +1020,22 @@
             padding: 16px; box-sizing: border-box;
             background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);
         }
+        #md-lib-modal.md-closing .md-lib-panel,
+        #md-list-picker.md-closing .md-pick-panel {
+            animation: mdDialogOut .15s ease-out forwards;
+        }
         #md-lib-modal .md-lib-panel {
-            width: min(980px, calc(100vw - 32px)); max-height: min(88dvh, 820px);
+            width: min(960px, calc(100vw - 32px)); max-height: min(88dvh, 800px);
             display: flex; flex-direction: column; overflow: hidden;
             background: var(--card); color: var(--ink);
-            border: var(--bw) solid var(--bd); border-radius: 14px; box-shadow: 8px 8px 0 var(--bd);
+            border: var(--bw) solid var(--bd); border-radius: 16px; box-shadow: 8px 8px 0 var(--bd);
             font-family: var(--f-sans); animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
         }
         #md-list-picker .md-pick-panel {
-            width: min(440px, calc(100vw - 32px)); max-height: min(84dvh, 640px);
+            width: min(430px, calc(100vw - 32px)); max-height: min(84dvh, 620px);
             display: flex; flex-direction: column; overflow: hidden;
             background: var(--card); color: var(--ink);
-            border: var(--bw) solid var(--bd); border-radius: 14px; box-shadow: 6px 6px 0 var(--bd);
+            border: var(--bw) solid var(--bd); border-radius: 16px; box-shadow: 7px 7px 0 var(--bd);
             font-family: var(--f-sans); animation: mdDialogIn .18s cubic-bezier(0.2, 0, 0, 1) both;
         }
         .md-modal-head {
@@ -1089,16 +1108,20 @@
         .md-lib-card-rm:hover { background: var(--pink); }
         .md-lib-empty { padding: 40px 20px; text-align: center; font: 700 14px/1.5 var(--f-sans); color: var(--muted); }
 
-        .md-pick-series { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 2px solid var(--bd); background: var(--card); }
-        .md-pick-thumb { width: 42px; height: 62px; border: 2px solid var(--bd); border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--soft); }
-        .md-pick-title { font: 800 14px/1.3 var(--f-sans); color: var(--ink); }
-        .md-pick-lists { flex: 1 1 auto; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+        .md-pick-series { display: flex; align-items: center; gap: 14px; padding: 14px 18px; border-bottom: 2px solid var(--bd); background: var(--card); }
+        .md-pick-thumb { width: 46px; height: 68px; border: 2px solid var(--bd); border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--soft); outline: 1px solid var(--img-outline); outline-offset: -1px; }
+        .md-pick-meta { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+        .md-pick-title { font: 900 14.5px/1.3 var(--f-sans); color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .md-pick-sub { font: 700 11.5px/1.2 var(--f-mono); color: var(--muted); }
+        .md-pick-lists { flex: 1 1 auto; overflow-y: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 9px; background: var(--card); }
         .md-pick-row {
-            display: flex; align-items: center; justify-content: space-between; gap: 10px;
-            padding: 10px 12px; background: var(--soft); color: var(--ink);
-            border: 2px solid var(--bd); border-radius: 9px; box-shadow: var(--sh-sm); cursor: pointer;
-            font: 800 13px/1.2 var(--f-sans); transition: transform .12s ease-out, background-color .14s ease-out;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; box-sizing: border-box;
+            padding: 11px 14px; background: var(--soft); color: var(--ink);
+            border: 2px solid var(--bd); border-radius: 8px; box-shadow: var(--sh-sm); cursor: pointer;
+            font: 800 13.5px/1.2 var(--f-sans); transition: transform .12s ease-out, background-color .14s ease-out, box-shadow .12s ease-out;
         }
+        .md-pick-row:active { transform: scale(0.96); }
+        .md-pick-row-badge { font: 800 11.5px/1 var(--f-mono); font-variant-numeric: tabular-nums; padding: 3px 8px; border-radius: 999px; background: var(--card); color: var(--ink); border: 1.5px solid var(--bd); }
         .md-pick-row:hover { background: var(--cream); transform: translate(-1px, -1px); }
         .md-pick-row[data-in="1"] { background: var(--yellow); color: var(--on-ink); }
         html[data-md-theme="light"] .md-pick-row[data-in="1"] { color: #111111; }
@@ -2770,6 +2793,7 @@
         if (!grid || grid.dataset.mdExtraPresets === '1') return;
         grid.dataset.mdExtraPresets = '1';
 
+        const extraBtns = [];
         for (const p of EXTRA_PRESETS) {
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -2786,10 +2810,55 @@
                     setReactInputValue(hexInputs[2], p.accent);
                 }
                 $$('.settings-custom__preset', grid).forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+                customSwatch.dataset.active = '0';
+                customSwatch.setAttribute('aria-pressed', 'false');
                 setTheme('custom', true);
             });
             grid.appendChild(btn);
+            extraBtns.push(btn);
         }
+
+        // Dedicated last circle: mirrors user's manual custom hex colors ONLY when not matching a preset theme
+        const customSwatch = document.createElement('button');
+        customSwatch.type = 'button';
+        customSwatch.className = 'settings-custom__preset md-custom-swatch';
+        customSwatch.title = 'Custom colour';
+        customSwatch.setAttribute('aria-label', 'Custom colour swatch');
+        customSwatch.setAttribute('aria-pressed', 'false');
+        customSwatch.dataset.active = '0';
+        customSwatch.style.background = 'linear-gradient(135deg, var(--bg, #1c1416) 50%, var(--accent, #e5484d) 50%)';
+        grid.appendChild(customSwatch);
+
+        const syncCustomSwatch = (isManualEdit = false) => {
+            const hexInputs = $$('.settings-color__hex', panel);
+            const bg = hexInputs[0]?.value?.trim() || '';
+            const ac = hexInputs[2]?.value?.trim() || '';
+            if (/^#[0-9a-f]{3,8}$/i.test(bg) && /^#[0-9a-f]{3,8}$/i.test(ac)) {
+                customSwatch.style.background = `linear-gradient(135deg, ${bg} 50%, ${ac} 50%)`;
+            }
+            if (isManualEdit) {
+                $$('.settings-custom__preset', grid).forEach(b => b.setAttribute('aria-pressed', 'false'));
+                customSwatch.dataset.active = '1';
+                customSwatch.setAttribute('aria-pressed', 'true');
+            }
+        };
+
+        // Clicking any native preset clears our extra presets and deactivates the custom swatch
+        grid.addEventListener('click', e => {
+            const clicked = e.target instanceof Element ? e.target.closest('.settings-custom__preset') : null;
+            if (!clicked || clicked.classList.contains('md-extra-preset') || clicked === customSwatch) return;
+            extraBtns.forEach(b => b.setAttribute('aria-pressed', 'false'));
+            customSwatch.dataset.active = '0';
+            customSwatch.setAttribute('aria-pressed', 'false');
+        }, true);
+
+        // Typing or picking custom hex colors activates ONLY the last custom swatch circle
+        panel.addEventListener('input', e => {
+            if (e.target instanceof Element && e.target.closest('.settings-color__hex, input[type="color"]')) {
+                syncCustomSwatch(true);
+            }
+        });
+        syncCustomSwatch(false);
     }
 
     function tagDropdowns(app) {
@@ -3080,17 +3149,51 @@
      *  LOCAL LIBRARY & CUSTOM LISTS (Top Bar Button + Cover '+' Interceptor)
      * ==================================================================== */
     const DEFAULT_LISTS = [
-        { id: 'reading', name: 'Reading', items: [] },
+        { id: 'reading', name: 'Currently Reading', items: [] },
         { id: 'plan', name: 'Plan to Read', items: [] },
         { id: 'completed', name: 'Completed', items: [] },
     ];
 
     function getLibrary() {
         const data = store.get('lists', null);
-        if (data && Array.isArray(data.lists) && data.lists.length) return data;
+        if (data && Array.isArray(data.lists) && data.lists.length) {
+            const r = data.lists.find(l => l.id === 'reading');
+            if (r && r.name === 'Reading') { r.name = 'Currently Reading'; store.set('lists', data); }
+            return data;
+        }
         const init = { lists: DEFAULT_LISTS.map(l => ({ ...l, items: [] })) };
         store.set('lists', init);
         return init;
+    }
+
+    function upsertCurrentlyReading(series) {
+        if (!series?.path) return;
+        const lib = getLibrary();
+        let list = lib.lists.find(l => l.id === 'reading');
+        if (!list) {
+            list = { id: 'reading', name: 'Currently Reading', items: [] };
+            lib.lists.unshift(list);
+        }
+        const existing = list.items.find(it => it.path === series.path);
+        const cover = imageUrl(series.cover) || existing?.cover || getCachedCover(series.path);
+        list.items = list.items.filter(it => it.path !== series.path);
+        list.items.unshift({
+            path: series.path,
+            title: toTitleCase(series.title || existing?.title || 'Series'),
+            cover,
+            addedAt: Date.now(),
+        });
+        saveLibrary(lib);
+    }
+
+    function removeFromCurrentlyReading(seriesPath) {
+        if (!seriesPath) return;
+        const lib = getLibrary();
+        const list = lib.lists.find(l => l.id === 'reading');
+        if (!list) return;
+        const before = list.items.length;
+        list.items = list.items.filter(it => it.path !== seriesPath);
+        if (list.items.length !== before) saveLibrary(lib);
     }
 
     function saveLibrary(data) {
@@ -3169,14 +3272,17 @@
         const overlay = document.createElement('div');
         overlay.id = 'md-list-picker';
         overlay.innerHTML = `
-            <div class="md-pick-panel" role="dialog" aria-label="Save to local list">
+            <div class="md-pick-panel md-own-dialog" role="dialog" aria-label="Save to local list">
                 <div class="md-modal-head">
                     <h2>Save to List</h2>
                     <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
                 </div>
                 <div class="md-pick-series">
                     ${cover ? `<img class="md-pick-thumb" src="${cover}" alt="">` : '<div class="md-pick-thumb"></div>'}
-                    <div class="md-pick-title"></div>
+                    <div class="md-pick-meta">
+                        <div class="md-pick-title"></div>
+                        <div class="md-pick-sub">Stored locally in your browser</div>
+                    </div>
                 </div>
                 <div class="md-pick-lists"></div>
                 <form class="md-pick-foot">
@@ -3197,7 +3303,7 @@
                 row.type = 'button';
                 row.className = 'md-pick-row';
                 row.dataset.in = inList ? '1' : '0';
-                row.innerHTML = `<span></span><span>${inList ? '✓ Saved' : '+ Add'}</span>`;
+                row.innerHTML = `<span></span><span class="md-pick-row-badge">${inList ? '✓ Saved' : '+ Add'}</span>`;
                 row.firstElementChild.textContent = `${l.name} (${l.items.length})`;
                 row.addEventListener('click', () => {
                     const added = toggleSeriesInList(l.id, { ...series, cover });
@@ -3208,7 +3314,14 @@
             }
         }
 
-        const close = () => overlay.remove();
+        const onKey = e => { if (e.key === 'Escape') close(); };
+        const close = () => {
+            document.removeEventListener('keydown', onKey);
+            if (reducedMotion.matches) { overlay.remove(); return; }
+            overlay.classList.add('md-closing');
+            setTimeout(() => overlay.remove(), 150);
+        };
+        document.addEventListener('keydown', onKey);
         $('.md-modal-close', overlay).addEventListener('click', close);
         overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
         $('.md-pick-foot', overlay).addEventListener('submit', e => {
@@ -3233,7 +3346,7 @@
         const overlay = document.createElement('div');
         overlay.id = 'md-lib-modal';
         overlay.innerHTML = `
-            <div class="md-lib-panel" role="dialog" aria-label="My Local Library">
+            <div class="md-lib-panel md-own-dialog" role="dialog" aria-label="My Local Library">
                 <div class="md-modal-head">
                     <h2>My Library</h2>
                     <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
@@ -3358,7 +3471,14 @@
             bodyEl.appendChild(grid);
         }
 
-        const close = () => overlay.remove();
+        const onKey = e => { if (e.key === 'Escape') close(); };
+        const close = () => {
+            document.removeEventListener('keydown', onKey);
+            if (reducedMotion.matches) { overlay.remove(); return; }
+            overlay.classList.add('md-closing');
+            setTimeout(() => overlay.remove(), 150);
+        };
+        document.addEventListener('keydown', onKey);
         $('.md-modal-close', overlay).addEventListener('click', close);
         overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
         renderLibrary();
@@ -3462,6 +3582,7 @@
                 return;
             }
             clearArmed = false;
+            historyItems().forEach(x => removeFromCurrentlyReading(x.seriesPath));
             saveHistory([]);
             sec.remove();
             historyNode = null;
@@ -3493,6 +3614,7 @@
                 e.preventDefault();
                 e.stopPropagation();
                 saveHistory(historyItems().filter(x => x.seriesPath !== item.seriesPath));
+                removeFromCurrentlyReading(item.seriesPath);
                 card.remove();
                 if (!track.children.length) { sec.remove(); historyNode = null; }
                 toast('Removed from Continue Reading');
@@ -3630,7 +3752,9 @@
             totalPages,
             cover: imageUrl(context.cover) || imageUrl(old?.cover) || getCachedCover(context.seriesPath),
         });
-        saveHistory(items.filter((item, i) => !i || item.seriesPath !== context.seriesPath));
+        const deduped = items.filter((item, i) => !i || item.seriesPath !== context.seriesPath);
+        saveHistory(deduped);
+        upsertCurrentlyReading({ path: context.seriesPath, title: context.series, cover: deduped[0]?.cover });
         lastTracked = context.url;
     }
 
@@ -4459,7 +4583,7 @@
 
     function readChapCache(seriesPath) {
         try {
-            const raw = sessionStorage.getItem('md-comix-chaps:' + seriesPath);
+            const raw = sessionStorage.getItem('md-comix-chaps-v2:' + seriesPath);
             if (!raw) return null;
             const parsed = JSON.parse(raw);
             if (!parsed || !Array.isArray(parsed.items) || !parsed.items.length) return null;
@@ -4470,7 +4594,7 @@
 
     function writeChapCache(seriesPath, items, complete) {
         try {
-            sessionStorage.setItem('md-comix-chaps:' + seriesPath, JSON.stringify({ ts: Date.now(), complete: !!complete, items }));
+            sessionStorage.setItem('md-comix-chaps-v2:' + seriesPath, JSON.stringify({ ts: Date.now(), complete: !!complete, items }));
         } catch (_) {}
     }
 
@@ -4577,6 +4701,32 @@
             if (!items.length) break;
             existingRaw.push(...items.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
             onProgress?.(p, lastPage, existingRaw);
+        }
+
+        // Reverse-order bottom-up fill: if descending pagination stopped above Ch. 1 (e.g. server capped at page 32),
+        // fetch ascending from page 1 so Ch. 1, Ch. 2, etc. are ALWAYS present!
+        if (workingTpl && !blocked && existingRaw.length) {
+            const nums = existingRaw.map(x => x.sortNum).filter(n => n > 0);
+            const minNum = nums.length ? Math.min(...nums) : 0;
+            if (minNum > 1) {
+                for (let ap = 1; ap <= 5; ap++) {
+                    await sleep(420);
+                    const u = new URL(workingTpl, location.origin);
+                    u.searchParams.set('limit', '100');
+                    u.searchParams.set('per_page', '100');
+                    u.searchParams.set('order[number]', 'asc');
+                    u.searchParams.set('page', String(ap));
+                    onProgress?.(lastPage + ap, lastPage + ap, existingRaw, `Fetching earliest chapters (Ch. 1–${Math.floor(minNum)})…`);
+                    const { status, json } = await fetchJsonWithBackoff(u.href, ap, 5);
+                    if (status !== 200 || !json) break;
+                    const ascItems = extractApiChapterItems(json).map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean);
+                    if (!ascItems.length) break;
+                    existingRaw.push(...ascItems);
+                    onProgress?.(lastPage + ap, lastPage + ap, existingRaw);
+                    const maxAsc = Math.max(...ascItems.map(x => x.sortNum).filter(n => n >= 0));
+                    if (maxAsc >= minNum) { complete = true; break; }
+                }
+            }
         }
 
         return { items: existingRaw, complete, blocked, nextPage, lastPage, workingTpl };
