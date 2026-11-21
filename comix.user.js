@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.15
+// @version      2026-11-21.16
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -2515,16 +2515,17 @@
         html[data-md-site="comix"][data-md-page="chapter"][data-md-bg="dark"] { --nb-reader-bg: #150f26; }
         html[data-md-site="comix"][data-md-page="chapter"][data-md-bg="black"] { --nb-reader-bg: #000000; }
         html[data-md-site="comix"] .rpage { --reader-bg: var(--nb-reader-bg, var(--page-bg)); }
-        html[data-md-site="comix"] .rpage-main { background: var(--reader-bg) !important; padding-top: 64px !important; }
+        html[data-md-site="comix"] .rpage-main { background: var(--reader-bg) !important; }
+        html[data-md-site="comix"] .rpage--long-strip .rpage-main { padding-top: 64px !important; }
         html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-page[data-page] {
             max-width: calc(var(--md-base) * var(--md-zoom)) !important;
             width: 100% !important;
-            margin-inline: auto !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
             transition: max-width .22s cubic-bezier(0.2, 0, 0, 1);
         }
         html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage--long-strip .rpage-page[data-page],
-        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-page[data-page],
-        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-main__inner {
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage--long-strip .rpage-main__inner {
             max-width: 100vw !important;
             width: 100% !important;
         }
@@ -2556,8 +2557,8 @@
             box-shadow: -6px 0 0 var(--bd) !important;
             animation: mdDrawerIn .22s cubic-bezier(0.2, 0, 0, 1) both;
         }
-        /* Dynamically anchor VERTICAL progress rail beside manga images; leave Top / Bottom / Off modes controlled by Comix Settings! */
-        html[data-md-site="comix"][data-md-page="chapter"] .rpage-progress:is(.rpage-progress--left, .rpage-progress--right) {
+        /* Support BOTH Left and Right vertical progress rails cleanly */
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-progress--right {
             position: fixed !important;
             left: calc(50% + min(calc(50vw - 14px), calc((var(--md-base) * var(--md-zoom)) / 2 + 10px))) !important;
             right: auto !important;
@@ -2568,9 +2569,24 @@
             border-radius: 999px !important;
             transition: left .22s cubic-bezier(0.2, 0, 0, 1), opacity .14s ease-out !important;
         }
-        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-progress:is(.rpage-progress--left, .rpage-progress--right) {
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-progress--left {
+            position: fixed !important;
+            right: calc(50% + min(calc(50vw - 14px), calc((var(--md-base) * var(--md-zoom)) / 2 + 10px))) !important;
+            left: auto !important;
+            top: 64px !important;
+            bottom: var(--md-prog-bottom, 18px) !important;
+            width: 6px !important;
+            z-index: 90 !important;
+            border-radius: 999px !important;
+            transition: right .22s cubic-bezier(0.2, 0, 0, 1), opacity .14s ease-out !important;
+        }
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage--long-strip .rpage-progress--right {
             left: auto !important;
             right: 6px !important;
+        }
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage--long-strip .rpage-progress--left {
+            right: auto !important;
+            left: 6px !important;
         }
         html[data-md-site="comix"]:fullscreen .rpage-progress,
         html[data-md-site="comix"][data-md-fs="1"] .rpage-progress {
@@ -4625,6 +4641,7 @@
                 if (!(t instanceof Element) || t.closest(TAP_IGNORE)) return;
                 const sel = getSelection();
                 if (sel && !sel.isCollapsed && String(sel).trim()) return;
+                if (!$('.rpage--long-strip') && (e.clientX < innerWidth * 0.3 || e.clientX > innerWidth * 0.7)) return;
                 showDock(reader.dock.classList.contains('hide'));
             }, true);
             addEventListener('keydown', e => {
@@ -4643,7 +4660,7 @@
         let progRaf = 0;
         const syncProgressBounds = () => {
             progRaf = 0;
-            if (detectPage() !== 'chapter') {
+            if (detectPage() !== 'chapter' || !$('.rpage--long-strip')) {
                 delete root.dataset.mdPastImages;
         root.style.removeProperty('--md-prog-bottom');
                 root.style.removeProperty('--md-prog-bottom');
@@ -4701,8 +4718,9 @@
             if (detectPage() !== 'chapter' || e.ctrlKey || e.metaKey || e.altKey) return;
             const a = document.activeElement;
             if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return;
-            if (e.key === 'ArrowLeft') nativeBtn('.rpage-floatctl button[aria-label="Previous chapter"]')?.click();
-            else if (e.key === 'ArrowRight') nativeBtn('.rpage-floatctl button[aria-label="Next chapter"]')?.click();
+            const isStrip = !!$('.rpage--long-strip');
+            if (isStrip && e.key === 'ArrowLeft') nativeBtn('.rpage-floatctl button[aria-label="Previous chapter"]')?.click();
+            else if (isStrip && e.key === 'ArrowRight') nativeBtn('.rpage-floatctl button[aria-label="Next chapter"]')?.click();
             else if (e.key === '-' || e.key === '_') stepZoom(-1);
             else if (e.key === '+' || e.key === '=') stepZoom(1);
             else if (e.key === '0') { applyZoom(1); toast('Zoom: 100%', 1200); }
