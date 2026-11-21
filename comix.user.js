@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.12
+// @version      2026-11-21.13
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -240,7 +240,8 @@
         if (CHAPTER_PATH.test(path)) return 'chapter';
         if (SERIES_PATH.test(path)) return 'overview';
         if (USER_PATH.test(path)) return 'user';
-        if (/^\/(?:home\/?)?$/.test(path) || /^\/(browser|browse|filter|latest|popular|genre|search|groups|collections|community|uploaders)/i.test(path)) return 'list';
+        if (/^\/community(?:\/|$)/i.test(path)) return 'community';
+        if (/^\/(?:home\/?)?$/.test(path) || /^\/(browser|browse|filter|latest|popular|genre|search|groups|collections|uploaders)/i.test(path)) return 'list';
         return 'other';
     }
     root.dataset.mdPage = detectPage();
@@ -1401,6 +1402,72 @@
             border-top: var(--bw) solid var(--bd) !important;
         }
 
+        /* ===== COMMUNITY PAGE & SUB-PAGES OPTIMIZATION (/community*) ===== */
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-head="1"] {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 14px !important;
+            box-shadow: var(--sh) !important;
+            padding: 18px 22px !important;
+            margin: 12px 0 18px !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-tabs="1"] {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin: 0 0 18px !important;
+            padding: 0 !important;
+            border-bottom: 0 !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-tabs="1"] :is(a, button) {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 7px 14px !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12.5px/1 var(--f-sans) !important;
+            text-transform: uppercase !important;
+            letter-spacing: .03em !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-tabs="1"] :is(a, button):hover {
+            background: var(--cream) !important;
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-tabs="1"] :is(a, button):is(.is-active, .active, [aria-selected="true"], [aria-current="page"], [aria-pressed="true"]) {
+            background: var(--yellow) !important;
+            color: var(--on-ink) !important;
+        }
+        html[data-md-site="comix"][data-md-theme="light"][data-md-page="community"] [data-md-comm-tabs="1"] :is(a, button):is(.is-active, .active, [aria-selected="true"], [aria-current="page"], [aria-pressed="true"]) {
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] :is([data-md-comm-card="1"], main article, main [class*="post-card" i], main [class*="post-item" i], main [class*="cpost" i]:not(.cpost-cat):not(.cpost-tag)) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+            padding: 16px 18px !important;
+            margin-bottom: 12px !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-card="1"]:hover {
+            transform: translate(-1px, -1px) !important;
+            box-shadow: var(--sh-hover) !important;
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"][data-md-page="community"] [data-md-comm-card="1"] .uavatar {
+            border: 2px solid var(--bd) !important;
+            border-radius: 50% !important;
+        }
+
         /* ===== USER PROFILE PAGE OPTIMIZATION (/u/<id>) ===== */
         html[data-md-site="comix"][data-md-page="user"] [data-md-user-hero="1"] {
             background: var(--card) !important;
@@ -2499,6 +2566,18 @@
             display: none !important;
             opacity: 0 !important;
         }
+        /* Fade out progress rail once user scrolls past manga images into chapter-ending / comments */
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-past-images="1"] .rpage-progress {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        html[data-md-site="comix"] .rpage-chap-ending__head {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+        }
         .md-iswap { position: relative; display: inline-grid; place-items: center; width: 18px; height: 18px; }
         .md-iswap .md-i {
             grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center;
@@ -2863,7 +2942,7 @@
     /* ====================================================================
      *  DOM DE-BLOAT, DROPDOWN & USER PROFILE TAGGING
      * ==================================================================== */
-    const AUTH_EXACT_RE = /^(log\s*in|login|sign\s*in|sign\s*up|register|follow|following|unfollow|add\s+to\s+collection|add\s+to\s+list|bookmark|reply|post\s+comment|add\s+comment)$/i;
+    const AUTH_EXACT_RE = /^(log\s*in|login|sign\s*in|sign\s*up|register|follow|following|unfollow|add\s+to\s+collection|add\s+to\s+list|bookmark|reply|post\s+comment|add\s+comment|new\s+post|create\s+post)$/i;
 
     function purgeAuthUI(app) {
         if (!CONFIG.hideAuthUI) return;
@@ -3045,6 +3124,32 @@
         }
     }
 
+    function tagCommunityPage(app) {
+        if (detectPage() !== 'community') return;
+        const main = $('main', app) || app;
+        const h1 = $('h1', main);
+        if (h1 && !h1.closest('[data-md-comm-head="1"]')) {
+            const headBox = h1.closest('header, section, [class*="head" i], [class*="hero" i]') || h1.parentElement;
+            if (headBox && headBox !== main && !headBox.closest(UI_ZONES) && !headBox.closest('.cm-widget')) {
+                headBox.dataset.mdCommHead = '1';
+            }
+        }
+        for (const nav of $$('nav, [role="tablist"], [class*="tabs" i], [class*="cats" i], [class*="filter" i]', main)) {
+            if (nav.closest(UI_ZONES) || nav.closest('.cm-widget') || nav.dataset.mdCommTabs === '1') continue;
+            const items = $$(':scope > a, :scope > button', nav);
+            if (items.length >= 3 && !nav.classList.contains('npager')) {
+                nav.dataset.mdCommTabs = '1';
+            }
+        }
+        for (const postLink of $$('a[href^="/community/post/"]', main)) {
+            if (postLink.closest(UI_ZONES) || postLink.closest('.cm-widget')) continue;
+            const card = postLink.closest('li, article, [class*="post" i], [class*="item" i], [class*="row" i]');
+            if (card && card !== main && !card.dataset.mdCommCard) {
+                card.dataset.mdCommCard = '1';
+            }
+        }
+    }
+
     function tagUserProfile(app) {
         if (detectPage() !== 'user') return;
         const main = $('main', app) || app;
@@ -3071,6 +3176,60 @@
      *  NETFLIX-STYLE FEATURED HERO CAROUSEL (#md-hero)
      * ==================================================================== */
     let heroState = null;
+    const firstChPending = new Map();
+
+    async function resolveFirstChapterUrl(seriesPath) {
+        if (!seriesPath) return null;
+        try {
+            const cached = sessionStorage.getItem('md-comix-firstch:' + seriesPath);
+            if (cached) return cached;
+        } catch (_) {}
+        if (firstChPending.has(seriesPath)) return firstChPending.get(seriesPath);
+
+        const job = (async () => {
+            try {
+                const res = await fetch(seriesPath, { credentials: 'same-origin' });
+                if (!res.ok) return null;
+                const html = await res.text();
+                // 1. Comix embeds exact detail.firstChapterUrl (handles Ch. 0, Prologue, Ch. 0.1, Ch. 1, etc.) inside #initial-data
+                const initMatch = html.match(/<script[^>]*id=["']initial-data["'][^>]*>([\s\S]*?)<\/script>/i);
+                if (initMatch) {
+                    try {
+                        const data = JSON.parse(initMatch[1]);
+                        for (const val of Object.values(data?.queries || {})) {
+                            if (val && typeof val === 'object' && typeof val.firstChapterUrl === 'string' && val.firstChapterUrl) {
+                                const u = route(val.firstChapterUrl, CHAPTER_PATH);
+                                if (u) {
+                                    try { sessionStorage.setItem('md-comix-firstch:' + seriesPath, u.pathname); } catch (_) {}
+                                    return u.pathname;
+                                }
+                            }
+                        }
+                    } catch (_) {}
+                }
+                // 2. Fallback: parse DOM links and pick the lowest numeric chapter (including 0, 0.1, etc.)
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const candidates = [];
+                for (const a of $$('a[href*="-chapter-"]', doc)) {
+                    const u = route(a.getAttribute('href'), CHAPTER_PATH);
+                    if (!u || !u.pathname.startsWith(seriesPath + '/')) continue;
+                    const m = u.pathname.match(/-chapter-(\d+(?:\.\d+)?)/i);
+                    const num = m ? parseFloat(m[1]) : Infinity;
+                    candidates.push({ url: u.pathname, num });
+                }
+                if (candidates.length) {
+                    candidates.sort((a, b) => a.num - b.num);
+                    const best = candidates[0].url;
+                    try { sessionStorage.setItem('md-comix-firstch:' + seriesPath, best); } catch (_) {}
+                    return best;
+                }
+            } catch (_) {}
+            return null;
+        })().finally(() => firstChPending.delete(seriesPath));
+
+        firstChPending.set(seriesPath, job);
+        return job;
+    }
 
     function mountHero(column) {
         const cards = $$('.section .card[href]', column);
@@ -3174,7 +3333,12 @@
             const playBtn = $('.md-hero-play', hero);
             const moreBtn = $('.md-hero-more', hero);
             const cardLink = $('.md-hero-card', hero);
-            if (playBtn) playBtn.href = cur.url;
+            if (playBtn) {
+                let cachedFirst = null;
+                try { cachedFirst = sessionStorage.getItem('md-comix-firstch:' + cur.url); } catch (_) {}
+                playBtn.href = cachedFirst || cur.url;
+                playBtn.dataset.seriesUrl = cur.url;
+            }
             if (moreBtn) moreBtn.href = cur.url;
             if (cardLink) { cardLink.href = cur.url; cardLink.setAttribute('aria-label', cur.title); }
             const cardImg = $('.md-hero-card img', hero);
@@ -3240,6 +3404,27 @@
             else { setProgressRate(hero.matches(':hover') ? 0.1 : 1.0); restartTimer(); }
         };
 
+        const heroPlayBtn = $('.md-hero-play', hero);
+        if (heroPlayBtn) {
+            heroPlayBtn.addEventListener('mouseenter', () => {
+                const sp = heroPlayBtn.dataset.seriesUrl;
+                if (sp) resolveFirstChapterUrl(sp).then(firstUrl => {
+                    if (firstUrl && heroPlayBtn.dataset.seriesUrl === sp) heroPlayBtn.href = firstUrl;
+                });
+            });
+            heroPlayBtn.addEventListener('click', async e => {
+                const sp = heroPlayBtn.dataset.seriesUrl;
+                if (!sp) return;
+                if (CHAPTER_PATH.test(new URL(heroPlayBtn.href, location.origin).pathname)) return;
+                e.preventDefault();
+                const lbl = $('span', heroPlayBtn);
+                const origTxt = lbl?.textContent || 'Read now';
+                if (lbl) lbl.textContent = 'Opening…';
+                const firstUrl = await resolveFirstChapterUrl(sp);
+                if (lbl) lbl.textContent = origTxt;
+                location.href = firstUrl || sp;
+            });
+        }
         hero.addEventListener('mouseenter', onEnter);
         hero.addEventListener('mouseleave', onLeave);
         document.addEventListener('visibilitychange', onVis);
@@ -4444,8 +4629,17 @@
             if (fsBtn) fsBtn.setAttribute('aria-pressed', String(isFs));
         });
 
+        const syncProgressVisibility = () => {
+            if (detectPage() !== 'chapter') { delete root.dataset.mdPastImages; return; }
+            const ending = $('.rpage-chap-ending, .rpage-main .cm-widget, .rpage > .cm-widget');
+            const past = !!(ending && ending.getBoundingClientRect().top < innerHeight * 0.9);
+            if (past) root.dataset.mdPastImages = '1';
+            else delete root.dataset.mdPastImages;
+        };
+
         addEventListener('scroll', () => {
             if (detectPage() !== 'chapter') return;
+            syncProgressVisibility();
             const y = scrollY, dy = y - last;
             if (Math.abs(dy) < 8) return;
             last = y;
@@ -4676,6 +4870,7 @@
         delete root.dataset.mdBg;
         delete root.dataset.mdNavhide;
         delete root.dataset.mdStretch;
+        delete root.dataset.mdPastImages;
         root.style.removeProperty('--nb-reader-bg');
     }
 
@@ -5530,6 +5725,7 @@
         mountLibraryTopBtn(app);
         syncSavedBadges();
         tagUserProfile(app);
+        tagCommunityPage(app);
         purgeAuthUI(app);
         renderCommentScores(app);
         addExtras();
