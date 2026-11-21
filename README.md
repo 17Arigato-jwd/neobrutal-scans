@@ -23,8 +23,8 @@ Choose the dedicated script for your site:
 | **Asura Scans Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js) | **Comix Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--21.19-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js) |
 | **High-contrast Neobrutalism skin** with zero-flash dark/light toggle, minimalist floating reader dock with zoom (50%–200%) & contrast switcher, novel reader overhaul, and multi-chapter batch ZIP downloader.<br>*Domains:* `asurascans.com`, `*.asurascans.com` | **Full-site Neobrutalism & 4-theme Settings sync**, offline Local Library & custom lists, sign-in nag removal & ad neutralizer, hero banner carousel with 3D tilt, single scrollable chapter list with scanlation-group dropdowns, deduplicated batch ZIP & PDF exporter (up to 500 chapters), floating reader dock with stretch-to-width, and mobile ergonomics (safe-area insets, touch-friendly docks & horizontal snap tracks).<br>*Domains:* `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` |
 | 👉 **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)** | 👉 **[Install Comix Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)** |
-| **Demonic Scans Dedicated** *(MangaDemon)*<br>[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **MangaRead Dedicated** *(mangaread.org)*<br>[![Version](https://img.shields.io/badge/version-2026--11--21.15-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) |
-| **Popunder killer & membership popup immunity**, Netflix-style hero carousel with falling progress timer, cookie-stored Continue Reading shelf, 3-tier podium leaderboard, single-chapter `.cbz` export, and comic ↔ novel reader formatting.<br>*Domains:* `demonicscans.org`, `mangademon.org`, & mirrors | **4-layer ad & popunder debloater**, hero carousel, standalone Continue Reading shelf, 2-row mobile reader dock, custom comment video player with downloader, spoiler tag revamp, Save to List prompt, static page support, `.cbz` export, and batch ZIP downloader.<br>*Domains:* `mangaread.org`, `*.mangaread.org` |
+| **Demonic Scans Dedicated** *(MangaDemon)*<br>[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **MangaRead Dedicated** *(mangaread.org)*<br>[![Version](https://img.shields.io/badge/version-2026--11--21.16-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) |
+| **Popunder killer & membership popup immunity**, Netflix-style hero carousel with falling progress timer, cookie-stored Continue Reading shelf, 3-tier podium leaderboard, single-chapter `.cbz` export, and comic ↔ novel reader formatting.<br>*Domains:* `demonicscans.org`, `mangademon.org`, & mirrors | **4-layer ad & popunder debloater**, hero carousel, standalone Continue Reading shelf, 2-row mobile reader dock, interactive search card info overlay, custom comment video player, Save to List prompt, static page support, `.cbz` export, and batch ZIP downloader.<br>*Domains:* `mangaread.org`, `*.mangaread.org` |
 | 👉 **[Install DemonicScans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** | 👉 **[Install MangaRead Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)** |
 
 *(Note: The legacy monolithic combined script has been archived to [`archive/neobrutal-scans.user.js`](archive/neobrutal-scans.user.js)).*
@@ -65,6 +65,17 @@ Your userscript manager will automatically detect the script and prompt you to c
 ---
 
 ### MangaRead Dedicated Features
+
+#### 📱 Mobile Experience Showcase
+
+| Homepage & Hero Carousel | Series Overview & Details | Chapter Reader & Dock |
+|:---:|:---:|:---:|
+| <img src="screenshots/mangaread/mobile_homepage_hero_and_continue_reading.png" width="220" alt="MangaRead Mobile Homepage & Hero Carousel" /> | <img src="screenshots/mangaread/mobile_series_overview_details.png" width="220" alt="MangaRead Mobile Series Overview" /> | <img src="screenshots/mangaread/mobile_chapter_reader_dock.png" width="220" alt="MangaRead Mobile Chapter Reader & Dock" /> |
+
+| Save to List Modal | Search Cards & Info Overlay | Local Library Modal |
+|:---:|:---:|:---:|
+| <img src="screenshots/mangaread/mobile_save_to_list_modal.png" width="220" alt="MangaRead Save to List Modal" /> | <img src="screenshots/mangaread/mobile_search_results_light_mode.png" width="220" alt="MangaRead Search Results with Info Overlay" /> | <img src="screenshots/mangaread/mobile_library_modal_light_mode.png" width="220" alt="MangaRead Library Modal Light Mode" /> |
+
 - **Featured Hero Carousel**: Full hero banner with falling progress bars, view counts, and latest chapter indicators ported to MangaRead homepage.
 - **Dynamic Mobile Hero Spacing**: Automatically calculates and trims excessive vertical margin gaps under `#md-hero` on mobile viewports ($\le 768\text{px}$) on load and resize.
 - **Unified Multi-Row Listing Grid**: Flattens nested row wrappers with `display: contents` into a single responsive grid container (3-columns on desktop $\ge 900\text{px}$, responsive 2-columns on mobile $\le 600\text{px}$), maintaining uniform spacing without ragged rows.
@@ -92,6 +103,8 @@ Your userscript manager will automatically detect the script and prompt you to c
 - **Spoiler Tag Styling Revamp**: wpDiscuz spoiler wrappers restyled with uppercase `JetBrains Mono` headers, high-contrast borders, and clean expandable content blocks.
 - **2-Row Mobile Reader Bottom Dock**: In chapter reader mode on mobile viewports (≤ 768px), the dock is formatted into a thumb-reachable 2-row grid (`repeat(6, 1fr)`) eliminating horizontal scrolling while keeping all navigation, zoom, and download tools accessible.
 - **Series Overview Add-to-List**: Full-width Neobrutalist "Add to List" button (`#md-ov-lib-btn`) on manga profile headers.
+- **Interactive Search Card Info Overlay**: Clicking "INFO" on search cards reveals an animated Neobrutalist overlay (`.md-sc-overlay`) featuring rating pills, release year, publication status, authors, artists, clickable genre tags, and a dynamic "See more" expansion button.
+- **Contained Card Geometry & Edge-to-Edge Covers**: Enforced strict 2-line title containment, 1-line alternative title slotting, and edge-to-edge cover container styling eliminating text clipping across catalog and search listings.
 
 ---
 

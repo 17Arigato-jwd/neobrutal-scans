@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.15
+// @version      2026-11-21.16
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -11615,45 +11615,53 @@
             }
 
             card.classList.add('md-sc-clean');
-            // Force tight edge-to-edge thumbnail framing directly (beats any Bootstrap/Madara padding)
+            // Force equal 6px padding around 3 edges of cover & concentric 8px rounded corners (walks exact DOM chain)
             card.style.setProperty('display', 'grid', 'important');
-            card.style.setProperty('grid-template-columns', '104px minmax(0, 1fr)', 'important');
+            card.style.setProperty('grid-template-columns', '108px minmax(0, 1fr)', 'important');
             card.style.setProperty('gap', '10px', 'important');
             card.style.setProperty('padding', '6px 10px 6px 6px', 'important');
             card.style.setProperty('align-items', 'stretch', 'important');
+            card.style.setProperty('border-radius', '12px', 'important');
             [...card.children].forEach((ch, idx) => {
                 if (ch.classList.contains('md-sc-overlay')) return;
                 ch.style.setProperty('padding', '0', 'important');
                 ch.style.setProperty('margin', '0', 'important');
                 if (idx === 0) {
-                    ch.style.setProperty('width', '104px', 'important');
-                    ch.style.setProperty('max-width', '104px', 'important');
+                    ch.style.setProperty('width', '108px', 'important');
+                    ch.style.setProperty('max-width', '108px', 'important');
                     ch.style.setProperty('height', '100%', 'important');
+                    ch.style.setProperty('display', 'flex', 'important');
+                    ch.style.setProperty('align-items', 'stretch', 'important');
                 }
             });
             const thumbEl = card.querySelector('.tab-thumb');
-            const hoverEl = card.querySelector('.tab-thumb .c-image-hover');
-            const imgEl = card.querySelector('.tab-thumb img');
-            if (thumbEl) {
-                thumbEl.style.setProperty('width', '104px', 'important');
-                thumbEl.style.setProperty('height', '100%', 'important');
-                thumbEl.style.setProperty('min-height', '154px', 'important');
-                thumbEl.style.setProperty('padding', '0', 'important');
-                thumbEl.style.setProperty('margin', '0', 'important');
-            }
-            if (hoverEl) {
-                hoverEl.style.setProperty('width', '100%', 'important');
-                hoverEl.style.setProperty('height', '100%', 'important');
-                hoverEl.style.setProperty('padding', '0', 'important');
-                hoverEl.style.setProperty('margin', '0', 'important');
-                hoverEl.style.setProperty('border', '2px solid var(--bd)', 'important');
-                hoverEl.style.setProperty('border-radius', '8px', 'important');
-                hoverEl.style.setProperty('overflow', 'hidden', 'important');
-            }
+            const imgEl = card.querySelector('.tab-thumb img, img');
             if (imgEl) {
+                // Zero padding/margin and stretch height:100% on every wrapper between img and card
+                let cur = imgEl.parentElement;
+                while (cur && cur !== card) {
+                    cur.style.setProperty('padding', '0', 'important');
+                    cur.style.setProperty('margin', '0', 'important');
+                    cur.style.setProperty('width', '100%', 'important');
+                    cur.style.setProperty('height', '100%', 'important');
+                    cur.style.setProperty('display', 'block', 'important');
+                    cur.style.setProperty('box-sizing', 'border-box', 'important');
+                    cur = cur.parentElement;
+                }
+                const frameEl = thumbEl || imgEl.parentElement;
+                if (frameEl && frameEl !== card) {
+                    frameEl.style.setProperty('border', '2px solid var(--bd)', 'important');
+                    frameEl.style.setProperty('border-radius', '8px', 'important');
+                    frameEl.style.setProperty('overflow', 'hidden', 'important');
+                    frameEl.style.setProperty('box-shadow', 'var(--sh-sm)', 'important');
+                    frameEl.style.setProperty('aspect-ratio', 'auto', 'important');
+                }
                 imgEl.style.setProperty('width', '100%', 'important');
                 imgEl.style.setProperty('height', '100%', 'important');
+                imgEl.style.setProperty('min-height', '100%', 'important');
                 imgEl.style.setProperty('object-fit', 'cover', 'important');
+                imgEl.style.setProperty('object-position', '50% 18%', 'important');
+                imgEl.style.setProperty('border-radius', '6px', 'important');
                 imgEl.style.setProperty('display', 'block', 'important');
             }
         });
