@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.7
+// @version      2026-11-21.8
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -7195,7 +7195,151 @@
                 height: 32px !important;
                 min-height: 32px !important;
                 margin: 0 !important;
-                flex: 0 0 54px !important;
+                flex: 0 0 58px !important;
+            }
+        }
+        /* ================================================================
+         *  v2026-11-21.8 POLISH:
+         *  - Frosted-blur document-start loading screen (#md-loader)
+         *  - Aligned search bar + static Search button + visible Gear icon
+         *  - Centered dark/light toggle circle (#md-theme)
+         *  - Guaranteed visible 3-dots dropdown on mobile sub-nav bar
+         * ================================================================ */
+
+        /* 1. Frosted-Blur Loading Curtain (#md-loader) */
+        #md-loader {
+            position: fixed !important;
+            inset: 0 !important;
+            z-index: 2147483640 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: color-mix(in srgb, var(--bg, #f5f2ea) 58%, transparent) !important;
+            backdrop-filter: blur(18px) saturate(1.1) !important;
+            -webkit-backdrop-filter: blur(18px) saturate(1.1) !important;
+            transition: opacity 0.25s ease !important;
+            pointer-events: all !important;
+        }
+        #md-loader.is-done {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        .md-loader-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: var(--card, #ffffff);
+            color: var(--ink, #111111);
+            border: 3px solid var(--bd, #111111);
+            border-radius: 10px;
+            box-shadow: 4px 4px 0 var(--bd, #111111);
+            font: 800 13.5px/1 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .md-loader-spin {
+            width: 16px;
+            height: 16px;
+            border: 3px solid var(--bd, #111111);
+            border-top-color: var(--primary, #bf5959);
+            border-radius: 50%;
+            animation: mdSpin 0.65s linear infinite;
+        }
+
+        /* 2. Search bar + Search button + Gear icon: force static flex alignment (no overlap) */
+        html body header.site-header .search-main-menu form.manga-search-form,
+        html body .search-main-menu form.manga-search-form {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            gap: 6px !important;
+            position: relative !important;
+        }
+        html body header.site-header .search-main-menu form.manga-search-form input.manga-search-field,
+        html body header.site-header .search-main-menu form.manga-search-form input[type="text"] {
+            position: static !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            width: auto !important;
+            height: 40px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+        html body header.site-header .search-main-menu form.manga-search-form input[type="submit"],
+        html body header.site-header .search-main-menu form.manga-search-form button[type="submit"] {
+            position: static !important;
+            top: auto !important;
+            right: auto !important;
+            bottom: auto !important;
+            left: auto !important;
+            transform: none !important;
+            flex: 0 0 auto !important;
+            height: 40px !important;
+            line-height: 1 !important;
+            margin: 0 !important;
+            padding: 0 14px !important;
+            box-sizing: border-box !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        html body header.site-header .search-main-menu form.manga-search-form a.md-adv-gear {
+            position: static !important;
+            flex: 0 0 40px !important;
+            width: 40px !important;
+            height: 40px !important;
+            margin: 0 !important;
+            box-sizing: border-box !important;
+        }
+
+        /* 3. Center dark/light toggle circle cleanly inside #md-theme */
+        html body header.site-header #md-theme {
+            width: 58px !important;
+            min-width: 58px !important;
+            height: 34px !important;
+            min-height: 34px !important;
+            padding: 0 !important;
+            box-sizing: border-box !important;
+        }
+        html body header.site-header #md-theme .md-th-sw {
+            width: 100% !important;
+            height: 100% !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 3px !important;
+            box-sizing: border-box !important;
+        }
+        html body header.site-header #md-theme .md-th-knob {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            margin: 0 !important;
+        }
+
+        @media (max-width: 768px) {
+            /* Ensure sub-nav_content is a flex row so #md-subnav-more always sits on the right */
+            html body header.site-header .c-sub-header-nav .sub-nav_content {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                padding: 0 10px !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+            }
+            html body header.site-header .c-sub-header-nav .sub-nav_list {
+                flex: 1 1 auto !important;
+                padding: 6px 4px !important;
+                gap: 18px !important;
+            }
+            html body header.site-header #md-subnav-more {
+                display: inline-flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                align-items: center !important;
+                flex: 0 0 auto !important;
+                margin-left: 8px !important;
             }
         }
     `;
@@ -9885,35 +10029,40 @@
         }
 
         // 3. Mobile sub-nav 3-dots dropdown containing remaining options (like Genres dropdown)
-        const subList = $('.c-sub-header-nav .sub-nav_list', hdr);
-        if (subList && !document.getElementById('md-subnav-more')) {
+        const subWrap = $('.c-sub-header-nav .sub-nav_content', hdr) || $('.c-sub-header-nav', hdr);
+        const subList = $('.c-sub-header-nav .sub-nav_list', hdr) || $('.c-sub-header-nav ul', hdr);
+        if (subWrap && subList && !document.getElementById('md-subnav-more')) {
             const items = [...subList.children].filter(el => el.tagName === 'LI' && !el.classList.contains('md-more-li'));
-            if (items.length > 3) {
-                const extraItems = items.slice(3);
-                extraItems.forEach(li => li.classList.add('md-sub-overflow'));
+            const extraItems = items.slice(3);
+            extraItems.forEach(li => li.classList.add('md-sub-overflow'));
 
-                const moreLi = document.createElement('li');
-                moreLi.id = 'md-subnav-more';
-                moreLi.className = 'md-more-li';
-                const moreBtn = document.createElement('button');
-                moreBtn.type = 'button';
-                moreBtn.className = 'md-more-btn';
-                moreBtn.setAttribute('aria-expanded', 'false');
-                moreBtn.setAttribute('aria-label', 'More categories');
-                moreBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg>';
+            const moreWrap = document.createElement('div');
+            moreWrap.id = 'md-subnav-more';
+            moreWrap.className = 'md-more-wrap';
 
-                const menu = document.createElement('div');
-                menu.id = 'md-subnav-more-menu';
-                menu.className = 'md-more-menu';
-                extraItems.forEach(li => {
-                    const a = li.querySelector('a');
-                    if (!a) return;
-                    const clone = document.createElement('a');
-                    clone.href = a.href;
-                    clone.textContent = a.textContent.trim();
-                    menu.appendChild(clone);
-                });
+            const moreBtn = document.createElement('button');
+            moreBtn.type = 'button';
+            moreBtn.className = 'md-more-btn';
+            moreBtn.setAttribute('aria-expanded', 'false');
+            moreBtn.setAttribute('aria-label', 'More categories');
+            moreBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg>';
 
+            const menu = document.createElement('div');
+            menu.id = 'md-subnav-more-menu';
+            menu.className = 'md-more-menu';
+
+            const links = extraItems.length
+                ? extraItems.map(li => li.querySelector('a')).filter(Boolean)
+                : $$('.c-sub-header-nav a', hdr).slice(3);
+            links.forEach(a => {
+                if (a.closest('ul.sub-menu')) return;
+                const clone = document.createElement('a');
+                clone.href = a.href;
+                clone.textContent = a.textContent.trim();
+                if (clone.textContent) menu.appendChild(clone);
+            });
+
+            if (menu.children.length > 0) {
                 moreBtn.addEventListener('click', e => {
                     e.preventDefault();
                     e.stopPropagation();
@@ -9921,22 +10070,43 @@
                     moreBtn.setAttribute('aria-expanded', String(open));
                 });
                 document.addEventListener('click', e => {
-                    if (!moreLi.contains(e.target) && menu.classList.contains('open')) {
+                    if (!moreWrap.contains(e.target) && menu.classList.contains('open')) {
                         menu.classList.remove('open');
                         moreBtn.setAttribute('aria-expanded', 'false');
                     }
                 });
-
-                moreLi.append(moreBtn, menu);
-                subList.appendChild(moreLi);
+                moreWrap.append(moreBtn, menu);
+                subWrap.appendChild(moreWrap);
             }
         }
+    }
+
+    /* ====================================================================
+     *  DOCUMENT-START BLUR LOADING CURTAIN (#md-loader)
+     * ==================================================================== */
+    function initLoadingCurtain() {
+        if (document.readyState === 'complete') return;
+        if (document.getElementById('md-loader')) return;
+        const el = document.createElement('div');
+        el.id = 'md-loader';
+        el.setAttribute('aria-busy', 'true');
+        el.innerHTML = '<div class="md-loader-pill"><span class="md-loader-spin" aria-hidden="true"></span><span>Loading…</span></div>';
+        (document.documentElement || document.body).appendChild(el);
+        const dismiss = () => {
+            if (!el.isConnected || el.dataset.mdDone) return;
+            el.dataset.mdDone = '1';
+            el.classList.add('is-done');
+            setTimeout(() => { if (el.isConnected) el.remove(); }, 280);
+        };
+        window.addEventListener('load', () => setTimeout(dismiss, 140), { once: true });
+        setTimeout(dismiss, 2400);
     }
 
     /* ====================================================================
      *  RUN LOOP & LIFECYCLE
      * ==================================================================== */
     injectStyles();
+    try { initLoadingCurtain(); } catch (_) {}
 
     function run() {
         injectStyles();
