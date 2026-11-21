@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-20.3
+// @version      2026-11-21.1
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -291,6 +291,19 @@
         moon: SVG('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>'),
         home: SVG('<path d="M3 11 12 3l9 8M5 9.5V20h5v-6h4v6h5V9.5"/>'),
         chat: SVG('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z"/>'),
+        stretch: SVG('<path d="M4 12h16M4 12l4-4M4 12l4 4M20 12l-4-4M20 12l-4 4"/>'),
+        shrinkW: SVG('<path d="M9 12H3m6 0-3-3m3 3-3 3M15 12h6m-6 0 3-3m-3 3 3 3"/>'),
+        scroll: SVG('<polygon points="7 5 19 12 7 19 7 5" fill="currentColor" stroke="none"/>'),
+        pause: SVG('<rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none"/>'),
+        expand: SVG('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>'),
+        compress: SVG('<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>'),
+        gear: SVG('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>'),
+        bookmark: SVG('<path d="M6 4h12v17l-6-4-6 4V4z"/>'),
+        bookmarkFill: SVG('<path d="M6 4h12v17l-6-4-6 4V4z" fill="currentColor"/>'),
+        search: SVG('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+        trash: SVG('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
+        sortDesc: SVG('<path d="M11 6h9M11 12h6M11 18h3M5 5v14m0 0-3-3m3 3 3-3"/>'),
+        sortAsc: SVG('<path d="M11 6h9M11 12h6M11 18h3M5 19V5m0 0-3 3m3-3 3 3"/>'),
     };
 
     function toast(msg, ms = 2200) {
@@ -823,7 +836,7 @@
             border-radius: 6px !important;
             box-shadow: var(--sh-sm, 2px 2px 0 var(--bd)) !important;
             text-decoration: none !important;
-            transition: all 0.15s ease !important;
+            transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
             margin: 2px 0 !important;
         }
         .chapter-item .chapter a:hover,
@@ -1072,7 +1085,7 @@
             padding: 6px 12px !important;
             border-radius: 6px !important;
             display: inline-block !important;
-            transition: all 0.15s ease !important;
+            transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
         }
         .c-tabs-item.active a,
         .c-tabs-item a:hover {
@@ -4963,6 +4976,731 @@
         html[data-md-page="overview"] .post-total-rating .score {
             color: var(--ink) !important;
         }
+
+        /* ================================================================
+         *  v2026-11-21.1: SYNCED CHROME, NO NATIVE READER SCROLLBAR,
+         *  CENTERED READER COMMENTS, NEOBRUTAL MODALS, CONTINUE READING,
+         *  LIBRARY, FILTERBAR, @better-ui, MOBILE-FIRST
+         * ================================================================ */
+
+        /* Hide native browser scrollbar in chapter reader */
+        html[data-md-page="chapter"],
+        html[data-md-page="chapter"] body {
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        html[data-md-page="chapter"]::-webkit-scrollbar,
+        html[data-md-page="chapter"] body::-webkit-scrollbar {
+            display: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* Center comments section in chapter reader */
+        html[data-md-page="chapter"] .manga-discussion,
+        html[data-md-page="chapter"] .comments-area,
+        html[data-md-page="chapter"] #respond.comments-area,
+        html[data-md-page="chapter"] #comments,
+        html[data-md-page="chapter"] #wpdcom {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            float: none !important;
+            max-width: min(860px, calc(100vw - 24px)) !important;
+            width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        html[data-md-page="chapter"] .manga-discussion .row,
+        html[data-md-page="chapter"] .c-page-content .row {
+            justify-content: center !important;
+        }
+        html[data-md-page="chapter"] .manga-discussion .col-12,
+        html[data-md-page="chapter"] .manga-discussion .main-col {
+            margin-left: auto !important;
+            margin-right: auto !important;
+            float: none !important;
+            max-width: min(860px, 100%) !important;
+            flex: 0 1 860px !important;
+        }
+
+        /* @better-ui: Tactile active press & pure oklch image outlines */
+        #md-dock button:active:not(:disabled),
+        #md-rbar .md-rb-btn:active,
+        #md-rbar .md-rb-chap:active,
+        .md-hdr-btn:active,
+        .md-lib-save:active,
+        .md-cr-rm:active,
+        .md-modal button:active:not(:disabled),
+        .md-ch-sort-btn:active {
+            transform: scale(0.96) !important;
+        }
+        div.page-item-detail .item-thumb,
+        .md-cr-thumb,
+        .md-lib-thumb {
+            position: relative !important;
+        }
+        div.page-item-detail .item-thumb::after,
+        .md-cr-thumb::after,
+        .md-lib-thumb::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.1);
+            pointer-events: none;
+            z-index: 2;
+        }
+        html[data-md-theme="dark"] div.page-item-detail .item-thumb::after,
+        html[data-md-theme="dark"] .md-cr-thumb::after,
+        html[data-md-theme="dark"] .md-lib-thumb::after {
+            box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1);
+        }
+
+        /* Header Bookmark + Settings icon buttons */
+        .md-hdr-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 36px !important;
+            height: 36px !important;
+            padding: 0 !important;
+            border-radius: 8px !important;
+            border: var(--bw, 3px) solid var(--bd) !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            cursor: pointer !important;
+            transition: transform 0.14s ease, background-color 0.15s ease, color 0.15s ease !important;
+        }
+        .md-hdr-btn:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+        li.menu-md-act {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            list-style: none !important;
+            margin: 0 4px !important;
+        }
+
+        /* Synced Reader Top Bar (#md-rbar) + Chapter Pill */
+        html[data-md-page="chapter"][data-md-navhide="1"] #md-rbar {
+            transform: translateY(calc(-100% - 12px)) !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        #md-rbar {
+            transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease !important;
+            padding-top: max(8px, env(safe-area-inset-top)) !important;
+        }
+        #md-rbar .md-rb-chap {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            padding: 3px 10px !important;
+            border-radius: 8px !important;
+            border: 2px solid var(--bd) !important;
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 11.5px/1.3 'JetBrains Mono', monospace !important;
+            cursor: pointer !important;
+            max-width: 220px !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            transition: transform 0.14s ease, background-color 0.15s ease, color 0.15s ease !important;
+        }
+        #md-rbar .md-rb-chap:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+
+        /* Reader Dock contextual icon cross-fade & stretch mode */
+        #md-dock .md-ic-swap {
+            position: relative;
+            display: inline-flex;
+            width: 18px;
+            height: 18px;
+            align-items: center;
+            justify-content: center;
+        }
+        #md-dock .md-ic-swap > span {
+            position: absolute;
+            inset: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.16s ease, transform 0.18s ease, filter 0.16s ease;
+        }
+        #md-dock .md-ic-swap .ic-b {
+            opacity: 0;
+            transform: scale(0.82);
+            filter: blur(2px);
+        }
+        #md-dock button.is-on .md-ic-swap .ic-a {
+            opacity: 0;
+            transform: scale(0.82);
+            filter: blur(2px);
+        }
+        #md-dock button.is-on .md-ic-swap .ic-b {
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0);
+        }
+        #md-dock button.is-on {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border-color: var(--bd) !important;
+        }
+        html[data-md-page="chapter"][data-md-stretch="1"] .reading-content,
+        html[data-md-page="chapter"][data-md-stretch="1"] .reading-content .page-break,
+        html[data-md-page="chapter"][data-md-stretch="1"] .reading-content img {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        /* Dynamic Vertical Progress Rail (#md-progress) */
+        #md-progress {
+            position: fixed;
+            top: 12px;
+            bottom: var(--md-prog-bottom, 12px);
+            right: 8px;
+            width: 6px;
+            border-radius: 999px;
+            background: rgba(127, 127, 127, 0.25);
+            border: 1px solid var(--bd);
+            z-index: 99990;
+            cursor: pointer;
+            transition: opacity 0.2s ease, width 0.15s ease;
+            overflow: hidden;
+        }
+        #md-progress:hover { width: 9px; }
+        #md-progress[data-side="left"] { left: 8px; right: auto; }
+        #md-progress[data-side="off"] { display: none !important; }
+        #md-progress-fill {
+            width: 100%;
+            height: var(--md-prog-pct, 0%);
+            background: var(--primary);
+            border-radius: 999px;
+            transition: height 0.08s linear;
+        }
+        :fullscreen #md-progress,
+        :-webkit-full-screen #md-progress {
+            display: none !important;
+        }
+
+        /* Neobrutalist Modal System (Settings, Chapter Switcher, Library, List Picker) */
+        .md-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 100020;
+            background: rgba(0, 0, 0, 0.65);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .md-modal-backdrop.open { display: flex; }
+        .md-modal {
+            width: min(500px, 100%);
+            max-height: min(84vh, 740px);
+            display: flex;
+            flex-direction: column;
+            background: var(--card);
+            color: var(--ink);
+            border: var(--bw, 3px) solid var(--bd);
+            border-radius: var(--r, 10px);
+            box-shadow: var(--sh-hover, 6px 6px 0 var(--bd));
+            overflow: hidden;
+            font-family: 'DM Sans', system-ui, sans-serif;
+        }
+        .md-modal-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 13px 16px;
+            background: var(--bg);
+            border-bottom: var(--bw, 3px) solid var(--bd);
+        }
+        .md-modal-hd h3 {
+            margin: 0;
+            font: 800 15px/1.2 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--ink);
+        }
+        .md-modal-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--card);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            cursor: pointer;
+            transition: transform 0.14s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+        .md-modal-close:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .md-modal-bd {
+            padding: 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--card);
+        }
+        .md-set-sec {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .md-set-lbl {
+            font: 800 11.5px/1 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+        }
+        .md-seg {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 8px;
+        }
+        .md-seg button {
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            font: 800 13px/1.2 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: transform 0.14s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+        .md-seg button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh);
+        }
+        .md-seg button.active {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--bd);
+            box-shadow: var(--sh-sm);
+        }
+        .md-range-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            box-shadow: var(--sh-sm);
+        }
+        .md-range-row input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary);
+        }
+        .md-range-val {
+            min-width: 68px;
+            text-align: right;
+            font: 800 12.5px/1 'JetBrains Mono', monospace;
+            color: var(--ink);
+        }
+
+        /* Chapter Switcher Modal (#md-rchap-modal) */
+        .md-search-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            font: 700 16px/1.3 'DM Sans', sans-serif;
+        }
+        .md-search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        .md-rchap-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 54vh;
+            overflow-y: auto;
+            padding: 2px 4px 4px 2px;
+        }
+        .md-rchap-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm);
+            text-decoration: none !important;
+            font: 800 13px/1.3 'JetBrains Mono', monospace;
+            transition: transform 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+        }
+        .md-rchap-item:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh);
+            background: var(--card);
+        }
+        .md-rchap-item.is-cur {
+            background: var(--primary) !important;
+            border-color: var(--bd) !important;
+            color: #ffffff !important;
+            box-shadow: var(--sh-sm) !important;
+        }
+        .md-rchap-item.is-cur span { color: #ffffff !important; }
+        .md-rchap-date {
+            font: 700 11px/1 'JetBrains Mono', monospace;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+
+        /* Continue Reading Shelf (#md-continue-reading) */
+        #md-continue-reading {
+            max-width: var(--maxw, 1280px);
+            margin: 18px auto 22px;
+            padding: 0 16px;
+            font-family: 'DM Sans', system-ui, sans-serif;
+        }
+        .md-cr-hd {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+        .md-cr-title {
+            margin: 0;
+            font: 800 15px/1.2 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ink);
+        }
+        .md-cr-clear {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--card);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            font: 800 12px/1.2 'JetBrains Mono', monospace;
+            cursor: pointer;
+        }
+        .md-cr-clear:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .md-cr-row {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding: 2px 2px 8px;
+            scrollbar-width: thin;
+        }
+        .md-cr-card {
+            position: relative;
+            flex: 0 0 156px;
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--r, 10px);
+            border: var(--bw, 3px) solid var(--bd);
+            background: var(--card);
+            box-shadow: var(--sh);
+            overflow: hidden;
+            text-decoration: none !important;
+            color: var(--ink) !important;
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+        .md-cr-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--sh-hover);
+        }
+        .md-cr-thumb {
+            aspect-ratio: 3 / 4;
+            width: 100%;
+            background: var(--bg);
+            overflow: hidden;
+        }
+        .md-cr-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .md-cr-bar {
+            height: 4px;
+            background: var(--bg);
+            border-top: 2px solid var(--bd);
+            border-bottom: 2px solid var(--bd);
+        }
+        .md-cr-bar > i {
+            display: block;
+            height: 100%;
+            background: var(--primary);
+        }
+        .md-cr-meta {
+            padding: 8px 9px 9px;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        .md-cr-name {
+            font: 800 12.5px/1.25 'DM Sans', sans-serif;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            color: var(--ink);
+        }
+        .md-cr-ch {
+            font: 800 11px/1.2 'JetBrains Mono', monospace;
+            color: var(--primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .md-cr-rm {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            z-index: 4;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            border: 2px solid var(--bd);
+            background: var(--card);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            font: 800 14px/1 sans-serif;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .md-cr-rm:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+
+        /* Quick-Save + button on catalog covers & Overview Add-to-List button */
+        .md-lib-save {
+            position: absolute !important;
+            top: 6px !important;
+            right: 6px !important;
+            z-index: 6 !important;
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 7px !important;
+            border: 2px solid var(--bd) !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            cursor: pointer !important;
+            opacity: 0;
+            transition: opacity 0.16s ease, transform 0.14s ease, background-color 0.15s ease !important;
+        }
+        div.page-item-detail:hover .md-lib-save,
+        .md-lib-save.is-saved,
+        .md-lib-save:focus-visible {
+            opacity: 1 !important;
+        }
+        .md-lib-save.is-saved {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+        .md-ov-lib-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 7px !important;
+            margin-top: 10px !important;
+            padding: 9px 14px !important;
+            border-radius: 8px !important;
+            border: var(--bw, 3px) solid var(--bd) !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 13px/1 'JetBrains Mono', monospace !important;
+            cursor: pointer !important;
+        }
+        .md-ov-lib-btn.is-saved {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+
+        /* Library Modal (#md-lib-modal) */
+        .md-lib-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .md-lib-tab {
+            padding: 7px 11px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            font: 800 12px/1.2 'JetBrains Mono', monospace;
+            cursor: pointer;
+        }
+        .md-lib-tab.active {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .md-lib-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+            gap: 10px;
+        }
+        .md-lib-item {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+            text-decoration: none !important;
+            color: var(--ink) !important;
+        }
+        .md-lib-thumb {
+            aspect-ratio: 3 / 4;
+            background: var(--card);
+            overflow: hidden;
+        }
+        .md-lib-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .md-lib-info { padding: 7px 8px; font: 800 12px/1.25 'DM Sans', sans-serif; }
+        .md-lib-new-row { display: flex; gap: 8px; }
+        .md-lib-new-row input { flex: 1; }
+        .md-lib-new-row button {
+            padding: 0 14px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: var(--sh-sm);
+            font: 800 13px/1 'JetBrains Mono', monospace;
+            cursor: pointer;
+        }
+        .md-picker-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            box-shadow: var(--sh-sm);
+            cursor: pointer;
+            font: 800 13px/1.2 'JetBrains Mono', monospace;
+        }
+
+        /* Series Page Chapter Filter & Sort (#md-ch-filterbar) */
+        #md-ch-filterbar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 12px;
+            flex-wrap: wrap;
+        }
+        #md-ch-filterbar input {
+            flex: 1 1 200px;
+            min-width: 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--bg);
+            color: var(--ink);
+            box-shadow: var(--sh-sm);
+            font: 700 16px/1.3 'DM Sans', sans-serif;
+        }
+        .md-ch-sort-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 2px solid var(--bd);
+            background: var(--card);
+            color: var(--ink);
+            font: 800 12.5px/1 'JetBrains Mono', monospace;
+            cursor: pointer;
+            box-shadow: var(--sh-sm);
+            transition: transform 0.14s ease, background-color 0.15s ease, color 0.15s ease;
+        }
+        .md-ch-sort-btn:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .md-ch-count {
+            font: 800 12px/1 'JetBrains Mono', monospace;
+            color: var(--muted);
+        }
+
+        /* Mobile-First Optimization */
+        @media (hover: none) {
+            .md-lib-save { opacity: 0.92 !important; }
+        }
+        @media (max-width: 768px) {
+            html[data-md-page="chapter"] .reading-content,
+            html[data-md-page="chapter"] .reading-content .page-break,
+            html[data-md-page="chapter"] .reading-content img {
+                width: 100vw !important;
+                max-width: 100vw !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                border-radius: 0 !important;
+            }
+            html[data-md-page="chapter"] .read-container,
+            html[data-md-page="chapter"] .entry-content,
+            html[data-md-page="chapter"] .main-col-inner {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+            }
+            #md-dock {
+                max-width: calc(100vw - 16px) !important;
+                overflow-x: auto !important;
+                flex-wrap: nowrap !important;
+                justify-content: flex-start !important;
+                bottom: max(10px, env(safe-area-inset-bottom)) !important;
+                scrollbar-width: none !important;
+            }
+            #md-dock::-webkit-scrollbar { display: none; }
+            #md-dock button { flex-shrink: 0 !important; min-width: 38px !important; min-height: 38px !important; }
+            #md-rbar .md-rb-lbl { display: none !important; }
+            #md-rbar .md-rb-chap { max-width: 130px !important; }
+            .md-modal-backdrop { align-items: flex-end; padding: 0; }
+            .md-modal {
+                width: 100%;
+                max-height: 86vh;
+                border-radius: 14px 14px 0 0;
+                border-bottom: none;
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+            .md-cr-card { flex: 0 0 132px; }
+        }
     `;
 
     function injectStyles() {
@@ -5106,20 +5844,30 @@
 
     function getImgSrc(img) {
         if (!img) return '';
+        const isBad = s => !s || s.startsWith('data:image/svg') || s.startsWith('data:image/gif;base64,R0lGODlhAQAB') || /placeholder|blank\./i.test(s);
         const cand = [
+            img.getAttribute('data-manga-src'),
             img.getAttribute('data-src'),
             img.getAttribute('data-lazy-src'),
-            img.getAttribute('data-original'),
+            img.getAttribute('data-lzl-src'),
+            img.getAttribute('data-cfsrc'),
             img.getAttribute('wmu-data-src'),
-            img.getAttribute('src'),
+            img.getAttribute('data-original'),
             img.currentSrc,
+            img.getAttribute('src'),
             img.src
         ];
         for (const c of cand) {
             if (!c) continue;
             const s = String(c).trim();
-            if (s && !s.startsWith('data:image/svg') && !s.startsWith('data:image/gif;base64,R0lGODlhAQAB')) {
-                return s;
+            if (!isBad(s)) return s;
+        }
+        const ss = (img.getAttribute('srcset') || img.getAttribute('data-srcset') || '').trim();
+        if (ss) {
+            const parts = ss.split(',').map(p => p.trim().split(/\s+/));
+            parts.sort((a, b) => (parseInt(b[1], 10) || 0) - (parseInt(a[1], 10) || 0));
+            for (const p of parts) {
+                if (p[0] && !isBad(p[0])) return p[0];
             }
         }
         return (img.getAttribute('src') || img.src || '').trim();
@@ -5731,12 +6479,13 @@
         }
     }
 
-    const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], #md-dock, #md-toast, #md-top, #md-rbar, header';
+    const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], #md-dock, #md-toast, #md-top, #md-rbar, #md-progress, .md-modal-backdrop, header';
 
     function headerAutoHide() {
         if (!CONFIG.readerHeaderAutoHide) return;
         let last = scrollY;
         addEventListener('scroll', () => {
+            if (PAGE() === 'chapter') return;
             const y = scrollY, dy = y - last;
             if (Math.abs(dy) < 8) return;
             last = y;
@@ -5755,11 +6504,17 @@
         const show = on => {
             dock.classList.toggle('hide', !on);
             document.documentElement.classList.toggle('md-chrome-on', on);
-            if (on) openY = scrollY;
+            if (on) {
+                delete root.dataset.mdNavhide;
+                openY = scrollY;
+            } else {
+                root.dataset.mdNavhide = '1';
+            }
         };
 
         if (tapMode) {
             dock.classList.add('hide');
+            root.dataset.mdNavhide = '1';
             document.addEventListener('click', e => {
                 if (e.button !== 0) return;
                 const t = e.target;
@@ -5781,13 +6536,118 @@
                 if (CONFIG.dockHideOnScroll && shown() && dy > 0 && y - openY > CONFIG.dockScrollPx && !isBusy()) show(false);
             } else {
                 const nearEnd = innerHeight + y >= document.documentElement.scrollHeight - 320;
-                dock.classList.toggle('hide', dy > 0 && y > 240 && !nearEnd && !isBusy());
+                const hide = dy > 0 && y > 240 && !nearEnd && !isBusy();
+                dock.classList.toggle('hide', hide);
+                if (hide) root.dataset.mdNavhide = '1';
+                else delete root.dataset.mdNavhide;
             }
         }, { passive: true });
 
         if (!readerChrome.nav) {
             readerChrome.nav = true;
             headerAutoHide();
+        }
+    }
+
+    let autoScrollRaf = 0;
+    let autoScrollLast = 0;
+    function setAutoScroll(on) {
+        const btn = reader.dock && $('[data-act="autoscroll"]', reader.dock);
+        if (!on) {
+            if (autoScrollRaf) cancelAnimationFrame(autoScrollRaf);
+            autoScrollRaf = 0;
+            if (btn) btn.classList.remove('is-on');
+            return;
+        }
+        if (btn) btn.classList.add('is-on');
+        autoScrollLast = performance.now();
+        const tick = now => {
+            if (!autoScrollRaf) return;
+            const dt = Math.min(0.1, (now - autoScrollLast) / 1000);
+            autoScrollLast = now;
+            const speed = Number(store.get('autoScrollSpeed', 150)) || 150;
+            window.scrollBy(0, speed * dt);
+            if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) {
+                setAutoScroll(false);
+                return;
+            }
+            autoScrollRaf = requestAnimationFrame(tick);
+        };
+        autoScrollRaf = requestAnimationFrame(tick);
+    }
+
+    function applyStretch(on, persist = true) {
+        const val = !!on;
+        if (val) root.dataset.mdStretch = '1';
+        else delete root.dataset.mdStretch;
+        if (persist) store.set('stretch', val);
+        const btn = reader.dock && $('[data-act="stretch"]', reader.dock);
+        if (btn) btn.classList.toggle('is-on', val);
+    }
+
+    function syncFullscreenBtn() {
+        const btn = reader.dock && $('[data-act="fullscreen"]', reader.dock);
+        if (btn) btn.classList.toggle('is-on', !!document.fullscreenElement);
+    }
+    document.addEventListener('fullscreenchange', syncFullscreenBtn);
+
+    function toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            (document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen || (() => {})).call(document.documentElement);
+        } else {
+            (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+        }
+    }
+
+    function setupProgressRail() {
+        if (PAGE() !== 'chapter' || !document.body) return;
+        let rail = document.getElementById('md-progress');
+        if (!rail) {
+            rail = document.createElement('div');
+            rail.id = 'md-progress';
+            rail.title = 'Reading progress (click to jump)';
+            rail.innerHTML = '<div id="md-progress-fill"></div>';
+            document.body.appendChild(rail);
+            rail.addEventListener('click', e => {
+                const imgs = $$('.reading-content img');
+                if (!imgs.length) return;
+                const firstTop = imgs[0].getBoundingClientRect().top + scrollY;
+                const lastBot = imgs[imgs.length - 1].getBoundingClientRect().bottom + scrollY;
+                const rect = rail.getBoundingClientRect();
+                const ratio = Math.max(0, Math.min(1, (e.clientY - rect.top) / Math.max(1, rect.height)));
+                const targetY = firstTop + ratio * Math.max(0, lastBot - firstTop - innerHeight);
+                window.scrollTo({ top: targetY, behavior: 'smooth' });
+            });
+            const update = () => {
+                const side = store.get('progSide', 'right');
+                rail.dataset.side = side;
+                if (side === 'off') return;
+                const imgs = $$('.reading-content img');
+                if (!imgs.length) {
+                    rail.style.opacity = '0';
+                    return;
+                }
+                const firstTop = imgs[0].getBoundingClientRect().top + scrollY;
+                const lastRect = imgs[imgs.length - 1].getBoundingClientRect();
+                const lastBot = lastRect.bottom + scrollY;
+                const span = Math.max(1, lastBot - firstTop - innerHeight);
+                const pct = Math.max(0, Math.min(100, ((scrollY - firstTop) / span) * 100));
+                rail.style.setProperty('--md-prog-pct', pct.toFixed(1) + '%');
+                // Clamp bottom edge so rail ends with the last chapter image and never enters comments
+                const distFromBottom = Math.max(12, Math.round(innerHeight - lastRect.bottom + 8));
+                rail.style.setProperty('--md-prog-bottom', distFromBottom + 'px');
+                rail.style.opacity = lastRect.bottom < 48 ? '0' : '1';
+                // Update Continue Reading percentage silently
+                updateReadingPct(Math.round(pct));
+            };
+            let raf = 0;
+            const sched = () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); }); };
+            addEventListener('scroll', sched, { passive: true });
+            addEventListener('resize', sched, { passive: true });
+            setTimeout(update, 300);
+            rail.__update = update;
+        } else if (rail.__update) {
+            rail.__update();
         }
     }
 
@@ -5798,15 +6658,21 @@
 
         const btn = (act, icon, title, label) =>
             `<button type="button" data-act="${act}" title="${title}" aria-label="${title}">${icon}${label ? `<span class="md-lbl">${label}</span>` : ''}</button>`;
+        const swapBtn = (act, icA, icB, title) =>
+            `<button type="button" data-act="${act}" title="${title}" aria-label="${title}"><span class="md-ic-swap"><span class="ic-a">${icA}</span><span class="ic-b">${icB}</span></span></button>`;
 
         d.innerHTML =
             btn('prev', ICON.prev, 'Previous chapter (←)') +
+            swapBtn('chapters', ICON.list, ICON.stop, 'Chapter list (C)') +
             btn('next', ICON.next, 'Next chapter (→)') +
             '<span class="md-sep"></span>' +
             btn('zoom-out', ICON.minus, 'Zoom out (-)') +
             '<button type="button" class="md-zoom" data-act="zoom-reset" title="Reset zoom (0)" aria-label="Reset zoom">100%</button>' +
             btn('zoom-in', ICON.plus, 'Zoom in (+)') +
+            swapBtn('stretch', ICON.stretch, ICON.shrinkW, 'Stretch to fit width') +
             '<span class="md-sep"></span>' +
+            swapBtn('autoscroll', ICON.scroll, ICON.pause, 'Auto-scroll (P)') +
+            swapBtn('fullscreen', ICON.expand, ICON.compress, 'Fullscreen (F)') +
             btn('bg', ICON.bg, 'Background colour (B)') +
             '<button type="button" class="md-dl" data-act="download"></button>';
 
@@ -5816,6 +6682,8 @@
         setDl('idle', 'CBZ');
         $('[data-act="prev"]', d).disabled = !ctx.prev;
         $('[data-act="next"]', d).disabled = !ctx.next;
+        applyStretch(store.get('stretch', false), false);
+        syncFullscreenBtn();
 
         d.addEventListener('click', e => {
             const b = e.target.closest('button[data-act]');
@@ -5823,10 +6691,14 @@
             const cur = chapterContext();
             switch (b.dataset.act) {
                 case 'prev': if (cur.prev) location.href = cur.prev; break;
+                case 'chapters': toggleChapterModal(); break;
                 case 'next': if (cur.next) location.href = cur.next; break;
                 case 'zoom-out': stepZoom(-1); break;
                 case 'zoom-in': stepZoom(1); break;
                 case 'zoom-reset': applyZoom(1); break;
+                case 'stretch': applyStretch(root.dataset.mdStretch !== '1'); break;
+                case 'autoscroll': setAutoScroll(!autoScrollRaf); break;
+                case 'fullscreen': toggleFullscreen(); break;
                 case 'bg': cycleBg(); break;
                 case 'download': toggleDownload(); break;
             }
@@ -5845,6 +6717,9 @@
             else if (e.key === '+' || e.key === '=') stepZoom(1);
             else if (e.key === '0') applyZoom(1);
             else if (e.key === 'b' || e.key === 'B') cycleBg();
+            else if (e.key === 'p' || e.key === 'P') setAutoScroll(!autoScrollRaf);
+            else if (e.key === 'f' || e.key === 'F') toggleFullscreen();
+            else if (e.key === 'c' || e.key === 'C') toggleChapterModal();
         });
     }
 
@@ -5856,37 +6731,7 @@
         if (prevBtn) prevBtn.disabled = !ctx.prev;
         if (nextBtn) nextBtn.disabled = !ctx.next;
 
-        const srcSel = $('select.single-chapter-select');
-        if (!srcSel || srcSel.options.length <= 1) return;
-        let cs = $('.md-chap', dock);
-        if (!cs) {
-            cs = document.createElement('select');
-            cs.className = 'md-chap';
-            cs.title = 'Jump to chapter';
-            cs.setAttribute('aria-label', 'Jump to chapter');
-            cs.addEventListener('change', () => {
-                if (cs.value) location.href = cs.value;
-            });
-            const nextEl = $('[data-act="next"]', dock);
-            if (nextEl) nextEl.after(cs);
-            else dock.appendChild(cs);
-        }
-        if (cs.options.length !== srcSel.options.length) {
-            cs.innerHTML = '';
-            for (const opt of srcSel.options) {
-                const o = document.createElement('option');
-                let val = opt.dataset.redirect || opt.value;
-                if (val && !/^https?:\/\//i.test(val) && ctx.seriesUrl) {
-                    try { val = new URL(val, ctx.seriesUrl).href; } catch (e) {}
-                }
-                o.value = val;
-                o.textContent = opt.textContent.trim();
-                if (opt.selected) o.selected = true;
-                cs.appendChild(o);
-            }
-        } else if (srcSel.selectedIndex >= 0 && cs.selectedIndex !== srcSel.selectedIndex) {
-            cs.selectedIndex = srcSel.selectedIndex;
-        }
+        // Chapter selection is handled by #md-rchap-modal (dock list button & top-bar pill)
     }
 
     function setupReader() {
@@ -5907,6 +6752,8 @@
         buildDock(ctx);
         syncDockSelect(reader.dock);
         sanitizeReaderContent();
+        setupProgressRail();
+        recordReadingHistory(ctx);
     }
 
     /* ====================================================================
@@ -5937,6 +6784,31 @@
 
         const searchUl = $('header.site-header ul.main-menu-search') || $('.search-navigation .main-menu-search');
         if (searchUl) {
+            let actLi = searchUl.querySelector('li.menu-md-act');
+            if (!actLi) {
+                actLi = document.createElement('li');
+                actLi.className = 'menu-md-act';
+                const libBtn = document.createElement('button');
+                libBtn.id = 'md-lib-btn';
+                libBtn.type = 'button';
+                libBtn.className = 'md-hdr-btn';
+                libBtn.title = 'Library & Lists';
+                libBtn.setAttribute('aria-label', 'Open Library');
+                libBtn.innerHTML = ICON.bookmark;
+                libBtn.addEventListener('click', () => openLibraryModal());
+
+                const setBtn = document.createElement('button');
+                setBtn.id = 'md-set-btn';
+                setBtn.type = 'button';
+                setBtn.className = 'md-hdr-btn';
+                setBtn.title = 'Settings & Themes';
+                setBtn.setAttribute('aria-label', 'Open Settings');
+                setBtn.innerHTML = ICON.gear;
+                setBtn.addEventListener('click', () => openSettingsModal());
+
+                actLi.append(libBtn, setBtn);
+                searchUl.appendChild(actLi);
+            }
             let li = searchUl.querySelector('li.menu-theme');
             if (!li) {
                 li = document.createElement('li');
@@ -6160,6 +7032,44 @@
             restartTimer();
         });
 
+        // Mobile touch swipe left/right on hero
+        let touchX0 = 0, touchY0 = 0;
+        hero.addEventListener('touchstart', e => {
+            if (!e.touches || !e.touches[0]) return;
+            touchX0 = e.touches[0].clientX;
+            touchY0 = e.touches[0].clientY;
+        }, { passive: true });
+        hero.addEventListener('touchend', e => {
+            if (!e.changedTouches || !e.changedTouches[0]) return;
+            const dx = e.changedTouches[0].clientX - touchX0;
+            const dy = e.changedTouches[0].clientY - touchY0;
+            if (Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+                showSlide(dx < 0 ? currentSlide + 1 : currentSlide - 1);
+            }
+        }, { passive: true });
+
+        // Dynamic first-chapter resolution for "Read now" via Madara POST <seriesUrl>/ajax/chapters/
+        const handleFirstChapterClick = async e => {
+            const link = e.currentTarget;
+            const sUrl = link && link.dataset.seriesUrl;
+            if (!sUrl) return;
+            e.preventDefault();
+            const origText = link.classList.contains('md-hero-play') ? link.innerHTML : null;
+            if (origText) link.textContent = 'Finding Ch. 1…';
+            try {
+                const firstUrl = await resolveFirstChapterUrl(sUrl);
+                location.href = firstUrl || link.dataset.fallbackUrl || sUrl;
+            } catch (_) {
+                location.href = link.dataset.fallbackUrl || sUrl;
+            } finally {
+                if (origText) link.innerHTML = origText;
+            }
+        };
+        const heroPlayBtn = hero.querySelector('.md-hero-play');
+        const heroCardBtn = hero.querySelector('.md-hero-card');
+        if (heroPlayBtn) heroPlayBtn.addEventListener('click', handleFirstChapterClick);
+        if (heroCardBtn) heroCardBtn.addEventListener('click', handleFirstChapterClick);
+
         function showSlide(idx) {
             currentSlide = (idx + items.length) % items.length;
             const cur = items[currentSlide];
@@ -6217,13 +7127,21 @@
             }
 
             const playBtn = hero.querySelector('.md-hero-play');
-            if (playBtn) playBtn.href = cur.chapterHref || cur.href;
+            if (playBtn) {
+                playBtn.href = cur.href;
+                playBtn.dataset.seriesUrl = cur.href;
+                playBtn.dataset.fallbackUrl = cur.chapterHref || cur.href;
+            }
 
             const moreBtn = hero.querySelector('.md-hero-more');
             if (moreBtn) moreBtn.href = cur.href;
 
             const cardLink = hero.querySelector('.md-hero-card');
-            if (cardLink) cardLink.href = cur.chapterHref || cur.href;
+            if (cardLink) {
+                cardLink.href = cur.href;
+                cardLink.dataset.seriesUrl = cur.href;
+                cardLink.dataset.fallbackUrl = cur.chapterHref || cur.href;
+            }
 
             const cardImg = hero.querySelector('.md-hero-card img');
             if (cardImg) {
@@ -6346,9 +7264,9 @@
         if (home && !home.getAttribute('href')) home.setAttribute('href', '/');
         const t = $('.md-rb-title', bar);
         if (t) {
-            const b = $('b', t), sp = $('span', t);
+            const b = $('b', t), chBtn = $('.md-rb-chap', t);
             if (b && b.textContent !== ctx.series) b.textContent = ctx.series;
-            if (sp && sp.textContent !== ctx.label) sp.textContent = ctx.label;
+            if (chBtn && chBtn.textContent !== ctx.label) chBtn.textContent = ctx.label;
         }
         const n = commentCount();
         const c = $('.md-rb-count', bar);
@@ -6363,8 +7281,9 @@
         bar.innerHTML =
             '<a class="md-rb-btn" data-k="home" href="/" title="Home">' + ICON.home + '<span class="md-rb-lbl">Home</span></a>' +
             '<a class="md-rb-btn" data-k="series" href="#" title="Series page">' + ICON.list + '<span class="md-rb-lbl">Series</span></a>' +
-            '<div class="md-rb-title"><b></b><span></span></div>' +
+            '<div class="md-rb-title"><b></b><button type="button" class="md-rb-chap" title="Switch chapter"></button></div>' +
             '<button type="button" class="md-rb-btn" data-k="comments" title="Jump to comments">' + ICON.chat + '<span class="md-rb-lbl">Comments</span><span class="md-rb-count"></span></button>' +
+            '<button type="button" class="md-rb-btn" data-k="settings" title="Reader settings">' + ICON.gear + '<span class="md-rb-lbl">Settings</span></button>' +
             '<span class="md-rb-theme"></span>';
         document.body.appendChild(bar);
         $('[data-k="comments"]', bar).addEventListener('click', () => {
@@ -6372,6 +7291,8 @@
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             else toast('No comments section on this page');
         });
+        $('[data-k="settings"]', bar).addEventListener('click', () => openSettingsModal());
+        $('.md-rb-chap', bar).addEventListener('click', () => toggleChapterModal());
         syncReaderBar();
     }
 
@@ -6511,6 +7432,608 @@
     window.addEventListener('resize', () => { clearTimeout(trimTimer); trimTimer = setTimeout(trimHeroGap, 200); });
 
     /* ====================================================================
+     *  MADARA AJAX CHAPTER FETCHER & FIRST-CHAPTER RESOLVER
+     * ==================================================================== */
+    function seriesSlugFromUrl(u) {
+        try {
+            const p = new URL(u, location.origin).pathname;
+            const m = p.match(/\/manga\/([^/]+)/i);
+            return m ? m[1].toLowerCase() : p.replace(/^\/+|\/+$/g, '').toLowerCase();
+        } catch (_) {
+            return String(u || '');
+        }
+    }
+
+    async function fetchMadaraChapters(seriesUrl) {
+        if (!seriesUrl) return [];
+        const base = seriesUrl.replace(/\/+$/, '') + '/ajax/chapters/';
+        const res = await fetch(base, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+        if (!res.ok) return [];
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const list = [];
+        doc.querySelectorAll('li.wp-manga-chapter').forEach(li => {
+            const a = li.querySelector('a');
+            if (!a) return;
+            const href = a.getAttribute('href') || a.href;
+            const label = (a.textContent || '').replace(/\s+/g, ' ').trim();
+            const dateEl = li.querySelector('span.chapter-release-date');
+            const date = dateEl ? dateEl.textContent.replace(/\s+/g, ' ').trim() : '';
+            if (href && label) list.push({ href, label, date });
+        });
+        return list;
+    }
+
+    async function resolveFirstChapterUrl(seriesUrl) {
+        const key = 'md-first-ch:' + seriesSlugFromUrl(seriesUrl);
+        try {
+            const cached = sessionStorage.getItem(key);
+            if (cached) return cached;
+        } catch (_) {}
+        const list = await fetchMadaraChapters(seriesUrl);
+        if (!list.length) return null;
+        // Madara returns chapters newest-first; pick the oldest/lowest chapter (supports Ch. 0, Prologue, Ch. 0.1, Ch. 1)
+        const first = list[list.length - 1];
+        if (first && first.href) {
+            try { sessionStorage.setItem(key, first.href); } catch (_) {}
+            return first.href;
+        }
+        return null;
+    }
+
+    /* ====================================================================
+     *  COVER CACHE, CONTINUE READING SHELF & LOCAL LIBRARY
+     * ==================================================================== */
+    const DEFAULT_LISTS = ['Currently Reading', 'Plan to Read', 'Completed'];
+
+    function getCoverCache() {
+        const c = store.get('covers', {});
+        return c && typeof c === 'object' ? c : {};
+    }
+
+    function saveCover(slug, url) {
+        if (!slug || !url || url.startsWith('data:')) return;
+        const c = getCoverCache();
+        if (c[slug] === url) return;
+        c[slug] = url;
+        const keys = Object.keys(c);
+        if (keys.length > 240) delete c[keys[0]];
+        store.set('covers', c);
+    }
+
+    function harvestCovers() {
+        $$('div.page-item-detail').forEach(card => {
+            const a = card.querySelector('.item-thumb a, .post-title a');
+            const img = card.querySelector('.item-thumb img, img');
+            if (a && img) saveCover(seriesSlugFromUrl(a.href), getImgSrc(img));
+        });
+        if (PAGE() === 'overview') {
+            const img = $('.summary_image img');
+            if (img) saveCover(seriesSlugFromUrl(location.href), getImgSrc(img));
+        }
+    }
+
+    function getHistory() {
+        const arr = store.get('history', []);
+        return Array.isArray(arr) ? arr : [];
+    }
+
+    function setHistory(arr) {
+        store.set('history', arr.slice(0, 30));
+    }
+
+    function getLibrary() {
+        const lib = store.get('library', null);
+        if (lib && typeof lib === 'object') {
+            DEFAULT_LISTS.forEach(name => { if (!Array.isArray(lib[name])) lib[name] = []; });
+            return lib;
+        }
+        return { 'Currently Reading': [], 'Plan to Read': [], 'Completed': [] };
+    }
+
+    function setLibrary(lib) {
+        store.set('library', lib);
+    }
+
+    function isInAnyList(slug) {
+        const lib = getLibrary();
+        return Object.values(lib).some(arr => Array.isArray(arr) && arr.some(it => it.slug === slug));
+    }
+
+    function upsertInList(listName, item) {
+        const lib = getLibrary();
+        if (!Array.isArray(lib[listName])) lib[listName] = [];
+        lib[listName] = [item, ...lib[listName].filter(x => x.slug !== item.slug)];
+        setLibrary(lib);
+    }
+
+    function removeFromList(listName, slug) {
+        const lib = getLibrary();
+        if (!Array.isArray(lib[listName])) return;
+        lib[listName] = lib[listName].filter(x => x.slug !== slug);
+        setLibrary(lib);
+    }
+
+    function recordReadingHistory(ctx) {
+        if (!ctx || !ctx.seriesUrl) return;
+        const slug = seriesSlugFromUrl(ctx.seriesUrl);
+        const covers = getCoverCache();
+        const cover = covers[slug] || '';
+        const prev = getHistory().find(x => x.slug === slug);
+        const entry = {
+            slug,
+            series: ctx.series,
+            seriesUrl: ctx.seriesUrl,
+            chapterLabel: ctx.label,
+            chapterUrl: location.href,
+            cover: cover || (prev && prev.cover) || '',
+            pct: prev && prev.chapterUrl === location.href ? (prev.pct || 0) : 0,
+            updatedAt: Date.now()
+        };
+        const next = [entry, ...getHistory().filter(x => x.slug !== slug)];
+        setHistory(next);
+        // Auto-sync with Currently Reading list
+        upsertInList('Currently Reading', {
+            slug,
+            title: ctx.series,
+            url: ctx.seriesUrl,
+            cover: entry.cover,
+            chapterLabel: ctx.label,
+            chapterUrl: location.href,
+            addedAt: Date.now()
+        });
+    }
+
+    let lastPctSave = 0;
+    function updateReadingPct(pct) {
+        const now = Date.now();
+        if (now - lastPctSave < 1200) return;
+        lastPctSave = now;
+        const hist = getHistory();
+        if (!hist.length || hist[0].chapterUrl !== location.href) return;
+        hist[0].pct = Math.max(hist[0].pct || 0, pct);
+        setHistory(hist);
+    }
+
+    function buildContinueReading() {
+        const isHome = PAGE() === 'list' && (location.pathname === '/' || location.pathname === '' || /^\/(index\.php)?$/i.test(location.pathname));
+        const existing = document.getElementById('md-continue-reading');
+        if (!isHome) { if (existing) existing.remove(); return; }
+        const hist = getHistory();
+        if (!hist.length) { if (existing) existing.remove(); return; }
+
+        const covers = getCoverCache();
+        const shelf = existing || document.createElement('section');
+        shelf.id = 'md-continue-reading';
+        const cards = hist.slice(0, 14).map(it => {
+            const img = it.cover || covers[it.slug] || '';
+            const pct = Math.max(0, Math.min(100, Number(it.pct) || 0));
+            return `<div class="md-cr-card" data-slug="${it.slug.replace(/"/g, '&quot;')}">
+                <button type="button" class="md-cr-rm" data-rm="${it.slug.replace(/"/g, '&quot;')}" title="Remove from Continue Reading" aria-label="Remove">&times;</button>
+                <a href="${it.chapterUrl.replace(/"/g, '&quot;')}" style="text-decoration:none;color:inherit;display:flex;flex-direction:column;flex:1">
+                    <div class="md-cr-thumb">${img ? `<img src="${img.replace(/"/g, '&quot;')}" alt="" loading="lazy" decoding="async">` : ''}</div>
+                    <div class="md-cr-bar"><i style="width:${pct}%"></i></div>
+                    <div class="md-cr-meta">
+                        <span class="md-cr-name">${toTitleCase(it.series).replace(/</g, '&lt;')}</span>
+                        <span class="md-cr-ch">${String(it.chapterLabel || '').replace(/</g, '&lt;')}</span>
+                    </div>
+                </a>
+            </div>`;
+        }).join('');
+
+        shelf.innerHTML = `<div class="md-cr-hd">
+            <h3 class="md-cr-title">Continue Reading</h3>
+            <button type="button" class="md-cr-clear">Clear history</button>
+        </div><div class="md-cr-row">${cards}</div>`;
+
+        if (!existing) {
+            const hero = document.getElementById('md-hero');
+            if (hero) hero.after(shelf);
+            else {
+                const main = $('.site-content') || document.body;
+                main.prepend(shelf);
+            }
+        }
+
+        const clearBtn = $('.md-cr-clear', shelf);
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                const slugs = getHistory().map(x => x.slug);
+                setHistory([]);
+                slugs.forEach(s => removeFromList('Currently Reading', s));
+                shelf.remove();
+                toast('Cleared reading history');
+            });
+        }
+        $$('.md-cr-rm', shelf).forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                const slug = btn.dataset.rm;
+                setHistory(getHistory().filter(x => x.slug !== slug));
+                removeFromList('Currently Reading', slug);
+                buildContinueReading();
+            });
+        });
+    }
+
+    /* ====================================================================
+     *  CATALOG QUICK-SAVE & OVERVIEW ADD-TO-LIST
+     * ==================================================================== */
+    function decorateLibraryButtons() {
+        $$('div.page-item-detail .item-thumb').forEach(thumb => {
+            if (thumb.querySelector('.md-lib-save')) return;
+            const card = thumb.closest('div.page-item-detail');
+            const a = card && (card.querySelector('.post-title a') || thumb.querySelector('a'));
+            if (!a) return;
+            const url = a.href;
+            const slug = seriesSlugFromUrl(url);
+            const title = (a.textContent || a.getAttribute('title') || '').replace(/\s+/g, ' ').trim();
+            const img = thumb.querySelector('img');
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'md-lib-save' + (isInAnyList(slug) ? ' is-saved' : '');
+            btn.title = 'Save to list';
+            btn.setAttribute('aria-label', 'Save ' + title + ' to list');
+            btn.innerHTML = isInAnyList(slug) ? ICON.bookmarkFill : ICON.plus;
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                openListPicker({ slug, title: toTitleCase(title), url, cover: getImgSrc(img) }, () => {
+                    const saved = isInAnyList(slug);
+                    btn.classList.toggle('is-saved', saved);
+                    btn.innerHTML = saved ? ICON.bookmarkFill : ICON.plus;
+                });
+            });
+            thumb.appendChild(btn);
+        });
+
+        if (PAGE() === 'overview' && !document.getElementById('md-ov-lib-btn')) {
+            const host = $('.summary_content_wrap .post-status') || $('.summary_content') || $('.post-title');
+            if (host) {
+                const slug = seriesSlugFromUrl(location.href);
+                const title = ($('.post-title h1')?.textContent || document.title.split(' - ')[0] || '').trim();
+                const cover = getImgSrc($('.summary_image img'));
+                const btn = document.createElement('button');
+                btn.id = 'md-ov-lib-btn';
+                btn.type = 'button';
+                btn.className = 'md-ov-lib-btn';
+                const syncOv = () => {
+                    const saved = isInAnyList(slug);
+                    btn.classList.toggle('is-saved', saved);
+                    btn.innerHTML = (saved ? ICON.bookmarkFill : ICON.bookmark) + `<span>${saved ? 'In Library' : 'Add to List'}</span>`;
+                };
+                syncOv();
+                btn.addEventListener('click', () => {
+                    openListPicker({ slug, title: toTitleCase(title), url: location.href, cover }, syncOv);
+                });
+                host.appendChild(btn);
+            }
+        }
+    }
+
+    function openListPicker(item, onChange) {
+        let wrap = document.getElementById('md-list-picker');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'md-list-picker';
+            wrap.className = 'md-modal-backdrop';
+            wrap.addEventListener('click', e => { if (e.target === wrap) wrap.classList.remove('open'); });
+            document.body.appendChild(wrap);
+        }
+        const render = () => {
+            const lib = getLibrary();
+            const rows = Object.keys(lib).map(name => {
+                const has = lib[name].some(x => x.slug === item.slug);
+                return `<label class="md-picker-row">
+                    <span>${name.replace(/</g, '&lt;')} <small style="opacity:.6">(${lib[name].length})</small></span>
+                    <input type="checkbox" data-list="${name.replace(/"/g, '&quot;')}" ${has ? 'checked' : ''}>
+                </label>`;
+            }).join('');
+            wrap.innerHTML = `<div class="md-modal" role="dialog" aria-label="Save to list">
+                <div class="md-modal-hd">
+                    <h3>Save "${item.title.replace(/</g, '&lt;')}"</h3>
+                    <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
+                </div>
+                <div class="md-modal-bd">
+                    ${rows}
+                    <div class="md-lib-new-row">
+                        <input type="text" class="md-search-input" placeholder="New list name…">
+                        <button type="button">Add</button>
+                    </div>
+                </div>
+            </div>`;
+            $('.md-modal-close', wrap).addEventListener('click', () => wrap.classList.remove('open'));
+            $$('input[type="checkbox"]', wrap).forEach(cb => {
+                cb.addEventListener('change', () => {
+                    const ln = cb.dataset.list;
+                    if (cb.checked) upsertInList(ln, { ...item, addedAt: Date.now() });
+                    else removeFromList(ln, item.slug);
+                    if (onChange) onChange();
+                });
+            });
+            const inp = $('.md-lib-new-row input', wrap);
+            const addBtn = $('.md-lib-new-row button', wrap);
+            addBtn.addEventListener('click', () => {
+                const name = inp.value.trim();
+                if (!name) return;
+                upsertInList(name, { ...item, addedAt: Date.now() });
+                if (onChange) onChange();
+                render();
+            });
+        };
+        render();
+        wrap.classList.add('open');
+    }
+
+    function openLibraryModal() {
+        let wrap = document.getElementById('md-lib-modal');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'md-lib-modal';
+            wrap.className = 'md-modal-backdrop';
+            wrap.addEventListener('click', e => { if (e.target === wrap) wrap.classList.remove('open'); });
+            document.body.appendChild(wrap);
+        }
+        let activeTab = 'Currently Reading';
+        const render = () => {
+            const lib = getLibrary();
+            const names = Object.keys(lib);
+            if (!lib[activeTab]) activeTab = names[0] || 'Currently Reading';
+            const covers = getCoverCache();
+            const items = lib[activeTab] || [];
+            const tabsHtml = names.map(n => `<button type="button" class="md-lib-tab${n === activeTab ? ' active' : ''}" data-tab="${n.replace(/"/g, '&quot;')}">${n.replace(/</g, '&lt;')} (${lib[n].length})</button>`).join('');
+            const gridHtml = items.length ? items.map(it => {
+                const img = it.cover || covers[it.slug] || '';
+                const href = it.chapterUrl || it.url || '#';
+                return `<div class="md-lib-item">
+                    <button type="button" class="md-cr-rm" data-rm="${it.slug.replace(/"/g, '&quot;')}" title="Remove from list">&times;</button>
+                    <a href="${href.replace(/"/g, '&quot;')}" style="text-decoration:none;color:inherit">
+                        <div class="md-lib-thumb">${img ? `<img src="${img.replace(/"/g, '&quot;')}" alt="" loading="lazy">` : ''}</div>
+                        <div class="md-lib-info">${(it.title || it.slug).replace(/</g, '&lt;')}</div>
+                    </a>
+                </div>`;
+            }).join('') : '<p style="opacity:.7;margin:12px 0;font-size:13px">No series in this list yet.</p>';
+
+            wrap.innerHTML = `<div class="md-modal" role="dialog" aria-label="Library">
+                <div class="md-modal-hd">
+                    <h3>Library</h3>
+                    <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
+                </div>
+                <div class="md-modal-bd">
+                    <div class="md-lib-tabs">${tabsHtml}</div>
+                    <div class="md-lib-grid">${gridHtml}</div>
+                    <div class="md-lib-new-row">
+                        <input type="text" class="md-search-input" placeholder="Create custom list…">
+                        <button type="button">Create</button>
+                    </div>
+                </div>
+            </div>`;
+            $('.md-modal-close', wrap).addEventListener('click', () => wrap.classList.remove('open'));
+            $$('.md-lib-tab', wrap).forEach(t => t.addEventListener('click', () => { activeTab = t.dataset.tab; render(); }));
+            $$('.md-cr-rm', wrap).forEach(b => b.addEventListener('click', () => { removeFromList(activeTab, b.dataset.rm); render(); }));
+            const inp = $('.md-lib-new-row input', wrap);
+            $('.md-lib-new-row button', wrap).addEventListener('click', () => {
+                const name = inp.value.trim();
+                if (!name) return;
+                const l = getLibrary();
+                if (!l[name]) l[name] = [];
+                setLibrary(l);
+                activeTab = name;
+                render();
+            });
+        };
+        render();
+        wrap.classList.add('open');
+    }
+
+    /* ====================================================================
+     *  READER CHAPTER LIST QUICK-SWITCHER (#md-rchap-modal)
+     * ==================================================================== */
+    let cachedReaderChapters = null;
+
+    async function getReaderChapterList() {
+        const ctx = chapterContext();
+        const sel = $('select.single-chapter-select');
+        if (sel && sel.options.length > 1) {
+            return [...sel.options].map(opt => {
+                let href = opt.dataset.redirect || opt.value || '';
+                if (href && !/^https?:\/\//i.test(href) && ctx.seriesUrl) {
+                    try { href = new URL(href, ctx.seriesUrl).href; } catch (_) {}
+                }
+                return { href, label: opt.textContent.trim(), date: '', current: opt.selected };
+            });
+        }
+        if (cachedReaderChapters) return cachedReaderChapters;
+        const list = await fetchMadaraChapters(ctx.seriesUrl);
+        cachedReaderChapters = list.map(ch => ({
+            ...ch,
+            current: location.href.replace(/\/+$/, '') === ch.href.replace(/\/+$/, '')
+        }));
+        return cachedReaderChapters;
+    }
+
+    async function toggleChapterModal() {
+        let wrap = document.getElementById('md-rchap-modal');
+        const dockBtn = reader.dock && $('[data-act="chapters"]', reader.dock);
+        if (wrap && wrap.classList.contains('open')) {
+            wrap.classList.remove('open');
+            if (dockBtn) dockBtn.classList.remove('is-on');
+            return;
+        }
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'md-rchap-modal';
+            wrap.className = 'md-modal-backdrop';
+            wrap.addEventListener('click', e => {
+                if (e.target === wrap) {
+                    wrap.classList.remove('open');
+                    if (dockBtn) dockBtn.classList.remove('is-on');
+                }
+            });
+            document.body.appendChild(wrap);
+        }
+        wrap.innerHTML = `<div class="md-modal" role="dialog" aria-label="Chapters">
+            <div class="md-modal-hd">
+                <h3>Chapters</h3>
+                <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
+            </div>
+            <div class="md-modal-bd">
+                <input type="search" class="md-search-input" placeholder="Filter chapters…">
+                <div class="md-rchap-list"><p style="opacity:.7;font-size:13px">Loading chapters…</p></div>
+            </div>
+        </div>`;
+        wrap.classList.add('open');
+        if (dockBtn) dockBtn.classList.add('is-on');
+        $('.md-modal-close', wrap).addEventListener('click', () => {
+            wrap.classList.remove('open');
+            if (dockBtn) dockBtn.classList.remove('is-on');
+        });
+
+        const chapters = await getReaderChapterList();
+        const listEl = $('.md-rchap-list', wrap);
+        const inp = $('.md-search-input', wrap);
+        const render = q => {
+            const needle = (q || '').trim().toLowerCase();
+            const filtered = needle ? chapters.filter(c => c.label.toLowerCase().includes(needle)) : chapters;
+            listEl.innerHTML = filtered.length ? filtered.map(c =>
+                `<a class="md-rchap-item${c.current ? ' is-cur' : ''}" href="${c.href.replace(/"/g, '&quot;')}">
+                    <span>${c.label.replace(/</g, '&lt;')}</span>
+                    ${c.date ? `<span class="md-rchap-date">${c.date.replace(/</g, '&lt;')}</span>` : ''}
+                </a>`
+            ).join('') : '<p style="opacity:.7;font-size:13px">No matching chapters.</p>';
+        };
+        render('');
+        inp.addEventListener('input', () => render(inp.value));
+        const curEl = $('.md-rchap-item.is-cur', listEl);
+        if (curEl) curEl.scrollIntoView({ block: 'center' });
+    }
+
+    /* ====================================================================
+     *  SETTINGS MODAL (#md-settings-modal)
+     * ==================================================================== */
+    function openSettingsModal() {
+        let wrap = document.getElementById('md-settings-modal');
+        if (!wrap) {
+            wrap = document.createElement('div');
+            wrap.id = 'md-settings-modal';
+            wrap.className = 'md-modal-backdrop';
+            wrap.addEventListener('click', e => { if (e.target === wrap) wrap.classList.remove('open'); });
+            document.body.appendChild(wrap);
+        }
+        const render = () => {
+            const curTheme = root.dataset.mdTheme || 'dark';
+            const speed = Number(store.get('autoScrollSpeed', 150)) || 150;
+            const progSide = store.get('progSide', 'right');
+
+            wrap.innerHTML = `<div class="md-modal" role="dialog" aria-label="Settings">
+                <div class="md-modal-hd">
+                    <h3>Settings</h3>
+                    <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
+                </div>
+                <div class="md-modal-bd">
+                    <div class="md-set-sec">
+                        <span class="md-set-lbl">Theme</span>
+                        <div class="md-seg" data-g="theme">
+                            <button type="button" data-v="light" class="${curTheme === 'light' ? 'active' : ''}">Light</button>
+                            <button type="button" data-v="dark" class="${curTheme === 'dark' ? 'active' : ''}">Dark</button>
+                        </div>
+                    </div>
+                    <div class="md-set-sec">
+                        <span class="md-set-lbl">Auto-Scroll Speed</span>
+                        <div class="md-range-row">
+                            <input type="range" id="md-set-speed" min="60" max="400" step="10" value="${speed}">
+                            <span class="md-range-val" id="md-set-speed-val">${speed} px/s</span>
+                        </div>
+                    </div>
+                    <div class="md-set-sec">
+                        <span class="md-set-lbl">Progress Rail</span>
+                        <div class="md-seg" data-g="prog">
+                            <button type="button" data-v="left" class="${progSide === 'left' ? 'active' : ''}">Left</button>
+                            <button type="button" data-v="right" class="${progSide === 'right' ? 'active' : ''}">Right</button>
+                            <button type="button" data-v="off" class="${progSide === 'off' ? 'active' : ''}">Off</button>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+
+            $('.md-modal-close', wrap).addEventListener('click', () => wrap.classList.remove('open'));
+            $$('[data-g="theme"] button', wrap).forEach(b => b.addEventListener('click', () => {
+                setTheme(b.dataset.v);
+                render();
+            }));
+            const spInp = $('#md-set-speed', wrap);
+            const spVal = $('#md-set-speed-val', wrap);
+            spInp.addEventListener('input', () => {
+                const v = Number(spInp.value) || 150;
+                store.set('autoScrollSpeed', v);
+                spVal.textContent = v + ' px/s';
+            });
+            $$('[data-g="prog"] button', wrap).forEach(b => b.addEventListener('click', () => {
+                store.set('progSide', b.dataset.v);
+                const rail = document.getElementById('md-progress');
+                if (rail && rail.__update) rail.__update();
+                render();
+            }));
+        };
+        render();
+        wrap.classList.add('open');
+    }
+
+    /* ====================================================================
+     *  SERIES PAGE CHAPTER FILTER & SORT (#md-ch-filterbar)
+     * ==================================================================== */
+    function setupChapterFilterBar() {
+        if (PAGE() !== 'overview') return;
+        const ul = $('ul.main.version-chap');
+        if (!ul || document.getElementById('md-ch-filterbar')) return;
+
+        const bar = document.createElement('div');
+        bar.id = 'md-ch-filterbar';
+        let asc = false;
+        bar.innerHTML = `<input type="search" placeholder="Search chapters…" aria-label="Search chapters">
+            <button type="button" class="md-ch-sort-btn">${ICON.sortDesc}<span>Ch. Highest</span></button>
+            <span class="md-ch-count"></span>`;
+        ul.parentNode.insertBefore(bar, ul);
+
+        const inp = $('input', bar);
+        const sortBtn = $('.md-ch-sort-btn', bar);
+        const countEl = $('.md-ch-count', bar);
+
+        const parseNum = li => {
+            const t = (li.querySelector('a')?.textContent || '');
+            const m = t.match(/(\d+(?:\.\d+)?)/);
+            return m ? parseFloat(m[1]) : -1;
+        };
+
+        const applyFilter = () => {
+            const q = inp.value.trim().toLowerCase();
+            const items = [...ul.querySelectorAll(':scope > li.wp-manga-chapter')];
+            let vis = 0;
+            items.forEach(li => {
+                const ok = !q || (li.textContent || '').toLowerCase().includes(q);
+                li.style.display = ok ? '' : 'none';
+                if (ok) vis++;
+            });
+            countEl.textContent = `${vis} / ${items.length}`;
+        };
+
+        inp.addEventListener('input', applyFilter);
+        sortBtn.addEventListener('click', () => {
+            asc = !asc;
+            const items = [...ul.querySelectorAll(':scope > li.wp-manga-chapter')];
+            items.sort((a, b) => asc ? parseNum(a) - parseNum(b) : parseNum(b) - parseNum(a));
+            items.forEach(li => ul.appendChild(li));
+            sortBtn.innerHTML = (asc ? ICON.sortAsc : ICON.sortDesc) + `<span>${asc ? 'Ch. Lowest' : 'Ch. Highest'}</span>`;
+        });
+        applyFilter();
+    }
+
+    /* ====================================================================
      *  RUN LOOP & LIFECYCLE
      * ==================================================================== */
     injectStyles();
@@ -6525,12 +8048,14 @@
             fixCommentImages();
             try { restructureComments(); setupCommentCollapse(); setupCommentLoading(); tagHeadings(); lazyImages(); clearTimeout(trimTimer); trimTimer = setTimeout(trimHeroGap, 350); } catch (_) {}
             try { setupLoadMore(); } catch (_) {}
+            try { harvestCovers(); } catch (_) {}
             const page = PAGE();
             if (page === 'list') {
                 buildHero();
+                try { buildContinueReading(); decorateLibraryButtons(); } catch (_) {}
             } else if (page === 'overview') {
                 setupSelect(null, SEL_MANGAREAD);
-                try { setupCoverBackdrop(); } catch (_) {}
+                try { setupCoverBackdrop(); setupChapterFilterBar(); decorateLibraryButtons(); } catch (_) {}
             } else if (page === 'chapter') {
                 setupReader();
                 buildReaderBar();
@@ -6562,7 +8087,7 @@
         // Skip mutations caused solely by our own UI widgets
         if (muts.every(m => {
             const el = m.target.nodeType === 1 ? m.target : m.target.parentElement;
-            return el && el.closest('#md-dock, #md-toast, #md-top, #md-sel-bar, #md-hero');
+            return el && el.closest('#md-dock, #md-toast, #md-top, #md-sel-bar, #md-hero, #md-continue-reading, #md-progress, #md-ch-filterbar, .md-modal-backdrop');
         })) return;
         schedule();
     }).observe(document.documentElement, {
