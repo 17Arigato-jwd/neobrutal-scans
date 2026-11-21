@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.3
+// @version      2026-11-21.4
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -92,13 +92,14 @@
                     const reqUrl = typeof input === 'string' ? input : (input && input.url ? input.url : '');
                     if (reqUrl) {
                         const u = new URL(reqUrl, location.href);
-                        if (u.origin === location.origin && /\/chapters\b/i.test(u.pathname)) {
-                            const m = u.pathname.match(/\/manga\/([^/]+)\/chapters/i);
-                            if (m) {
-                                sniffedChapterApi.templateUrl = u.pathname + u.search;
+                        if (u.origin === location.origin && /chapter/i.test(u.pathname)) {
+                            const hidFromUrl = (u.pathname.match(/\/(?:manga|title|comic|series)\/([^/]+)\/chapters/i)?.[1])
+                                || (location.pathname.match(/^\/title\/([a-z0-9]+)(?:-|$)/i)?.[1]);
+                            if (hidFromUrl) {
                                 p.then(res => res && res.ok && res.clone().json().then(json => {
                                     if (extractApiChapterItems(json).length) {
-                                        sniffedChapterApi.byHid.set(m[1], { url: u.href, json });
+                                        sniffedChapterApi.templateUrl = u.pathname + u.search;
+                                        sniffedChapterApi.byHid.set(hidFromUrl, { url: u.href, json });
                                     }
                                 }).catch(() => {})).catch(() => {});
                             }
@@ -769,8 +770,8 @@
             from { opacity: 1; transform: translateX(0); }
             to   { opacity: 0; transform: translateX(28px); }
         }
-        /* Keep [role="dialog"] full-screen backdrop transparent/dimmed; style its inner panel as the centered card */
-        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast), [aria-modal="true"]:not(.settings-dialog)) {
+        /* Keep [role="dialog"] full-screen backdrop clean; style only non-empty content panel (skip backdrops & Turnstile) */
+        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(:has(iframe[src*="cloudflare"]))) {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -783,8 +784,8 @@
             box-shadow: none !important;
             max-height: none !important;
         }
-        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast), [aria-modal="true"]:not(.settings-dialog)) > :first-child,
-        html[data-md-site="comix"] dialog[open] {
+        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(:has(iframe[src*="cloudflare"]))) > :not(:empty):not([class*="backdrop" i]):not([class*="overlay" i]):not([class*="scrim" i]),
+        html[data-md-site="comix"] dialog[open]:not(:has(iframe[src*="cloudflare"])) {
             background: var(--card) !important;
             color: var(--ink) !important;
             border: var(--bw) solid var(--bd) !important;
@@ -1678,6 +1679,20 @@
             border-top-color: var(--yellow); border-radius: 50%;
             animation: mdSpin .75s linear infinite; flex-shrink: 0;
         }
+        #md-all-chaps .md-ch-morebar {
+            display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px;
+            padding: 10px 14px; background: var(--soft); border-top: 2px solid var(--bd);
+        }
+        #md-all-chaps .md-ch-morebar[hidden] { display: none !important; }
+        #md-all-chaps .md-ch-morebtn {
+            height: 34px; padding: 0 14px; background: var(--card); color: var(--ink);
+            border: 2px solid var(--bd); border-radius: 8px; box-shadow: var(--sh-sm);
+            font: 800 12px var(--f-sans); text-transform: uppercase; letter-spacing: .03em; cursor: pointer;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out;
+        }
+        #md-all-chaps .md-ch-morebtn:hover { background: var(--yellow); color: var(--on-ink); transform: translate(-1px, -1px); box-shadow: var(--sh); }
+        html[data-md-theme="light"] #md-all-chaps .md-ch-morebtn:hover { color: #111111; }
+        #md-all-chaps .md-ch-morebtn:active { transform: scale(0.96); }
         html[data-md-site="comix"] .mchap-toolbar { padding: 10px; border-radius: 14px !important; }
         html[data-md-site="comix"] .mchap-list {
             background: var(--card) !important;
@@ -3846,18 +3861,43 @@
         return [...map.values()].sort((a, b) => b.sortNum - a.sortNum);
     }
 
-    async function fetchAllChaptersApi(hid, seriesPath) {
-        if (!hid) return [];
+    const CHAP_CACHE_TTL = 15 * 60 * 1000;
+
+    function isTurnstileVisible() {
+        return !!($('iframe[src*="challenges.cloudflare.com"]') || $$('[role="dialog"], [aria-modal="true"]').some(d => /verify you.?re human/i.test(d.textContent || '')));
+    }
+
+    function readChapCache(seriesPath) {
+        try {
+            const raw = sessionStorage.getItem('md-comix-chaps:' + seriesPath);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !Array.isArray(parsed.items) || !parsed.items.length) return null;
+            if (Date.now() - (parsed.ts || 0) > CHAP_CACHE_TTL) return null;
+            return parsed;
+        } catch (_) { return null; }
+    }
+
+    function writeChapCache(seriesPath, items, complete) {
+        try {
+            sessionStorage.setItem('md-comix-chaps:' + seriesPath, JSON.stringify({ ts: Date.now(), complete: !!complete, items }));
+        } catch (_) {}
+    }
+
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+    async function fetchAllChaptersApi(hid, seriesPath, onProgress) {
+        if (!hid || isTurnstileVisible()) return { items: [], complete: false, blocked: isTurnstileVisible() };
+        // Give Comix's own initial chapter request a brief moment to be sniffed
+        if (!sniffedChapterApi.byHid.has(hid)) await sleep(220);
+
         const cached = sniffedChapterApi.byHid.get(hid);
         const baseTemplates = [];
         if (cached?.url) baseTemplates.push(cached.url);
         if (sniffedChapterApi.templateUrl) {
-            baseTemplates.push(sniffedChapterApi.templateUrl.replace(/\/manga\/[^/]+\/chapters/i, `/manga/${hid}/chapters`));
+            baseTemplates.push(sniffedChapterApi.templateUrl.replace(/\/(?:manga|title|comic|series)\/[^/]+\/chapters/i, `/manga/${hid}/chapters`));
         }
-        baseTemplates.push(
-            `/api/v2/manga/${hid}/chapters?limit=100&order[number]=desc&page=1`,
-            `/api/v2/manga/${hid}/chapters?limit=100&page=1`
-        );
+        baseTemplates.push(`/api/v2/manga/${hid}/chapters?limit=100&order[number]=desc&page=1`);
 
         const buildPageUrl = (tpl, pageNum) => {
             const u = new URL(tpl, location.origin);
@@ -3869,8 +3909,10 @@
         let workingTpl = null;
         let firstJson = null;
         for (const tpl of baseTemplates) {
+            if (isTurnstileVisible()) return { items: [], complete: false, blocked: true };
             try {
                 const res = await fetch(buildPageUrl(tpl, 1), { credentials: 'same-origin' });
+                if (res.status === 403 || res.status === 429) return { items: [], complete: false, blocked: true };
                 if (!res.ok) continue;
                 const json = await res.json();
                 if (extractApiChapterItems(json).length) {
@@ -3880,30 +3922,35 @@
                 }
             } catch (_) {}
         }
-        if (!workingTpl || !firstJson) return [];
+        if (!workingTpl || !firstJson) return { items: [], complete: false, blocked: false };
 
         const allRaw = [...extractApiChapterItems(firstJson)];
         const pag = firstJson.result?.pagination || firstJson.pagination || firstJson.meta || {};
-        const lastPage = Math.min(30, Number(pag.last_page || pag.total_pages || Math.ceil((pag.total || allRaw.length) / (pag.limit || pag.per_page || 100)) || 1));
+        const lastPage = Math.min(100, Number(pag.last_page || pag.total_pages || Math.ceil((pag.total || allRaw.length) / (pag.limit || pag.per_page || 100)) || 1));
 
-        if (lastPage > 1) {
-            const pages = [];
-            for (let p = 2; p <= lastPage; p++) pages.push(p);
-            let idx = 0;
-            async function worker() {
-                while (idx < pages.length) {
-                    const p = pages[idx++];
-                    try {
-                        const res = await fetch(buildPageUrl(workingTpl, p), { credentials: 'same-origin' });
-                        if (!res.ok) continue;
-                        allRaw.push(...extractApiChapterItems(await res.json()));
-                    } catch (_) {}
-                }
+        onProgress?.(1, lastPage, allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
+
+        let complete = true;
+        let blocked = false;
+        for (let p = 2; p <= lastPage; p++) {
+            await sleep(420); // Polite pacing so Cloudflare Turnstile never triggers
+            if (isTurnstileVisible()) { complete = false; blocked = true; break; }
+            try {
+                const res = await fetch(buildPageUrl(workingTpl, p), { credentials: 'same-origin' });
+                if (res.status === 403 || res.status === 429) { complete = false; blocked = true; break; }
+                if (!res.ok) { complete = false; break; }
+                const json = await res.json();
+                const items = extractApiChapterItems(json);
+                if (!items.length) break;
+                allRaw.push(...items);
+                onProgress?.(p, lastPage, allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
+            } catch (_) {
+                complete = false;
+                break;
             }
-            await Promise.all(Array.from({ length: Math.min(4, pages.length) }, worker));
         }
 
-        return allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean);
+        return { items: allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean), complete, blocked };
     }
 
     let seriesState = null;
@@ -3986,9 +4033,22 @@
         const loaderEl = document.createElement('div');
         loaderEl.className = 'md-ch-loader';
         loaderEl.hidden = true;
-        loaderEl.innerHTML = '<span class="md-ch-spinner" aria-hidden="true"></span><span class="md-ch-loader-txt">Loading all chapters…</span>';
+        loaderEl.innerHTML = '<span class="md-ch-spinner" aria-hidden="true"></span><span class="md-ch-loader-txt">Loading chapters…</span>';
 
-        box.append(head, scrollWrap, loaderEl);
+        const moreBar = document.createElement('div');
+        moreBar.className = 'md-ch-morebar';
+        moreBar.hidden = true;
+        const loadMoreBtn = document.createElement('button');
+        loadMoreBtn.type = 'button';
+        loadMoreBtn.className = 'md-ch-morebtn';
+        loadMoreBtn.textContent = 'Load next page';
+        const loadAllBtn = document.createElement('button');
+        loadAllBtn.type = 'button';
+        loadAllBtn.className = 'md-ch-morebtn';
+        loadAllBtn.textContent = 'Load all chapters';
+        moreBar.append(loadMoreBtn, loadAllBtn);
+
+        box.append(head, scrollWrap, loaderEl, moreBar);
 
         function visibleGroups() {
             const q = filterQuery.trim().toLowerCase();
@@ -4277,74 +4337,185 @@
             if (t && msg) t.textContent = msg;
         };
 
-        async function crawlHiddenPagination() {
-            const footTxt = $('.mchap-foot', chaptersSection)?.textContent || '';
-            const totalMatch = footTxt.match(/of\s+(\d+)\s+items/i);
-            const totalItems = totalMatch ? Number(totalMatch[1]) : 0;
-            const estPages = totalItems > 20 ? Math.min(40, Math.ceil(totalItems / 20)) : 0;
-            const hasPager = !!$('nav.npager button[aria-label="Next page"], nav.npager .npager__num', chaptersSection);
-            if (!hasPager) return;
+        let collectedRaw = [...scrapeDomChapters(chaptersSection)];
+        let isComplete = false;
+        let isCrawling = false;
 
-            const collected = [...scrapeDomChapters(chaptersSection)];
-            let pageNum = 1;
-            const maxPages = Math.max(estPages, 30);
-
-            setLoader(true, estPages ? `Loading all chapters (page 1 / ${estPages})…` : 'Loading all chapters…');
-
-            while (pageNum < maxPages) {
-                if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
-                if (!nextBtn || nextBtn.disabled || nextBtn.getAttribute('aria-disabled') === 'true') break;
-
-                const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
-                pageNum++;
-                setLoader(true, estPages ? `Loading all chapters (page ${pageNum} / ${estPages})…` : `Loading page ${pageNum}…`);
-                nextBtn.click();
-
-                const changed = await new Promise(resolve => {
-                    let done = false;
-                    const finish = val => { if (!done) { done = true; obs.disconnect(); clearTimeout(tm); resolve(val); } };
-                    const check = () => {
-                        const sig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
-                        if (sig && sig !== prevSig) finish(true);
-                    };
-                    const obs = new MutationObserver(check);
-                    obs.observe(chaptersSection, { childList: true, subtree: true, attributes: true });
-                    const tm = setTimeout(() => finish(false), 3500);
-                    check();
-                });
-
-                if (!changed || seriesState?.path !== seriesPath || !box.isConnected) break;
-                const pageRows = scrapeDomChapters(chaptersSection);
-                if (!pageRows.length) break;
-                collected.push(...pageRows);
-                groups = groupChaptersByNumber(collected);
-                renderRows();
-            }
-
-            const page1Btn = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
-            if (page1Btn && !page1Btn.classList.contains('is-active')) page1Btn.click();
+        function hasMoreHiddenPages() {
+            const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
+            return !!(nextBtn && !nextBtn.disabled && nextBtn.getAttribute('aria-disabled') !== 'true');
         }
 
-        const hid = extractSeriesHid(seriesPath);
-        setLoader(true, 'Loading all chapters…');
-        fetchAllChaptersApi(hid, seriesPath).then(async allChapters => {
-            if (seriesState?.path !== seriesPath || !box.isConnected) return;
-            if (allChapters.length > 20) {
-                groups = groupChaptersByNumber(allChapters);
-                renderRows();
-            } else {
-                await crawlHiddenPagination();
+        function refreshMoreBar(pausedForChallenge = false) {
+            if (isComplete || isCrawling || !hasMoreHiddenPages()) {
+                moreBar.hidden = true;
+                return;
             }
-        }).catch(async () => {
-            if (seriesState?.path !== seriesPath || !box.isConnected) return;
-            await crawlHiddenPagination();
-        }).finally(() => {
-            if (seriesState?.path !== seriesPath || !box.isConnected) return;
+            moreBar.hidden = false;
+            loadMoreBtn.textContent = pausedForChallenge ? 'Resume loading' : 'Load next page';
+        }
+
+        function restoreCleanUrl() {
+            try {
+                const u = new URL(location.href);
+                if (u.searchParams.has('page')) {
+                    u.searchParams.delete('page');
+                    history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+                }
+            } catch (_) {}
+        }
+
+        async function waitForDomPageChange(prevSig) {
+            return new Promise(resolve => {
+                let done = false;
+                const finish = val => { if (!done) { done = true; obs.disconnect(); clearTimeout(tm); resolve(val); } };
+                const check = () => {
+                    if (isTurnstileVisible()) { finish('blocked'); return; }
+                    const sig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                    if (sig && sig !== prevSig) finish('ok');
+                };
+                const obs = new MutationObserver(check);
+                obs.observe(chaptersSection, { childList: true, subtree: true, attributes: true });
+                const tm = setTimeout(() => finish('timeout'), 4500);
+                check();
+            });
+        }
+
+        async function stepHiddenPages(maxSteps = 1) {
+            if (isCrawling || isComplete) return;
+            if (isTurnstileVisible()) {
+                refreshMoreBar(true);
+                toast('Complete the Cloudflare check, then click Resume loading.', 3000);
+                return;
+            }
+            isCrawling = true;
+            loadingAll = true;
+            moreBar.hidden = true;
+            let blocked = false;
+            let steps = 0;
+
+            try {
+                // If user landed on ?page=32 from an older URL, jump back to page 1 first so we don't miss recent chapters
+                const activeNum = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
+                if (activeNum > 1 && collectedRaw.length <= 20) {
+                    const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
+                    if (p1) {
+                        const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                        setLoader(true, 'Jumping back to page 1…');
+                        p1.click();
+                        const st = await waitForDomPageChange(prevSig);
+                        if (st === 'ok') {
+                            collectedRaw = [...scrapeDomChapters(chaptersSection)];
+                            groups = groupChaptersByNumber(collectedRaw);
+                            renderRows();
+                        }
+                    }
+                }
+
+                const footTxt = $('.mchap-foot', chaptersSection)?.textContent || '';
+                const totalMatch = footTxt.match(/of\s+(\d+)\s+items/i);
+                const estPages = totalMatch ? Math.ceil(Number(totalMatch[1]) / 20) : 0;
+
+                while (steps < maxSteps) {
+                    if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                    if (isTurnstileVisible()) { blocked = true; break; }
+                    const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
+                    if (!nextBtn || nextBtn.disabled || nextBtn.getAttribute('aria-disabled') === 'true') {
+                        isComplete = true;
+                        break;
+                    }
+                    const curPage = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
+                    const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                    setLoader(true, estPages ? `Loading chapters (page ${curPage + 1} / ${estPages})…` : `Loading page ${curPage + 1}…`);
+                    nextBtn.click();
+
+                    const st = await waitForDomPageChange(prevSig);
+                    if (st === 'blocked') { blocked = true; break; }
+                    if (st !== 'ok' || seriesState?.path !== seriesPath || !box.isConnected) break;
+
+                    const pageRows = scrapeDomChapters(chaptersSection);
+                    if (!pageRows.length) break;
+                    collectedRaw.push(...pageRows);
+                    groups = groupChaptersByNumber(collectedRaw);
+                    renderRows();
+                    steps++;
+
+                    if (steps < maxSteps) await sleep(650); // Human-paced delay to avoid Turnstile
+                }
+
+                if (!hasMoreHiddenPages()) isComplete = true;
+                writeChapCache(seriesPath, collectedRaw, isComplete);
+
+                // Always return URL to clean page 1 so reloads never get stuck on ?page=32
+                if (isComplete) {
+                    const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
+                    if (p1 && !p1.classList.contains('is-active')) p1.click();
+                    restoreCleanUrl();
+                } else {
+                    restoreCleanUrl();
+                }
+            } finally {
+                isCrawling = false;
+                loadingAll = false;
+                setLoader(false);
+                renderRows();
+                refreshMoreBar(blocked);
+                if (blocked) toast('Paused for Cloudflare check — click Resume after verifying.', 3200);
+            }
+        }
+
+        loadMoreBtn.addEventListener('click', () => stepHiddenPages(3));
+        loadAllBtn.addEventListener('click', () => stepHiddenPages(Infinity));
+
+        // Gentle infinite scroll: loads 1 more page when scrolling near bottom (if not already complete)
+        scrollWrap.addEventListener('scroll', () => {
+            if (isComplete || isCrawling || isTurnstileVisible()) return;
+            if (scrollWrap.scrollTop + scrollWrap.clientHeight >= scrollWrap.scrollHeight - 80) {
+                stepHiddenPages(1);
+            }
+        }, { passive: true });
+
+        // Boot sequence: 1) Check 15-min sessionStorage cache -> 2) Try polite limit=100 API -> 3) Clean on-demand / infinite-scroll pager
+        const cachedData = readChapCache(seriesPath);
+        if (cachedData && cachedData.items.length >= collectedRaw.length) {
+            collectedRaw = cachedData.items;
+            isComplete = !!cachedData.complete;
             loadingAll = false;
-            setLoader(false);
+            groups = groupChaptersByNumber(collectedRaw);
+            restoreCleanUrl();
             renderRows();
-        });
+            refreshMoreBar(false);
+        } else {
+            const hid = extractSeriesHid(seriesPath);
+            setLoader(true, 'Loading chapters…');
+            fetchAllChaptersApi(hid, seriesPath, (p, total, partial) => {
+                if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                collectedRaw = partial;
+                groups = groupChaptersByNumber(collectedRaw);
+                setLoader(true, `Loading all chapters (${p}/${total})…`);
+                renderRows();
+            }).then(result => {
+                if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                if (result.items.length) {
+                    collectedRaw = result.items;
+                    isComplete = result.complete;
+                    groups = groupChaptersByNumber(collectedRaw);
+                    writeChapCache(seriesPath, collectedRaw, isComplete);
+                }
+                loadingAll = false;
+                setLoader(false);
+                restoreCleanUrl();
+                renderRows();
+                refreshMoreBar(result.blocked);
+            }).catch(() => {
+                if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                loadingAll = false;
+                setLoader(false);
+                restoreCleanUrl();
+                renderRows();
+                refreshMoreBar(false);
+            });
+        }
     }
 
     /* ====================================================================
