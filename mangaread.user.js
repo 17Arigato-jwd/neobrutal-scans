@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.4
+// @version      2026-11-21.5
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -6587,7 +6587,261 @@
         @media (max-width: 768px) {
             .md-cr-card { flex: 0 0 156px !important; }
             .md-subnav-btn span { display: none !important; }
-            .md-subnav-btn { width: 36px !important; padding: 0 !important; margin-left: 8px !important; }
+            .md-subnav-btn { width: 32px !important; padding: 0 !important; margin-left: 4px !important; }
+        }
+        /* ================================================================
+         *  v2026-11-21.5 POLISH:
+         *  - Sub-nav dropdown clipping fix + header-link Browse button
+         *  - Advanced button styled inside collapsible search bar
+         *  - Cover quality (object-fit, low-res ambient backdrop, SVG sharpen)
+         *  - Length-breaking username & avatar overflow guard
+         *  - Heavy mobile optimization (zero header clip, no section overlap)
+         * ================================================================ */
+
+        /* 1. Browse button matching old header text links (no heavy box) */
+        .md-subnav-btn {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 7px !important;
+            margin-left: 20px !important;
+            padding: 6px 10px !important;
+            background: transparent !important;
+            color: #ffffff !important;
+            border: 2px solid transparent !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+            font: 800 13.5px/1 'DM Sans', sans-serif !important;
+            letter-spacing: 0.04em !important;
+            text-transform: uppercase !important;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25) !important;
+            cursor: pointer !important;
+            transition: transform 0.14s ease, background-color 0.15s ease, border-color 0.15s ease !important;
+        }
+        .md-subnav-btn:hover,
+        .md-subnav-btn.is-on {
+            background: rgba(0, 0, 0, 0.18) !important;
+            border-color: rgba(255, 255, 255, 0.45) !important;
+        }
+        .md-subnav-btn:active { transform: scale(0.96) !important; }
+        .md-subnav-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+
+        /* 2. Sub-nav dropdown clipping fix (no peeking line under GENRES) */
+        header.site-header .c-sub-header-nav,
+        header.site-header .c-sub-header-nav .sub-nav_content,
+        header.site-header .c-sub-header-nav .sub-nav_list {
+            overflow: visible !important;
+        }
+        header.site-header .c-sub-header-nav .sub-nav_list li.menu-item-has-children > ul.sub-menu {
+            display: none !important;
+        }
+        header.site-header .c-sub-header-nav .sub-nav_list li.menu-item-has-children:hover > ul.sub-menu,
+        header.site-header .c-sub-header-nav .sub-nav_list li.menu-item-has-children:focus-within > ul.sub-menu {
+            display: grid !important;
+        }
+
+        /* 3. Advanced link inside collapsible search bar */
+        .search-main-menu a.md-adv-in-search,
+        form.manga-search-form a.md-adv-in-search {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 38px !important;
+            padding: 0 14px !important;
+            border-radius: 8px !important;
+            border: 2px solid var(--bd) !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            text-decoration: none !important;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+        }
+        .search-main-menu a.md-adv-in-search:hover,
+        form.manga-search-form a.md-adv-in-search:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+
+        /* 4. Crisp Cover Rendering + Low-Res Ambient Backdrop + Light SVG Sharpen */
+        div.page-item-detail .item-thumb img,
+        .popular-item-wrap .popular-img img,
+        .md-cr-thumb img,
+        .md-lib-thumb img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            object-position: 50% 18% !important;
+        }
+        .md-sharpen {
+            filter: url(#md-sharpen) contrast(1.03);
+        }
+        .md-lowres-wrap {
+            position: relative !important;
+            overflow: hidden !important;
+            background: var(--bg) !important;
+        }
+        .md-lowres-wrap::before {
+            content: "";
+            position: absolute;
+            inset: -14px;
+            background-image: var(--md-lowres-bg);
+            background-size: cover;
+            background-position: center;
+            filter: blur(14px) brightness(0.75) saturate(1.1);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .md-lowres-wrap img {
+            position: relative !important;
+            z-index: 1 !important;
+            object-fit: contain !important;
+            object-position: center !important;
+        }
+
+        /* 5. Length-breaking usernames & broken avatar circle guard */
+        html body #wpdcom .wpd-avatar {
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+            border-radius: 50% !important;
+            overflow: hidden !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex-shrink: 0 !important;
+            border: 2px solid var(--bd) !important;
+            background: var(--bg) !important;
+        }
+        html body #wpdcom .wpd-avatar img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            border: none !important;
+        }
+        .md-av-fallback {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary);
+            color: #ffffff;
+            font: 800 17px/1 'JetBrains Mono', monospace;
+        }
+        html body #wpdcom .wpd-comment-header {
+            display: flex !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            gap: 6px 10px !important;
+            padding-right: 42px !important;
+            min-width: 0 !important;
+        }
+        html body #wpdcom .wpd-comment-author,
+        html body #wpdcom .wpd-comment-author a {
+            max-width: min(220px, 52vw) !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+            overflow-wrap: anywhere !important;
+        }
+
+        /* 6. Heavy Mobile Optimization (Zero Clipping, Zero Overlap, Clean 2-Col Grid) */
+        @media (max-width: 768px) {
+            html, body {
+                overflow-x: clip !important;
+            }
+            header.site-header .main-navigation_wrap {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                gap: 6px !important;
+                padding: 8px 10px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            header.site-header .wrap_branding {
+                min-width: 0 !important;
+                flex: 0 1 auto !important;
+            }
+            header.site-header .wrap_branding img,
+            header.site-header .logo img {
+                max-width: 132px !important;
+                height: auto !important;
+            }
+            .md-subnav-btn {
+                margin-left: 4px !important;
+                padding: 5px 7px !important;
+                gap: 4px !important;
+            }
+            header.site-header .search-navigation,
+            header.site-header .search-navigation .main-menu-search {
+                gap: 6px !important;
+                flex-shrink: 0 !important;
+                margin-left: auto !important;
+            }
+            header.site-header a.open-search-main-menu,
+            header.site-header .md-hdr-btn {
+                width: 32px !important;
+                height: 32px !important;
+            }
+            header.site-header #md-theme {
+                transform: scale(0.86) !important;
+                transform-origin: right center !important;
+            }
+            header.site-header .c-sub-header-nav .sub-nav_list {
+                overflow-x: auto !important;
+                scrollbar-width: none !important;
+                padding: 8px 10px !important;
+                gap: 14px !important;
+            }
+            header.site-header .c-sub-header-nav .sub-nav_list::-webkit-scrollbar { display: none; }
+
+            /* Prevent Continue Reading / Latest Manga Updates overlap on mobile */
+            #md-continue-reading {
+                display: block !important;
+                position: relative !important;
+                z-index: 2 !important;
+                clear: both !important;
+                margin: 12px 0 18px !important;
+            }
+            .page-content-listing,
+            .page-listing-item {
+                position: relative !important;
+                z-index: 1 !important;
+                clear: both !important;
+                margin-top: 0 !important;
+            }
+            .md-hero-thumbs {
+                padding-left: 4px !important;
+                padding-right: 4px !important;
+            }
+            #md-rbar {
+                padding: 8px 10px !important;
+                gap: 6px !important;
+            }
+            #md-rbar .md-rb-title b {
+                max-width: 140px !important;
+                font-size: 12px !important;
+            }
+            html body #wpdcom .wpd-comment {
+                padding: 12px !important;
+            }
+            html body #wpdcom .wpd-avatar {
+                width: 36px !important;
+                height: 36px !important;
+                min-width: 36px !important;
+                max-width: 36px !important;
+            }
+            html body #wpdcom .wpd-comment-author,
+            html body #wpdcom .wpd-comment-author a {
+                max-width: 145px !important;
+            }
         }
     `;
 
@@ -8259,6 +8513,24 @@
                 const col = head.querySelector('.md-col');
                 if (col) head.appendChild(col);
             }
+            // Prevent broken avatar alt text from stretching avatar circle
+            const av = own('.wpd-avatar');
+            const avImg = av && av.querySelector('img');
+            if (av && avImg) {
+                const fallbackAvatar = () => {
+                    if (av.dataset.mdAvFixed) return;
+                    av.dataset.mdAvFixed = '1';
+                    const author = (own('.wpd-comment-author')?.textContent || avImg.getAttribute('alt') || '?').trim();
+                    const initial = (author.replace(/[^A-Za-z0-9]/g, '')[0] || author[0] || '?').toUpperCase();
+                    avImg.style.display = 'none';
+                    const sp = document.createElement('span');
+                    sp.className = 'md-av-fallback';
+                    sp.textContent = initial;
+                    av.appendChild(sp);
+                };
+                if (avImg.complete && avImg.naturalWidth === 0) fallbackAvatar();
+                else avImg.addEventListener('error', fallbackAvatar, { once: true });
+            }
         });
     }
 
@@ -8403,25 +8675,117 @@
         return c && typeof c === 'object' ? c : {};
     }
 
+    function upscaleCoverUrl(url) {
+        if (!url || typeof url !== 'string' || url.startsWith('data:')) return url || '';
+        return url.replace(/-\d+x\d+(\.[a-zA-Z0-9]+)(?=$|\?)/, '$1');
+    }
+
+    function ensureSharpenSvg() {
+        if (document.getElementById('md-svg-filters') || !document.body) return;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.id = 'md-svg-filters';
+        svg.setAttribute('aria-hidden', 'true');
+        svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;pointer-events:none';
+        svg.innerHTML = '<defs><filter id="md-sharpen"><feConvolveMatrix order="3" preserveAlpha="true" kernelMatrix="0 -0.35 0 -0.35 2.4 -0.35 0 -0.35 0"/></filter></defs>';
+        document.body.appendChild(svg);
+    }
+
+    function evaluateCoverQuality(img) {
+        if (!img || !img.complete || !img.naturalWidth) return;
+        const box = img.closest('.item-thumb, .popular-img, .md-cr-thumb, .md-lib-thumb, .summary_image');
+        if (img.naturalWidth < 180) {
+            img.classList.remove('md-sharpen');
+            if (box) {
+                const src = img.currentSrc || img.src || '';
+                box.classList.add('md-lowres-wrap');
+                if (src) box.style.setProperty('--md-lowres-bg', 'url("' + src.replace(/"/g, '%22') + '")');
+            }
+        } else {
+            if (box) {
+                box.classList.remove('md-lowres-wrap');
+                box.style.removeProperty('--md-lowres-bg');
+            }
+            if (img.naturalWidth < 250) {
+                ensureSharpenSvg();
+                img.classList.add('md-sharpen');
+            } else {
+                img.classList.remove('md-sharpen');
+            }
+        }
+    }
+
+    function upgradeCoverImg(img) {
+        if (!img || img.dataset.mdCovUp === '1') return;
+        const orig = getImgSrc(img);
+        if (!orig || orig.startsWith('data:')) return;
+        img.dataset.mdCovUp = '1';
+        img.removeAttribute('width');
+        img.removeAttribute('height');
+        const full = upscaleCoverUrl(orig);
+        if (full && full !== orig) {
+            img.dataset.mdOrigSrc = orig;
+            img.removeAttribute('srcset');
+            img.removeAttribute('sizes');
+            img.addEventListener('error', () => {
+                if (img.dataset.mdFallbackDone) return;
+                img.dataset.mdFallbackDone = '1';
+                img.src = orig;
+            }, { once: true });
+            img.src = full;
+        }
+        img.addEventListener('load', () => evaluateCoverQuality(img));
+        if (img.complete && img.naturalWidth) evaluateCoverQuality(img);
+    }
+
     function saveCover(slug, url) {
         if (!slug || !url || url.startsWith('data:')) return;
+        const clean = upscaleCoverUrl(url);
         const c = getCoverCache();
-        if (c[slug] === url) return;
-        c[slug] = url;
-        const keys = Object.keys(c);
-        if (keys.length > 240) delete c[keys[0]];
-        store.set('covers', c);
+        if (c[slug] !== clean) {
+            c[slug] = clean;
+            const keys = Object.keys(c);
+            if (keys.length > 240) delete c[keys[0]];
+            store.set('covers', c);
+        }
+        // Upgrade stored library & history cover URLs to un-suffixed full-res
+        const lib = getLibrary();
+        let libDirty = false;
+        Object.keys(lib).forEach(k => {
+            (lib[k] || []).forEach(it => {
+                if (it && it.slug === slug && it.cover !== clean) {
+                    it.cover = clean;
+                    libDirty = true;
+                }
+            });
+        });
+        if (libDirty) setLibrary(lib);
+        const hist = getHistory();
+        let histDirty = false;
+        hist.forEach(it => {
+            if (it && it.slug === slug && it.cover !== clean) {
+                it.cover = clean;
+                histDirty = true;
+            }
+        });
+        if (histDirty) setHistory(hist);
     }
 
     function harvestCovers() {
         $$('div.page-item-detail').forEach(card => {
             const a = card.querySelector('.item-thumb a, .post-title a');
             const img = card.querySelector('.item-thumb img, img');
+            if (img) upgradeCoverImg(img);
             if (a && img) saveCover(seriesSlugFromUrl(a.href), getImgSrc(img));
+        });
+        $$('.popular-item-wrap img, .widget-manga-recent img, .md-cr-thumb img, .md-lib-thumb img').forEach(img => {
+            upgradeCoverImg(img);
         });
         if (PAGE() === 'overview') {
             const img = $('.summary_image img');
-            if (img) saveCover(seriesSlugFromUrl(location.href), getImgSrc(img));
+            if (img) {
+                upgradeCoverImg(img);
+                saveCover(seriesSlugFromUrl(location.href), getImgSrc(img));
+            }
         }
     }
 
@@ -8546,9 +8910,9 @@
         <div class="md-cr-wrap" data-fade="none"><div class="md-cr-row">${cards}</div></div>`;
 
         if (!existing) {
-            const mainCol = $('.c-page-content .main-col .main-col-inner') || $('.c-page-content .main-col') || $('.page-content-listing')?.parentElement;
-            if (mainCol) {
-                mainCol.prepend(shelf);
+            const listing = $('.c-page-content .main-col .c-blog__heading') || $('.page-content-listing');
+            if (listing && listing.parentElement) {
+                listing.parentElement.insertBefore(shelf, listing);
             } else {
                 const hero = document.getElementById('md-hero');
                 if (hero) hero.after(shelf);
@@ -9106,7 +9470,7 @@
                     const btn = document.createElement('button');
                     btn.id = 'md-subnav-toggle';
                     btn.type = 'button';
-                    btn.className = 'md-hdr-btn md-subnav-btn';
+                    btn.className = 'md-subnav-btn';
                     const syncBtn = () => {
                         const open = root.dataset.mdSubnavOpen === '1';
                         btn.setAttribute('aria-expanded', String(open));
@@ -9121,6 +9485,7 @@
                         else delete root.dataset.mdSubnavOpen;
                         store.set('subnavOpen', next);
                         syncBtn();
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
                     });
                     if (logoWrap.classList.contains('wrap_branding')) logoWrap.after(btn);
                     else logoWrap.prepend(btn);
@@ -9128,12 +9493,30 @@
             }
         }
 
-        // 2. Move "Advanced" link into the expandable search bar
-        const advLink = $('header.site-header a.btn-search-adv, header.site-header .adv-search-link, header.site-header .search-navigation > a[href*="s="], header.site-header a.adv-search');
-        const searchForm = $('.search-main-menu form.manga-search-form, .search-main-menu form, header.site-header .manga-search-form');
-        if (advLink && searchForm && !searchForm.contains(advLink)) {
-            advLink.classList.add('md-adv-in-search');
-            searchForm.appendChild(advLink);
+        // 2. Move "Advanced" link (matched reliably by text or selector) into the collapsible search bar
+        const moveAdv = () => {
+            const advLink = $$('header.site-header a, .search-navigation a').find(a =>
+                !a.closest('.search-main-menu, form.manga-search-form') &&
+                (/^\s*advanced\s*$/i.test(a.textContent || '') || a.matches('.btn-search-adv, .adv-search-link, .adv-search'))
+            );
+            const searchHost = $('.search-main-menu form.manga-search-form')
+                || $('.search-main-menu form')
+                || $('.search-main-menu')
+                || $('header.site-header form.manga-search-form');
+            if (advLink && searchHost && !searchHost.contains(advLink)) {
+                const parentLi = advLink.closest('li');
+                advLink.classList.add('md-adv-in-search');
+                searchHost.appendChild(advLink);
+                if (parentLi && parentLi.children.length === 0 && !parentLi.textContent.trim()) {
+                    parentLi.remove();
+                }
+            }
+        };
+        moveAdv();
+        const openSearchBtn = $('a.open-search-main-menu', hdr);
+        if (openSearchBtn && !openSearchBtn.dataset.mdAdvHook) {
+            openSearchBtn.dataset.mdAdvHook = '1';
+            openSearchBtn.addEventListener('click', () => setTimeout(moveAdv, 60));
         }
     }
 
