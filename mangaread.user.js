@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.8
+// @version      2026-11-21.9
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -7342,6 +7342,245 @@
                 margin-left: 8px !important;
             }
         }
+        /* ================================================================
+         *  v2026-11-21.9 POLISH:
+         *  - Compact mobile comments
+         *  - 2-row mobile reader bottom dock + cleaner #md-rbar
+         *  - Compact Advanced Search cards + mobile sort dropdown
+         *  - Series overview sub-nav spacing + full-width Add to List
+         *  - Neobrutalist comment spoiler tag revamp
+         * ================================================================ */
+
+        /* 1. Neobrutalist Spoiler Tag Revamp (wpDiscuz comments) */
+        html body #wpdcom .wpdiscuz-spoiler-wrap,
+        html body #wpdcom .wpd-spoiler-wrap {
+            border: 2.5px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            background: var(--bg) !important;
+            margin: 10px 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+        }
+        html body #wpdcom .wpdiscuz-spoiler-title,
+        html body #wpdcom .wpd-spoiler-title {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            padding: 9px 12px !important;
+            margin: 0 !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: none !important;
+            border-bottom: 2px solid var(--bd) !important;
+            font: 800 12.5px/1.2 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.03em !important;
+            cursor: pointer !important;
+            transition: background-color 0.14s ease, color 0.14s ease !important;
+        }
+        html body #wpdcom .wpdiscuz-spoiler-title:hover,
+        html body #wpdcom .wpd-spoiler-title:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+        html body #wpdcom .wpdiscuz-spoiler-content,
+        html body #wpdcom .wpd-spoiler-content {
+            padding: 10px 12px !important;
+            margin: 0 !important;
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            border: none !important;
+            font: 600 13.5px/1.55 'DM Sans', sans-serif !important;
+            font-style: normal !important;
+        }
+
+        /* 2. Full-width Add to List button on series overview */
+        #md-ov-lib-btn.md-ov-lib-btn {
+            display: flex !important;
+            width: 100% !important;
+            justify-content: center !important;
+            align-items: center !important;
+            gap: 8px !important;
+            padding: 11px 16px !important;
+            margin-top: 10px !important;
+            box-sizing: border-box !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+        }
+
+        /* 3. Desktop: hide mobile sort dropdown */
+        .md-sort-select { display: none !important; }
+
+        /* 4. #md-rbar title ellipsis safety */
+        #md-rbar .md-rb-title {
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+        #md-rbar .md-rb-title b {
+            display: block !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+
+        @media (max-width: 768px) {
+            /* A. Series Overview: prevent fixed/absolute header + sub-nav from overlapping title */
+            html[data-md-page="overview"] header.site-header {
+                position: relative !important;
+                background: var(--header-gradient) !important;
+                border-bottom: var(--bw) solid var(--bd) !important;
+            }
+            html[data-md-page="overview"] .profile-manga {
+                padding-top: 16px !important;
+            }
+
+            /* B. 2-Row Bottom Dock in Chapter Reader (all controls reachable, no horizontal scroll) */
+            html[data-md-page="chapter"] #md-dock {
+                display: grid !important;
+                grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+                gap: 6px !important;
+                width: calc(100vw - 16px) !important;
+                max-width: 420px !important;
+                padding: 8px !important;
+                overflow: visible !important;
+                box-sizing: border-box !important;
+            }
+            html[data-md-page="chapter"] #md-dock .md-sep {
+                display: none !important;
+            }
+            html[data-md-page="chapter"] #md-dock button {
+                width: 100% !important;
+                min-width: 0 !important;
+                height: 38px !important;
+                padding: 0 4px !important;
+                justify-content: center !important;
+            }
+            html[data-md-page="chapter"] #md-dock button.md-dl {
+                grid-column: span 2 !important;
+            }
+            html[data-md-page="chapter"] #md-rbar {
+                grid-template-columns: auto minmax(0, 1fr) auto !important;
+                padding: 8px 10px !important;
+                gap: 8px !important;
+            }
+            html[data-md-page="chapter"] #md-rbar .md-rb-title b {
+                max-width: 170px !important;
+            }
+
+            /* C. Compact Mobile Comments (eliminate wasted vertical space) */
+            html[data-md-page="chapter"] #wpdcom {
+                padding: 10px 10px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-thread-head {
+                padding-bottom: 8px !important;
+                margin-bottom: 10px !important;
+                gap: 6px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-comment {
+                padding: 9px 10px !important;
+                margin-bottom: 8px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-comment-wrap {
+                gap: 8px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-comment-left {
+                gap: 5px !important;
+                min-width: 42px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-vote {
+                padding: 3px 6px !important;
+                min-width: 38px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-comment-header {
+                gap: 4px 6px !important;
+                margin-bottom: 4px !important;
+                padding-right: 34px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-comment-text {
+                margin: 2px 0 0 !important;
+                padding: 0 !important;
+                line-height: 1.45 !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-comment-text p {
+                margin: 0 0 4px !important;
+            }
+            html[data-md-page="chapter"] #wpdcom .wpd-comment-footer {
+                margin-top: 6px !important;
+                padding-top: 4px !important;
+            }
+
+            /* D. Advanced Search Space Optimization + Mobile Sort Dropdown */
+            .tab-wrap {
+                flex-direction: row !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                flex-wrap: nowrap !important;
+                gap: 8px !important;
+                padding: 8px 10px !important;
+            }
+            .tab-wrap ul.c-tabs-content,
+            .tab-wrap .c-nav-tabs {
+                display: none !important;
+            }
+            .tab-wrap .md-sort-select {
+                display: inline-block !important;
+                padding: 7px 10px !important;
+                border-radius: 8px !important;
+                border: 2px solid var(--bd) !important;
+                background: var(--bg) !important;
+                color: var(--ink) !important;
+                box-shadow: var(--sh-sm) !important;
+                font: 800 13px/1.2 'JetBrains Mono', monospace !important;
+                max-width: 148px !important;
+                flex-shrink: 0 !important;
+            }
+            /* Compact search result rows on mobile */
+            .search-lists .c-tabs-item__content,
+            .c-tabs-item__content.row {
+                display: flex !important;
+                flex-direction: row !important;
+                align-items: flex-start !important;
+                gap: 10px !important;
+                padding: 10px !important;
+                margin: 0 0 10px !important;
+            }
+            .search-lists .c-tabs-item__content .tab-thumb,
+            .c-tabs-item__content .col-4,
+            .c-tabs-item__content .col-sm-3 {
+                flex: 0 0 84px !important;
+                width: 84px !important;
+                max-width: 84px !important;
+                padding: 0 !important;
+            }
+            .search-lists .c-tabs-item__content .tab-summary,
+            .c-tabs-item__content .col-8,
+            .c-tabs-item__content .col-sm-9 {
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+                max-width: none !important;
+                padding: 0 !important;
+            }
+            .c-tabs-item__content .mg_alternative,
+            .c-tabs-item__content .mg_author,
+            .c-tabs-item__content .mg_artists {
+                display: none !important;
+            }
+            .c-tabs-item__content .post-content_item {
+                margin: 2px 0 !important;
+                padding: 0 !important;
+                display: flex !important;
+                gap: 6px !important;
+                font-size: 12px !important;
+            }
+            .c-tabs-item__content .mg_genres .summary-content {
+                display: -webkit-box !important;
+                -webkit-line-clamp: 1 !important;
+                -webkit-box-orient: vertical !important;
+                overflow: hidden !important;
+            }
+        }
     `;
 
     function injectStyles() {
@@ -8919,7 +9158,6 @@
             '<div class="md-rb-right">' +
                 '<button type="button" class="md-rb-btn" data-k="comments" title="Jump to comments">' + ICON.chat + '<span class="md-rb-lbl">Comments</span><span class="md-rb-count"></span></button>' +
                 '<button type="button" class="md-rb-btn" data-k="settings" title="Reader settings">' + ICON.gear + '<span class="md-rb-lbl">Settings</span></button>' +
-                '<span class="md-rb-theme"></span>' +
             '</div>';
         document.body.appendChild(bar);
         $('[data-k="comments"]', bar).addEventListener('click', () => {
@@ -9929,6 +10167,12 @@
 
     function setupCommentSortBar() {
         if (PAGE() !== 'chapter') return;
+        // Remove redundant 'Comments for chapter "..."' headings above the comments card
+        $$('h1,h2,h3,h4,h5,h6,.c-blog__heading,.comments-title').forEach(h => {
+            if (/^\s*comments\s+for\s+chapter/i.test(h.textContent || '')) {
+                h.style.setProperty('display', 'none', 'important');
+            }
+        });
         const w = $('#wpdcom');
         const list = w && w.querySelector('.wpd-thread-list');
         if (!w || !list) return;
@@ -10081,6 +10325,29 @@
         }
     }
 
+    function setupSortDropdown() {
+        const wrap = $('.tab-wrap');
+        if (!wrap || wrap.querySelector('.md-sort-select')) return;
+        const links = $$('ul.c-tabs-content li a, .c-nav-tabs li a', wrap);
+        if (links.length < 2) return;
+        const sel = document.createElement('select');
+        sel.className = 'md-sort-select';
+        sel.setAttribute('aria-label', 'Sort results');
+        links.forEach(a => {
+            const opt = document.createElement('option');
+            opt.value = a.href;
+            opt.textContent = a.textContent.replace(/\s+/g, ' ').trim();
+            if (a.closest('li')?.classList.contains('active') || a.classList.contains('active')) {
+                opt.selected = true;
+            }
+            sel.appendChild(opt);
+        });
+        sel.addEventListener('change', () => {
+            if (sel.value) location.href = sel.value;
+        });
+        wrap.appendChild(sel);
+    }
+
     /* ====================================================================
      *  DOCUMENT-START BLUR LOADING CURTAIN (#md-loader)
      * ==================================================================== */
@@ -10133,7 +10400,7 @@
                 try { setupCommentSortBar(); } catch (_) {}
             }
             setupThemeToggle();
-            try { setupHeaderControls(); } catch (_) {}
+            try { setupHeaderControls(); setupSortDropdown(); } catch (_) {}
             addExtras();
             const bar = $('#md-sel-bar');
             if (bar && bar.__sync) bar.__sync();
