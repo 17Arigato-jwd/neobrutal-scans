@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.3
+// @version      2026-11-21.4
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -6277,6 +6277,318 @@
                 flex: none !important;
             }
         }
+        /* ================================================================
+         *  v2026-11-21.4 POLISH:
+         *  - Unified single-box chapter comments + themed footer
+         *  - Flush-left Continue Reading matching Latest Manga Updates
+         *  - Header Browse toggle + single-row sub-nav + Advanced in search
+         *  - Full Neobrutalist Advanced Search page
+         *  - Dead-center #md-rbar title + hidden redundant chapter heading
+         * ================================================================ */
+
+        /* 1. Hide redundant chapter heading above images & truly center #md-rbar */
+        html[data-md-page="chapter"] #chapter-heading,
+        html[data-md-page="chapter"] .c-blog-post > .entry-header,
+        html[data-md-page="chapter"] .entry-header,
+        html[data-md-page="chapter"] .comments-area > h4,
+        html[data-md-page="chapter"] .manga-discussion > h4 {
+            display: none !important;
+        }
+        #md-rbar {
+            display: grid !important;
+            grid-template-columns: 1fr auto 1fr !important;
+            align-items: center !important;
+            gap: 10px !important;
+        }
+        #md-rbar .md-rb-left {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            justify-self: start !important;
+        }
+        #md-rbar .md-rb-title {
+            justify-self: center !important;
+            text-align: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            margin: 0 !important;
+            min-width: 0 !important;
+        }
+        #md-rbar .md-rb-right {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            justify-self: end !important;
+        }
+
+        /* 2. Unified single-frame chapter comments + integrated sort bar + themed footer */
+        html[data-md-page="chapter"] #respond.comments-area,
+        html[data-md-page="chapter"] .comments-area {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 28px auto 36px !important;
+        }
+        html[data-md-page="chapter"] #wpdcom {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            padding: 18px 20px !important;
+            margin: 0 auto !important;
+        }
+        html[data-md-page="chapter"] #wpdcom .wpd-thread-head {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+            border-bottom: 2px solid var(--bd) !important;
+            padding-bottom: 12px !important;
+            margin-bottom: 14px !important;
+        }
+        html[data-md-page="chapter"] #wpdcom .wpd-thread-info {
+            border-bottom: none !important;
+            padding-bottom: 0 !important;
+            margin: 0 !important;
+            color: var(--ink) !important;
+            font: 800 13.5px/1.2 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+        }
+        html[data-md-page="chapter"] #wpdcom .wpd-thread-info::after {
+            display: none !important;
+        }
+        #md-csort-bar {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        html[data-md-page="chapter"] footer.site-footer,
+        html[data-md-page="chapter"] .site-footer,
+        html[data-md-page="chapter"] .site-footer .bottom-footer,
+        html[data-md-page="chapter"] .bottom-footer {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border-top: var(--bw) solid var(--bd) !important;
+        }
+        html[data-md-page="chapter"] .site-footer a,
+        html[data-md-page="chapter"] .bottom-footer a {
+            color: var(--ink) !important;
+            font-weight: 700 !important;
+        }
+        html[data-md-page="chapter"] .site-footer p,
+        html[data-md-page="chapter"] .bottom-footer p,
+        html[data-md-page="chapter"] .site-footer .copyright {
+            color: var(--muted) !important;
+        }
+
+        /* 3. Flush-left Continue Reading matching Latest Manga Updates */
+        #md-continue-reading {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 0 26px !important;
+            padding: 0 !important;
+        }
+        .md-cr-hd {
+            position: relative !important;
+            overflow: hidden !important;
+            padding: 10px 14px !important;
+            margin-bottom: 16px !important;
+            background: var(--card) !important;
+            background-image: repeating-linear-gradient(
+                -45deg,
+                transparent 0 7px,
+                rgba(128, 128, 128, 0.14) 7px 9px
+            ) !important;
+            background-size: 96px 100% !important;
+            background-position: right center !important;
+            background-repeat: no-repeat !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+        }
+        .md-cr-title {
+            font: 800 15px/1.2 'DM Sans', sans-serif !important;
+            letter-spacing: 0.03em !important;
+        }
+        .md-cr-clear {
+            position: relative;
+            z-index: 2;
+        }
+        .md-cr-card {
+            flex: 0 0 206px !important;
+        }
+
+        /* 4. Site-wide Header: hide duplicate HOME/TOP/COMPLETED, add Browse toggle, single-row sub-nav, Advanced inside search */
+        header.site-header .main-menu {
+            display: none !important;
+        }
+        .md-subnav-btn {
+            width: auto !important;
+            padding: 0 12px !important;
+            gap: 7px !important;
+            margin-left: 14px !important;
+            font: 800 12px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+        }
+        .md-subnav-btn.is-on {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+        html:not([data-md-subnav-open="1"]) header.site-header .c-sub-header-nav {
+            display: none !important;
+        }
+        html[data-md-subnav-open="1"] header.site-header .c-sub-header-nav {
+            display: block !important;
+        }
+        header.site-header .c-sub-header-nav .container,
+        header.site-header .c-sub-header-nav .row,
+        header.site-header .c-sub-header-nav [class*="col-"],
+        header.site-header .c-sub-header-nav .sub-nav_content {
+            width: 100% !important;
+            max-width: var(--maxw, 1280px) !important;
+            flex: 0 0 100% !important;
+            float: none !important;
+        }
+        header.site-header .c-sub-header-nav .sub-nav_list {
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: flex-start !important;
+            gap: 18px !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 10px 0 !important;
+        }
+        header.site-header .c-sub-header-nav .sub-nav_list > li {
+            float: none !important;
+            display: inline-flex !important;
+            flex: 0 0 auto !important;
+            margin: 0 !important;
+            white-space: nowrap !important;
+        }
+        header.site-header .search-main-menu form.manga-search-form {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        header.site-header a.md-adv-in-search {
+            flex-shrink: 0 !important;
+            height: 38px !important;
+            padding: 0 12px !important;
+        }
+
+        /* 5. Full Neobrutalist Advanced Search Page Styling */
+        .c-search-header__wrapper {
+            background: var(--bg) !important;
+            border-bottom: var(--bw) solid var(--bd) !important;
+            padding: 20px 0 !important;
+        }
+        .search-advanced-form,
+        .search-advance {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: var(--r) !important;
+            box-shadow: var(--sh) !important;
+            padding: 20px 22px !important;
+        }
+        .search-advance label,
+        .search-advanced-form label,
+        .search-advance .checkbox-group label,
+        .search-advance .form-group > span {
+            color: var(--ink) !important;
+            font: 700 13px/1.3 'DM Sans', sans-serif !important;
+        }
+        .search-advance input[type="checkbox"],
+        .search-advanced-form input[type="checkbox"] {
+            accent-color: var(--primary) !important;
+            width: 16px !important;
+            height: 16px !important;
+            cursor: pointer !important;
+        }
+        .search-advance input[type="text"],
+        .search-advance input[type="search"],
+        .search-advance select,
+        .search-advanced-form input[type="text"],
+        .search-advanced-form select {
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 8px 12px !important;
+            font: 700 14px/1.3 'DM Sans', sans-serif !important;
+        }
+        .search-advance .btn-primary,
+        .search-advance input[type="submit"],
+        .search-advance button[type="submit"],
+        .search-advanced-form .search-submit {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 9px 22px !important;
+            font: 800 13px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            cursor: pointer !important;
+        }
+        .search-advance .btn-reset,
+        .search-advance input[type="reset"],
+        .search-advance button[type="reset"],
+        .search-advance a.btn-reset {
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 9px 18px !important;
+            font: 800 13px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            cursor: pointer !important;
+        }
+        .search-lists .tab-wrap,
+        .c-page-content .tab-wrap {
+            border: var(--bw) solid var(--bd) !important;
+            box-shadow: var(--sh) !important;
+        }
+        .tab-wrap .c-blog__heading.style-2 {
+            background-image: none !important;
+        }
+        .tab-wrap ul.c-tabs-content li a,
+        .tab-wrap .c-nav-tabs li a {
+            white-space: nowrap !important;
+            color: var(--ink) !important;
+            background: var(--bg) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 7px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 6px 11px !important;
+            font: 800 12px/1 'JetBrains Mono', monospace !important;
+            text-decoration: none !important;
+        }
+        .tab-wrap ul.c-tabs-content li.active a,
+        .tab-wrap .c-nav-tabs li.active a,
+        .tab-wrap ul.c-tabs-content li a:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+
+        @media (max-width: 768px) {
+            .md-cr-card { flex: 0 0 156px !important; }
+            .md-subnav-btn span { display: none !important; }
+            .md-subnav-btn { width: 36px !important; padding: 0 !important; margin-left: 8px !important; }
+        }
     `;
 
     function injectStyles() {
@@ -7846,12 +8158,16 @@
         const bar = document.createElement('div');
         bar.id = 'md-rbar';
         bar.innerHTML =
-            '<a class="md-rb-btn" data-k="home" href="/" title="Home">' + ICON.home + '<span class="md-rb-lbl">Home</span></a>' +
-            '<a class="md-rb-btn" data-k="series" href="#" title="Series page">' + ICON.list + '<span class="md-rb-lbl">Series</span></a>' +
+            '<div class="md-rb-left">' +
+                '<a class="md-rb-btn" data-k="home" href="/" title="Home">' + ICON.home + '<span class="md-rb-lbl">Home</span></a>' +
+                '<a class="md-rb-btn" data-k="series" href="#" title="Series page">' + ICON.list + '<span class="md-rb-lbl">Series</span></a>' +
+            '</div>' +
             '<div class="md-rb-title"><b></b><button type="button" class="md-rb-chap" title="Switch chapter"></button></div>' +
-            '<button type="button" class="md-rb-btn" data-k="comments" title="Jump to comments">' + ICON.chat + '<span class="md-rb-lbl">Comments</span><span class="md-rb-count"></span></button>' +
-            '<button type="button" class="md-rb-btn" data-k="settings" title="Reader settings">' + ICON.gear + '<span class="md-rb-lbl">Settings</span></button>' +
-            '<span class="md-rb-theme"></span>';
+            '<div class="md-rb-right">' +
+                '<button type="button" class="md-rb-btn" data-k="comments" title="Jump to comments">' + ICON.chat + '<span class="md-rb-lbl">Comments</span><span class="md-rb-count"></span></button>' +
+                '<button type="button" class="md-rb-btn" data-k="settings" title="Reader settings">' + ICON.gear + '<span class="md-rb-lbl">Settings</span></button>' +
+                '<span class="md-rb-theme"></span>' +
+            '</div>';
         document.body.appendChild(bar);
         $('[data-k="comments"]', bar).addEventListener('click', () => {
             const target = $('#wpdcom') || $('#respond') || $('#comments') || $('.comments-area');
@@ -8192,7 +8508,10 @@
     }
 
     function buildContinueReading() {
-        const isHome = PAGE() === 'list' && (location.pathname === '/' || location.pathname === '' || /^\/(index\.php)?$/i.test(location.pathname));
+        const b = document.body;
+        const isSearchOrArchive = !!(location.search && /[?&](s|post_type|m_orderby|genre)=/i.test(location.search)) ||
+            !!(b && (b.classList.contains('search') || b.classList.contains('search-results') || b.classList.contains('archive')));
+        const isHome = PAGE() === 'list' && (location.pathname === '/' || location.pathname === '' || /^\/index\.php$/i.test(location.pathname)) && !isSearchOrArchive;
         const existing = document.getElementById('md-continue-reading');
         if (!isHome) { if (existing) existing.remove(); return; }
         const hist = getHistory();
@@ -8227,11 +8546,13 @@
         <div class="md-cr-wrap" data-fade="none"><div class="md-cr-row">${cards}</div></div>`;
 
         if (!existing) {
-            const hero = document.getElementById('md-hero');
-            if (hero) hero.after(shelf);
-            else {
-                const main = $('.site-content') || document.body;
-                main.prepend(shelf);
+            const mainCol = $('.c-page-content .main-col .main-col-inner') || $('.c-page-content .main-col') || $('.page-content-listing')?.parentElement;
+            if (mainCol) {
+                mainCol.prepend(shelf);
+            } else {
+                const hero = document.getElementById('md-hero');
+                if (hero) hero.after(shelf);
+                else ($('.site-content') || document.body).prepend(shelf);
             }
         }
 
@@ -8664,6 +8985,20 @@
         return Number.isFinite(n) ? n : 0;
     }
 
+    function parseCommentId(el) {
+        if (!el) return 0;
+        const idAttr = el.id || el.getAttribute('data-comment-id') || '';
+        const m1 = idAttr.match(/(?:wpd-comm-|comment-)(\d+)/i);
+        if (m1) return parseInt(m1[1], 10);
+        const inner = el.querySelector('[id*="wpd-comm-"], [id*="comment-"], a[href*="#comment-"]');
+        if (inner) {
+            const s = (inner.id || inner.getAttribute('href') || '');
+            const m2 = s.match(/(?:wpd-comm-|comment-)(\d+)/i);
+            if (m2) return parseInt(m2[1], 10);
+        }
+        return 0;
+    }
+
     function parseCommentAgeSec(el) {
         const d = el.querySelector('.wpd-comment-date');
         if (!d) return Number.MAX_SAFE_INTEGER;
@@ -8672,7 +9007,7 @@
             const ts = Date.parse(title);
             if (!Number.isNaN(ts)) return Math.max(0, (Date.now() - ts) / 1000);
         }
-        const txt = (d.textContent || '').toLowerCase().trim();
+        const txt = (d.textContent || '').toLowerCase().replace(/\s+/g, ' ').trim();
         if (/just\s*now|moment/.test(txt)) return 1;
         const m = txt.match(/(\d+)\s*(sec|second|min|minute|hour|hr|day|week|wk|month|mo|year|yr)/);
         if (m) {
@@ -8692,22 +9027,33 @@
         return Number.MAX_SAFE_INTEGER;
     }
 
+    function compareCommentTime(a, b, newestFirst) {
+        const idA = parseCommentId(a);
+        const idB = parseCommentId(b);
+        if (idA && idB && idA !== idB) {
+            return newestFirst ? (idB - idA) : (idA - idB);
+        }
+        const ageA = parseCommentAgeSec(a);
+        const ageB = parseCommentAgeSec(b);
+        return newestFirst ? (ageA - ageB) : (ageB - ageA);
+    }
+
     function applyCommentSort(mode) {
         if (mode) currentCommentSort = mode;
         const list = $('#wpdcom .wpd-thread-list');
         if (!list) return;
         const items = [...list.children].filter(el => el.classList && el.classList.contains('wpd-comment'));
-        if (items.length <= 1) return;
-        items.sort((a, b) => {
-            if (currentCommentSort === 'top') {
-                const diff = parseCommentScore(b) - parseCommentScore(a);
-                if (diff !== 0) return diff;
-                return parseCommentAgeSec(a) - parseCommentAgeSec(b);
-            }
-            if (currentCommentSort === 'newest') return parseCommentAgeSec(a) - parseCommentAgeSec(b);
-            return parseCommentAgeSec(b) - parseCommentAgeSec(a);
-        });
-        items.forEach(el => list.appendChild(el));
+        if (items.length > 1) {
+            items.sort((a, b) => {
+                if (currentCommentSort === 'top') {
+                    const diff = parseCommentScore(b) - parseCommentScore(a);
+                    if (diff !== 0) return diff;
+                    return compareCommentTime(a, b, true);
+                }
+                return compareCommentTime(a, b, currentCommentSort === 'newest');
+            });
+            items.forEach(el => list.appendChild(el));
+        }
         const bar = document.getElementById('md-csort-bar');
         if (bar) {
             $$('button[data-sort]', bar).forEach(b => b.classList.toggle('active', b.dataset.sort === currentCommentSort));
@@ -8723,17 +9069,71 @@
         if (!bar) {
             bar = document.createElement('div');
             bar.id = 'md-csort-bar';
-            bar.innerHTML = `<span class="md-csort-lbl">Sort</span>
-                <button type="button" data-sort="top" class="active">Top</button>
+            bar.innerHTML = `<button type="button" data-sort="top" class="active">Top</button>
                 <button type="button" data-sort="newest">Newest</button>
                 <button type="button" data-sort="oldest">Oldest</button>`;
-            list.parentNode.insertBefore(bar, list);
+            const head = w.querySelector('.wpd-thread-head');
+            if (head) head.appendChild(bar);
+            else list.parentNode.insertBefore(bar, list);
             bar.addEventListener('click', e => {
                 const b = e.target.closest('button[data-sort]');
                 if (!b) return;
                 applyCommentSort(b.dataset.sort);
             });
             applyCommentSort('top');
+        }
+    }
+
+    /* ====================================================================
+     *  SITE-WIDE HEADER SUB-NAV TOGGLE & ADVANCED SEARCH RELOCATION
+     * ==================================================================== */
+    function setupHeaderControls() {
+        if (PAGE() === 'chapter') return;
+        const hdr = $('header.site-header');
+        if (!hdr) return;
+
+        // 1. Sub-nav bar toggle button (replaces duplicate HOME/TOP/COMPLETED links)
+        const subNav = $('.c-sub-header-nav', hdr);
+        if (subNav) {
+            if (!root.dataset.mdSubnavInit) {
+                root.dataset.mdSubnavInit = '1';
+                if (store.get('subnavOpen', false)) root.dataset.mdSubnavOpen = '1';
+                else delete root.dataset.mdSubnavOpen;
+            }
+            if (!document.getElementById('md-subnav-toggle')) {
+                const logoWrap = $('.wrap_branding', hdr) || $('.c-header__top .main-navigation_wrap > a', hdr) || $('.main-navigation_wrap', hdr);
+                if (logoWrap) {
+                    const btn = document.createElement('button');
+                    btn.id = 'md-subnav-toggle';
+                    btn.type = 'button';
+                    btn.className = 'md-hdr-btn md-subnav-btn';
+                    const syncBtn = () => {
+                        const open = root.dataset.mdSubnavOpen === '1';
+                        btn.setAttribute('aria-expanded', String(open));
+                        btn.classList.toggle('is-on', open);
+                        btn.title = open ? 'Hide browse bar' : 'Show browse bar';
+                        btn.innerHTML = ICON.list + '<span>Browse</span>';
+                    };
+                    syncBtn();
+                    btn.addEventListener('click', () => {
+                        const next = root.dataset.mdSubnavOpen !== '1';
+                        if (next) root.dataset.mdSubnavOpen = '1';
+                        else delete root.dataset.mdSubnavOpen;
+                        store.set('subnavOpen', next);
+                        syncBtn();
+                    });
+                    if (logoWrap.classList.contains('wrap_branding')) logoWrap.after(btn);
+                    else logoWrap.prepend(btn);
+                }
+            }
+        }
+
+        // 2. Move "Advanced" link into the expandable search bar
+        const advLink = $('header.site-header a.btn-search-adv, header.site-header .adv-search-link, header.site-header .search-navigation > a[href*="s="], header.site-header a.adv-search');
+        const searchForm = $('.search-main-menu form.manga-search-form, .search-main-menu form, header.site-header .manga-search-form');
+        if (advLink && searchForm && !searchForm.contains(advLink)) {
+            advLink.classList.add('md-adv-in-search');
+            searchForm.appendChild(advLink);
         }
     }
 
@@ -8767,6 +9167,7 @@
                 try { setupCommentSortBar(); } catch (_) {}
             }
             setupThemeToggle();
+            try { setupHeaderControls(); } catch (_) {}
             addExtras();
             const bar = $('#md-sel-bar');
             if (bar && bar.__sync) bar.__sync();
