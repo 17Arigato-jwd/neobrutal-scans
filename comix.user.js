@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.9
+// @version      2026-11-21.10
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -1284,6 +1284,113 @@
         }
         html[data-md-site="comix"] .lrow { padding: 12px; margin-bottom: 10px; }
         html[data-md-site="comix"] .filter-grid { padding: 14px; }
+        /* ===== SITE-WIDE AUDIT COVERAGE (Buttons, Inputs, Dropdowns, Browse/Filter, Community, Groups, Collections) ===== */
+        html[data-md-site="comix"] :is(.btn, .ubtn, .filter-btn, .pager__btn, .cm-item__viewmore, .settings-color__auto):not(.md-no-style) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 800 !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] :is(.btn, .ubtn, .filter-btn, .pager__btn, .cm-item__viewmore, .settings-color__auto):not(.md-no-style):hover:not(:disabled) {
+            background: var(--yellow) !important;
+            color: var(--on-ink) !important;
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"][data-md-theme="light"] :is(.btn, .ubtn, .filter-btn, .pager__btn, .cm-item__viewmore, .settings-color__auto):not(.md-no-style):hover:not(:disabled) {
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"] :is(.btn, .ubtn, .filter-btn, .pager__btn, .cm-item__viewmore, .settings-color__auto):not(.md-no-style):active:not(:disabled) {
+            transform: scale(0.96) !important;
+        }
+        html[data-md-site="comix"] :is(.btn--primary, .pager__btn.is-active, .pager__btn[aria-current="page"], header.topnav .icon-btn--active) {
+            background: var(--yellow) !important;
+            color: var(--on-ink) !important;
+            font-weight: 900 !important;
+        }
+        html[data-md-site="comix"][data-md-theme="light"] :is(.btn--primary, .pager__btn.is-active, .pager__btn[aria-current="page"], header.topnav .icon-btn--active) {
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"] :is(.input, .input--area, main .filter-bar input, main .search-bar input, main .cpost-search input) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-family: var(--f-sans) !important;
+        }
+        html[data-md-site="comix"] :is(.input, .input--area):focus {
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"] :is(.nav-menu, .fdrop__menu, .fdrop__panel, .fdrop__list, .fdrop > [class*="menu" i], .fdrop > [class*="panel" i]) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: 5px 5px 0 var(--bd) !important;
+            animation: mdDialogIn .15s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        html[data-md-site="comix"] :is(.nav-menu, .fdrop__menu, .fdrop__panel, .fdrop__list) :is(a, button) {
+            color: var(--ink) !important;
+            border-radius: 7px !important;
+            font-weight: 700 !important;
+            transition: background-color .12s ease-out !important;
+        }
+        html[data-md-site="comix"] :is(.nav-menu, .fdrop__menu, .fdrop__panel, .fdrop__list) :is(a, button):hover {
+            background: var(--yellow) !important;
+            color: var(--on-ink) !important;
+        }
+        html[data-md-site="comix"][data-md-theme="light"] :is(.nav-menu, .fdrop__menu, .fdrop__panel, .fdrop__list) :is(a, button):hover {
+            color: #111111 !important;
+        }
+        /* Series "Featured in collections" cards (.mcoll-item) */
+        html[data-md-site="comix"] .mpage__side ol.mcoll-list,
+        html[data-md-site="comix"] .mpage__side ul.mcoll-list {
+            display: flex !important; flex-direction: column !important; gap: 10px !important; margin: 0 !important; padding: 0 !important; list-style: none !important;
+        }
+        html[data-md-site="comix"] .mpage__side li.mcoll-item {
+            display: flex !important; align-items: center !important; gap: 10px !important; padding: 8px !important;
+            background: var(--card) !important; color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important; border-radius: 10px !important; box-shadow: var(--sh-sm) !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] .mpage__side li.mcoll-item:hover {
+            transform: translate(-1px, -1px) !important; box-shadow: var(--sh) !important; background: var(--cream) !important;
+        }
+        /* Community posts, Groups, Uploaders & Collections cards */
+        html[data-md-site="comix"] :is(.cpost, .cpost-card, .cpost-item, .cpost-detail, .group-card, .gcard, .uploader-card, .coll-card, .hcoll-card) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+            transition: transform .14s ease-out, box-shadow .14s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] :is(.cpost, .cpost-card, .cpost-item, .group-card, .gcard, .uploader-card, .coll-card, .hcoll-card):hover {
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh-hover) !important;
+            background: var(--cream) !important;
+        }
+        html[data-md-site="comix"] :is(.cpost-cat, .cpost-tag, .mpage__chip--tracker) {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 1.5px solid var(--bd) !important;
+            border-radius: 999px !important;
+            font-family: var(--f-mono) !important;
+            font-weight: 800 !important;
+        }
+        html[data-md-site="comix"] .useg {
+            display: inline-flex !important;
+            gap: 6px !important;
+            background: transparent !important;
+            border: 0 !important;
+            padding: 0 !important;
+        }
+
         html[data-md-site="comix"] .footer {
             background: var(--card) !important;
             color: var(--ink) !important;
@@ -5055,8 +5162,8 @@
 
         function getPagerMeta() {
             const footTxt = $('.mchap-foot', chaptersSection)?.textContent || '';
-            const totalMatch = footTxt.match(/of\s+(\d+)\s+items/i);
-            const totalItems = totalMatch ? Number(totalMatch[1]) : 0;
+            const totalMatch = footTxt.match(/of\s+([\d,]+)\s+items/i);
+            const totalItems = totalMatch ? Number(totalMatch[1].replace(/,/g, '')) : 0;
             const estPages = totalItems > 0 ? Math.ceil(totalItems / 20) : 0;
             const curPage = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
             const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
@@ -5100,7 +5207,7 @@
                     if (sig && sig !== prevSig) finish('ok');
                 };
                 const obs = new MutationObserver(check);
-                obs.observe(chaptersSection, { childList: true, subtree: true, attributes: true });
+                obs.observe(document.body || chaptersSection, { childList: true, subtree: true, attributes: true });
                 const tm = setTimeout(() => finish('timeout'), timeoutMs);
                 check();
             });
@@ -5185,9 +5292,59 @@
                     if (steps < maxSteps) await sleep(720);
                 }
 
+                // Bottom-up ascending flip: if full crawl stopped above Ch. 1 (e.g. Comix capped descending at page 32),
+                // click Comix's native Chapter sort button to flip to ascending and grab Ch. 1..minNum in 1-2 pages!
                 const finalMeta = getPagerMeta();
-                if (!finalMeta.hasNext && (!finalMeta.totalItems || collectedRaw.length >= finalMeta.totalItems)) {
-                    isComplete = true;
+                const reachedEnd = !finalMeta.hasNext || (maxSteps === Infinity && steps > 0);
+                const loadedNums = collectedRaw.map(x => x.sortNum).filter(n => n > 0);
+                const minLoaded = loadedNums.length ? Math.min(...loadedNums) : 0;
+                if (reachedEnd && !blocked && minLoaded > 1) {
+                    const sortToggle = $('.mchap-toolbar__sort button[title*="Sort by chapter" i]', chaptersSection);
+                    if (sortToggle) {
+                        const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                        setLoader(true, `Fetching earliest chapters (Ch. 1–${Math.floor(minLoaded)})…`);
+                        sortToggle.click();
+                        let flipSt = await waitForDomPageChange(prevSig, 8000);
+                        if (flipSt === 'blocked') {
+                            const cleared = await waitForTurnstileClear(90000);
+                            if (cleared) flipSt = 'ok';
+                        }
+                        if (flipSt === 'ok' && seriesState?.path === seriesPath && box.isConnected) {
+                            const ascPage1 = scrapeDomChapters(chaptersSection);
+                            collectedRaw.push(...ascPage1);
+                            groups = groupChaptersByNumber(collectedRaw);
+                            renderRows();
+                            // If Ch. 1..minLoaded spans 2-3 ascending pages, grab up to 3 more pages until we bridge minLoaded
+                            for (let ap = 0; ap < 3; ap++) {
+                                const maxAsc = Math.max(...ascPage1.map(x => x.sortNum).filter(n => n >= 0), 0);
+                                const curMin = Math.min(...collectedRaw.map(x => x.sortNum).filter(n => n > 0), 9999);
+                                if (curMin <= 1 && maxAsc >= minLoaded) break;
+                                const nb = $('nav.npager button[aria-label="Next page"]', chaptersSection);
+                                if (!nb || nb.disabled) break;
+                                const pSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                                await sleep(700);
+                                nb.click();
+                                const nst = await waitForDomPageChange(pSig, 8000);
+                                if (nst !== 'ok') break;
+                                const extra = scrapeDomChapters(chaptersSection);
+                                if (!extra.length) break;
+                                collectedRaw.push(...extra);
+                                groups = groupChaptersByNumber(collectedRaw);
+                                renderRows();
+                                if (Math.max(...extra.map(x => x.sortNum).filter(n => n >= 0), 0) >= minLoaded) break;
+                            }
+                            // Flip native sort back to descending cleanly
+                            await sleep(500);
+                            sortToggle.click();
+                        }
+                    }
+                }
+
+                const afterMeta = getPagerMeta();
+                const afterNums = collectedRaw.map(x => x.sortNum).filter(n => n > 0);
+                const afterMin = afterNums.length ? Math.min(...afterNums) : 0;
+                if ((!afterMeta.hasNext || afterMin <= 1) && (!afterMeta.totalItems || collectedRaw.length >= afterMeta.totalItems || afterMin <= 1)) {
+                    if (reachedEnd && !blocked) isComplete = true;
                 }
                 if (isComplete || collectedRaw.length >= 20) {
                     writeChapCache(seriesPath, collectedRaw, isComplete);
@@ -5195,8 +5352,8 @@
                 if (isComplete) {
                     const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
                     if (p1 && !p1.classList.contains('is-active')) p1.click();
+                    restoreCleanUrl();
                 }
-                restoreCleanUrl();
             } finally {
                 isCrawling = false;
                 loadingAll = false;
