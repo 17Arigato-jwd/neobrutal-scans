@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.13
+// @version      2026-11-21.14
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -8482,6 +8482,105 @@
             box-sizing: border-box !important;
         }
         .md-sc-ov-more:active { transform: scale(0.97) !important; }
+        /* ================================================================
+         *  v2026-11-21.14 POLISH:
+         *  - True tight edge-to-edge cover padding (beats .search-lists specificity)
+         *  - Strictly contained 2-line title & 1-line alt title (never clips off card)
+         *  - Dynamic See more button shown ONLY when overlay content overflows card
+         * ================================================================ */
+        html body .search-lists .row.c-tabs-item__content.md-sc-clean,
+        html body .c-tabs-item__content.md-sc-clean {
+            display: grid !important;
+            grid-template-columns: 98px minmax(0, 1fr) !important;
+            gap: 10px !important;
+            padding: 6px 10px 6px 6px !important;
+            align-items: stretch !important;
+            box-sizing: border-box !important;
+            overflow: hidden !important;
+        }
+        html body .search-lists .row.c-tabs-item__content.md-sc-clean > [class*="col-"],
+        html body .c-tabs-item__content.md-sc-clean > [class*="col-"] {
+            padding: 0 !important;
+            margin: 0 !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+        }
+        html body .c-tabs-item__content.md-sc-clean > [class*="col-"]:first-child {
+            width: 98px !important;
+            max-width: 98px !important;
+        }
+        html body .c-tabs-item__content.md-sc-clean .tab-thumb,
+        html body .c-tabs-item__content.md-sc-clean .tab-thumb .c-image-hover {
+            width: 98px !important;
+            height: 100% !important;
+            min-height: 146px !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        html body .c-tabs-item__content.md-sc-clean .tab-summary {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+            padding: 2px 0 !important;
+            margin: 0 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 5px !important;
+            box-sizing: border-box !important;
+        }
+        html body .c-tabs-item__content.md-sc-clean .post-title {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+        html body .c-tabs-item__content.md-sc-clean .post-title h3,
+        html body .c-tabs-item__content.md-sc-clean .post-title h4,
+        html body .c-tabs-item__content.md-sc-clean .post-title a {
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 100% !important;
+        }
+        html body .c-tabs-item__content.md-sc-clean .md-sc-alt,
+        html body .c-tabs-item__content.md-sc-clean .md-sc-genres {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+        }
+
+        /* Dynamic overflow See More button inside Info overlay */
+        .md-sc-ov-body {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .c-tabs-item__content.md-sc-clean.is-ov-expanded .md-sc-ov-body {
+            overflow: visible !important;
+        }
+        .md-sc-overlay .md-sc-ov-more {
+            display: none !important;
+        }
+        .md-sc-overlay.has-overflow .md-sc-ov-more,
+        .c-tabs-item__content.md-sc-clean.is-ov-expanded .md-sc-overlay .md-sc-ov-more {
+            display: flex !important;
+            margin-top: 6px !important;
+            flex-shrink: 0 !important;
+        }
     `;
 
     function injectStyles() {
@@ -11431,33 +11530,35 @@
             overlay.setAttribute('aria-hidden', 'true');
 
             const esc = s => String(s || '').replace(/</g, '&lt;');
-            const hasManyGenres = genres.length > 4;
-            const genresTagsHtml = genres.map((g, idx) =>
-                `<span class="md-sc-ov-tag${hasManyGenres && idx >= 4 ? ' is-extra' : ''}">${esc(g)}</span>`
+            const genresTagsHtml = genres.map(g =>
+                `<span class="md-sc-ov-tag">${esc(g)}</span>`
             ).join('');
 
-            overlay.innerHTML = `<div class="md-sc-ov-hd">
-                    <span class="md-sc-ov-title">${esc(titleEl.textContent.trim())}</span>
-                    <button type="button" class="md-sc-ov-close" aria-label="Close info">${ICON.stop}</button>
+            overlay.innerHTML = `<div class="md-sc-ov-body">
+                    <div class="md-sc-ov-hd">
+                        <span class="md-sc-ov-title">${esc(titleEl.textContent.trim())}</span>
+                        <button type="button" class="md-sc-ov-close" aria-label="Close info">${ICON.stop}</button>
+                    </div>
+                    <div class="md-sc-ov-pills">
+                        ${rating ? `<span class="md-sc-ov-pill md-sc-ov-star"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><polygon points="12 2.4 15 8.4 21.6 9.4 16.8 14 17.9 20.6 12 17.5 6.1 20.6 7.2 14 2.4 9.4 9 8.4" fill="#ffd43b" stroke="#000000" stroke-width="2.4" stroke-linejoin="round"/></svg><span>${esc(rating)} / 5</span></span>` : ''}
+                        ${status ? `<span class="md-sc-ov-pill">${esc(status)}</span>` : ''}
+                        ${release ? `<span class="md-sc-ov-pill">${esc(release)}</span>` : ''}
+                    </div>
+                    <div class="md-sc-ov-grid">
+                        ${authors ? `<div class="md-sc-ov-row"><b>Author(s):</b> <span>${esc(authors)}</span></div>` : ''}
+                        ${artists ? `<div class="md-sc-ov-row"><b>Artist(s):</b> <span>${esc(artists)}</span></div>` : ''}
+                    </div>
+                    ${genres.length ? `<div class="md-sc-ov-genres">
+                        <div class="md-sc-ov-tags">${genresTagsHtml}</div>
+                    </div>` : ''}
                 </div>
-                <div class="md-sc-ov-pills">
-                    ${rating ? `<span class="md-sc-ov-pill md-sc-ov-star"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><polygon points="12 2.4 15 8.4 21.6 9.4 16.8 14 17.9 20.6 12 17.5 6.1 20.6 7.2 14 2.4 9.4 9 8.4" fill="#ffd43b" stroke="#000000" stroke-width="2.4" stroke-linejoin="round"/></svg><span>${esc(rating)} / 5</span></span>` : ''}
-                    ${status ? `<span class="md-sc-ov-pill">${esc(status)}</span>` : ''}
-                    ${release ? `<span class="md-sc-ov-pill">${esc(release)}</span>` : ''}
-                </div>
-                <div class="md-sc-ov-grid">
-                    ${authors ? `<div class="md-sc-ov-row"><b>Author(s):</b> <span>${esc(authors)}</span></div>` : ''}
-                    ${artists ? `<div class="md-sc-ov-row"><b>Artist(s):</b> <span>${esc(artists)}</span></div>` : ''}
-                </div>
-                ${genres.length ? `<div class="md-sc-ov-genres">
-                    <div class="md-sc-ov-tags">${genresTagsHtml}</div>
-                </div>` : ''}
-                ${hasManyGenres ? '<button type="button" class="md-sc-ov-more">See more &#9660;</button>' : ''}`;
+                <button type="button" class="md-sc-ov-more">See more &#9660;</button>`;
 
             card.appendChild(overlay);
 
             const closeBtn = $('.md-sc-ov-close', overlay);
             const moreBtn = $('.md-sc-ov-more', overlay);
+            const ovBody = $('.md-sc-ov-body', overlay);
             const syncMorphClip = () => {
                 const cr = card.getBoundingClientRect();
                 const br = infoBtn.getBoundingClientRect();
@@ -11468,10 +11569,16 @@
                 const l = Math.max(0, Math.round(br.left - cr.left));
                 overlay.style.setProperty('--md-ov-clip', `inset(${t}px ${r}px ${b}px ${l}px round 7px)`);
             };
+            const syncOverflow = () => {
+                overlay.classList.remove('has-overflow');
+                const fits = ovBody.scrollHeight <= overlay.clientHeight - 14;
+                overlay.classList.toggle('has-overflow', !fits);
+            };
             infoBtn.addEventListener('click', e => {
                 e.preventDefault();
                 e.stopPropagation();
                 syncMorphClip();
+                syncOverflow();
                 overlay.getBoundingClientRect();
                 card.classList.add('is-info-open');
                 overlay.setAttribute('aria-hidden', 'false');
