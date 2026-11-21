@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.10
+// @version      2026-11-21.12
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -11,6 +11,8 @@
 // @license      MIT
 // @match        https://comix.to/*
 // @match        https://*.comix.to/*
+// @match        https://comix.ws/*
+// @match        https://*.comix.ws/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=comix.to
 // @run-at       document-start
 // @noframes
@@ -18,6 +20,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM.xmlHttpRequest
 // @connect      comix.to
+// @connect      comix.ws
 // @connect      *
 // ==/UserScript==
 
@@ -272,6 +275,7 @@
         shrinkW: SVG('<path d="M3 12h6m-3-3 3 3-3 3M21 12h-6m3-3-3 3 3 3"/>'),
         bookmark: SVG('<path d="M6 4h12a1 1 0 0 1 1 1v16l-7-4-7 4V5a1 1 0 0 1 1-1z"/>'),
         trash: SVG('<path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/>'),
+        reload: SVG('<path d="M21 12a9 9 0 1 1-2.64-6.36L21 8"/><path d="M21 3v5h-5"/>'),
         swapIcon: (a, b) => `<span class="md-iswap"><span class="md-i md-i-a">${a}</span><span class="md-i md-i-b">${b}</span></span>`,
     };
 
@@ -1964,6 +1968,16 @@
         #md-all-chaps .md-ch-sort:hover { background: var(--yellow); color: #111111; transform: translate(-1px, -1px); box-shadow: var(--sh); }
         html[data-md-theme="dark"] #md-all-chaps .md-ch-sort:hover { color: #ffffff; }
         #md-all-chaps .md-ch-sort:active { transform: scale(0.96); }
+        #md-all-chaps .md-ch-reload {
+            width: 36px; height: 36px; padding: 0; display: inline-grid; place-items: center;
+            background: var(--card); color: var(--ink); border: 2px solid var(--bd); border-radius: 8px;
+            box-shadow: var(--sh-sm); cursor: pointer; flex: 0 0 auto;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out;
+        }
+        #md-all-chaps .md-ch-reload:hover { background: var(--yellow); color: var(--on-ink); transform: translate(-1px, -1px); box-shadow: var(--sh); }
+        html[data-md-theme="light"] #md-all-chaps .md-ch-reload:hover { color: #111111; }
+        #md-all-chaps .md-ch-reload:active { transform: scale(0.96); }
+        #md-all-chaps .md-ch-reload.is-spinning svg { animation: mdSpin .75s linear infinite; }
         #md-all-chaps .md-ch-badge {
             padding: 4px 10px; background: var(--card); color: var(--muted); border: 1.5px solid var(--bd);
             border-radius: 999px; font: 800 11.5px/1 var(--f-mono); font-variant-numeric: tabular-nums; margin-left: auto;
@@ -3266,18 +3280,23 @@
         return imageUrl(getCoverMap()[seriesPath] || '');
     }
 
+    function imgSrcOf(img) {
+        if (!img) return '';
+        return imageUrl(img.currentSrc || img.getAttribute('src') || img.getAttribute('data-src') || img.getAttribute('data-lazy-src'));
+    }
+
     function harvestCovers(app) {
         for (const a of $$('.card[href], .lrow a[href], .side-item a[href]', app)) {
             const u = route(a.href, SERIES_PATH);
             if (!u) continue;
             const host = a.closest('.card, .lrow, .side-item') || a;
             const img = $('img', host);
-            const src = imageUrl(img?.currentSrc || img?.getAttribute('src'));
+            const src = imgSrcOf(img);
             if (src) saveCoverToCache(u.pathname, src);
         }
         if (detectPage() === 'overview') {
             const img = $('.mpage__poster img', app);
-            const src = imageUrl(img?.currentSrc || img?.getAttribute('src'));
+            const src = imgSrcOf(img);
             if (src) saveCoverToCache(location.pathname, src);
         }
     }
@@ -4395,7 +4414,12 @@
         const showDock = on => {
             if (!reader.dock) return;
             reader.dock.classList.toggle('hide', !on);
-            if (on) { openY = scrollY; delete root.dataset.mdNavhide; }
+            if (on) {
+                openY = scrollY;
+                delete root.dataset.mdNavhide;
+            } else {
+                root.dataset.mdNavhide = '1';
+            }
         };
 
         if (CONFIG.readerDockOnTap) {
@@ -4425,19 +4449,15 @@
             const y = scrollY, dy = y - last;
             if (Math.abs(dy) < 8) return;
             last = y;
-            if (CONFIG.readerHeaderAutoHide) {
-                const busy = reader.rbar && reader.rbar.contains(document.activeElement);
-                if (busy || y < 80 || dy < 0) delete root.dataset.mdNavhide;
-                else root.dataset.mdNavhide = '1';
-            }
             if (reader.dock && !reader.job) {
+                const busy = reader.rbar && reader.rbar.contains(document.activeElement);
                 if (CONFIG.readerDockOnTap) {
-                    if (CONFIG.dockHideOnScroll && !reader.dock.classList.contains('hide') && dy > 0 && y - openY > CONFIG.dockScrollPx) {
+                    if (!busy && CONFIG.dockHideOnScroll && !reader.dock.classList.contains('hide') && dy > 0 && y - openY > CONFIG.dockScrollPx) {
                         showDock(false);
                     }
                 } else {
                     const nearEnd = innerHeight + y >= root.scrollHeight - 320;
-                    reader.dock.classList.toggle('hide', dy > 0 && y > 240 && !nearEnd);
+                    showDock(!(dy > 0 && y > 240 && !nearEnd));
                 }
             }
         }, { passive: true });
@@ -4460,14 +4480,18 @@
     }
 
     function getReaderCommentCount() {
-        const titleTxt = $('.rpage-cmpanel .cm-widget__title')?.textContent || '';
-        const m = titleTxt.match(/(\d[\d,]*)/);
-        if (m) return m[1];
+        for (const el of $$('.rpage .cm-widget__title, .rpage-cmpanel .cm-widget__title, .cm-widget__title')) {
+            const m = (el.textContent || '').match(/(\d[\d,]*)/);
+            if (m) return m[1];
+        }
         const btnTxt = nativeBtn('.rpage-floatctl button[aria-label*="comments" i]')?.textContent?.trim() || '';
         const m2 = btnTxt.match(/(\d[\d,]*)/);
         if (m2) return m2[1];
         const sniffed = sniffedCommentCounts.get(location.pathname);
         if (typeof sniffed === 'number') return String(sniffed);
+        const data = initialData();
+        const cnt = data?.read?.comments_count ?? data?.read?.comment_count;
+        if (typeof cnt === 'number') return String(cnt);
         return '';
     }
 
@@ -4544,10 +4568,15 @@
                 switch (b.dataset.act) {
                     case 'chapters': nativeBtn('.rpage-floatctl .rpage-floatctl__chap, .rpage-floatctl button[aria-label="Chapter list"]')?.click(); break;
                     case 'comments': {
+                        const bottomCm = $('.rpage-main .cm-widget, .rpage > .cm-widget, .rpage-chap-ending ~ .cm-widget') || $$('.cm-widget').find(w => !w.closest('.rpage-cmpanel'));
+                        const nearBottom = (innerHeight + scrollY >= root.scrollHeight - Math.max(1400, innerHeight * 1.4))
+                            || (bottomCm && bottomCm.getBoundingClientRect().top < innerHeight * 1.6);
                         if (isCommentsOpen()) {
                             const closeBtn = $('.rpage-cmpanel__close');
                             if (closeBtn) closeBtn.click();
                             else nativeBtn('.rpage-floatctl button[aria-label*="comments" i]')?.click();
+                        } else if (nearBottom && bottomCm) {
+                            bottomCm.scrollIntoView({ behavior: reducedMotion.matches ? 'instant' : 'smooth', block: 'start' });
                         } else {
                             nativeBtn('.rpage-floatctl button[aria-label*="comments" i]')?.click();
                         }
@@ -4566,7 +4595,7 @@
             d.id = 'md-dock';
             d.setAttribute('role', 'toolbar');
             d.setAttribute('aria-label', 'Reader controls');
-            if (CONFIG.readerDockOnTap) d.classList.add('hide');
+            if (CONFIG.readerDockOnTap) { d.classList.add('hide'); root.dataset.mdNavhide = '1'; }
 
             const btn = (act, icon, title, label) =>
                 `<button type="button" data-act="${act}" title="${title}" aria-label="${title}" aria-pressed="false">${icon}${label ? `<span class="md-lbl">${label}</span>` : ''}</button>`;
@@ -4706,7 +4735,7 @@
             const numMatch = rawCh.match(/(\d+(?:\.\d+)?)/) || slug.match(/^(\d+(?:\.\d+)?)/);
             const numStr = numMatch ? String(Number(numMatch[1])) : null;
             const title = $('.mchap-row__title', anchor)?.textContent.trim() || '';
-            const group = $('.mchap-row__group', row)?.textContent.trim() || $('.mchap-row__uploader', row)?.textContent.trim() || 'Unknown Group';
+            const group = $('.mchap-row__group', row)?.textContent.trim() || $('a[href^="/groups/"]', row)?.textContent.trim() || $('.mchap-row__uploader', row)?.textContent.trim() || $('a[href^="/u/"]', row)?.textContent.trim() || 'Unknown Group';
             const time = $('.mchap-row__time', row)?.textContent.trim() || '';
             const label = numStr !== null ? `Chapter ${numStr}` : (rawCh || `Chapter ${slug}`);
             const key = numStr !== null ? ('ch:' + numStr) : ('id:' + id);
@@ -4840,11 +4869,18 @@
         sortBtn.className = 'md-ch-sort';
         sortBtn.textContent = 'Ch. Highest ↓';
 
+        const reloadBtn = document.createElement('button');
+        reloadBtn.type = 'button';
+        reloadBtn.className = 'md-ch-reload';
+        reloadBtn.title = 'Reload chapters (check for new or missing chapters)';
+        reloadBtn.setAttribute('aria-label', 'Reload chapters');
+        reloadBtn.innerHTML = ICON.reload;
+
         const totalBadge = document.createElement('span');
         totalBadge.className = 'md-ch-badge';
         totalBadge.textContent = groups.length + ' chapters';
 
-        head.append(searchInput, sortBtn, totalBadge);
+        head.append(searchInput, sortBtn, reloadBtn, totalBadge);
 
         const scrollWrap = document.createElement('div');
         scrollWrap.className = 'md-ch-scroll';
@@ -5159,14 +5195,32 @@
         let collectedRaw = [...scrapeDomChapters(chaptersSection)];
         let isComplete = false;
         let isCrawling = false;
+        let stickyTotal = 0;
+
+        function uniqueRawCount() {
+            const ids = new Set();
+            for (const x of collectedRaw) if (x?.id) ids.add(x.id);
+            return ids.size;
+        }
 
         function getPagerMeta() {
             const footTxt = $('.mchap-foot', chaptersSection)?.textContent || '';
             const totalMatch = footTxt.match(/of\s+([\d,]+)\s+items/i);
-            const totalItems = totalMatch ? Number(totalMatch[1].replace(/,/g, '')) : 0;
+            const parsedTotal = totalMatch ? Number(totalMatch[1].replace(/,/g, '')) : 0;
+            if (parsedTotal > stickyTotal) stickyTotal = parsedTotal;
+            const totalItems = parsedTotal || stickyTotal;
             const estPages = totalItems > 0 ? Math.ceil(totalItems / 20) : 0;
-            const curPage = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
-            const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
+            const activeEl = $('nav.npager .npager__num.is-active, nav.npager [aria-current="page"]', chaptersSection);
+            const curPage = Number(activeEl?.textContent?.trim() || '1') || 1;
+            let nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
+            if (!nextBtn || nextBtn.disabled || nextBtn.getAttribute('aria-disabled') === 'true') {
+                // Fallback to numbered (curPage + 1) button inside nav.npager
+                nextBtn = $$('nav.npager button, nav.npager a', chaptersSection).find(el =>
+                    !el.disabled && el.getAttribute('aria-disabled') !== 'true' &&
+                    /^\d{1,4}$/.test((el.textContent || '').trim()) &&
+                    Number((el.textContent || '').trim()) === curPage + 1
+                ) || null;
+            }
             const hasNext = !!(nextBtn && !nextBtn.disabled && nextBtn.getAttribute('aria-disabled') !== 'true');
             return { totalItems, estPages, curPage, nextBtn, hasNext };
         }
@@ -5259,18 +5313,25 @@
                     setLoader(true, estPages ? `Loading chapters (page ${curPage + 1} / ${estPages})…` : `Loading page ${curPage + 1}…`);
                     nextBtn.click();
 
-                    let st = await waitForDomPageChange(prevSig, 8000);
+                    let st = await waitForDomPageChange(prevSig, 6000);
+                    // Retry clicking up to 2 extra times on slow settles (matching harvest_chapters.js)
+                    for (let retry = 0; retry < 2 && st === 'timeout'; retry++) {
+                        if (seriesState?.path !== seriesPath || !box.isConnected) break;
+                        const metaRetry = getPagerMeta();
+                        if (!metaRetry.hasNext || !metaRetry.nextBtn) break;
+                        metaRetry.nextBtn.click();
+                        st = await waitForDomPageChange(prevSig, 6000);
+                    }
                     if (st === 'blocked') {
                         setLoader(true, `Waiting for Cloudflare check… (page ${curPage + 1}${estPages ? '/' + estPages : ''})`);
                         const cleared = await waitForTurnstileClear(90000);
                         if (!cleared || seriesState?.path !== seriesPath || !box.isConnected) { blocked = true; break; }
-                        // After Cloudflare clears, check if the page already updated; if not, click Next again
                         const nowSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
                         if (!nowSig || nowSig === prevSig) {
-                            const retryBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
-                            if (retryBtn && !retryBtn.disabled) {
-                                retryBtn.click();
-                                st = await waitForDomPageChange(prevSig, 8000);
+                            const metaAfter = getPagerMeta();
+                            if (metaAfter.hasNext && metaAfter.nextBtn) {
+                                metaAfter.nextBtn.click();
+                                st = await waitForDomPageChange(prevSig, 7000);
                             }
                         } else {
                             st = 'ok';
@@ -5292,10 +5353,10 @@
                     if (steps < maxSteps) await sleep(720);
                 }
 
-                // Bottom-up ascending flip: if full crawl stopped above Ch. 1 (e.g. Comix capped descending at page 32),
-                // click Comix's native Chapter sort button to flip to ascending and grab Ch. 1..minNum in 1-2 pages!
+                // Bottom-up ascending flip: ONLY run when descending pagination ACTUALLY reached the last page (!finalMeta.hasNext)
+                // and lowest chapter is still > 1 (never on a partial batch or mid-series timeout, which would leave gaps!).
                 const finalMeta = getPagerMeta();
-                const reachedEnd = !finalMeta.hasNext || (maxSteps === Infinity && steps > 0);
+                const reachedEnd = !finalMeta.hasNext;
                 const loadedNums = collectedRaw.map(x => x.sortNum).filter(n => n > 0);
                 const minLoaded = loadedNums.length ? Math.min(...loadedNums) : 0;
                 if (reachedEnd && !blocked && minLoaded > 1) {
@@ -5341,10 +5402,9 @@
                 }
 
                 const afterMeta = getPagerMeta();
-                const afterNums = collectedRaw.map(x => x.sortNum).filter(n => n > 0);
-                const afterMin = afterNums.length ? Math.min(...afterNums) : 0;
-                if ((!afterMeta.hasNext || afterMin <= 1) && (!afterMeta.totalItems || collectedRaw.length >= afterMeta.totalItems || afterMin <= 1)) {
-                    if (reachedEnd && !blocked) isComplete = true;
+                const haveAllItems = !afterMeta.totalItems || uniqueRawCount() >= afterMeta.totalItems;
+                if (!afterMeta.hasNext && reachedEnd && !blocked && haveAllItems) {
+                    isComplete = true;
                 }
                 if (isComplete || collectedRaw.length >= 20) {
                     writeChapCache(seriesPath, collectedRaw, isComplete);
@@ -5357,6 +5417,7 @@
             } finally {
                 isCrawling = false;
                 loadingAll = false;
+                reloadBtn.classList.remove('is-spinning');
                 setLoader(false);
                 renderRows();
                 refreshMoreBar(blocked);
@@ -5366,6 +5427,23 @@
 
         loadMoreBtn.addEventListener('click', () => stepHiddenPages(5));
         loadAllBtn.addEventListener('click', () => stepHiddenPages(Infinity));
+        reloadBtn.addEventListener('click', async () => {
+            if (isCrawling) return;
+            try { sessionStorage.removeItem('md-comix-chaps-v3:' + seriesPath); } catch (_) {}
+            reloadBtn.classList.add('is-spinning');
+            isComplete = false;
+            const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
+            if (p1 && !p1.classList.contains('is-active')) {
+                const prevSig = $$('.mchap-row__primary[href]', chaptersSection).map(a => a.getAttribute('href')).join('|');
+                p1.click();
+                await waitForDomPageChange(prevSig, 6000);
+            }
+            collectedRaw = [...scrapeDomChapters(chaptersSection)];
+            groups = groupChaptersByNumber(collectedRaw);
+            renderRows();
+            toast('Reloading chapters…', 1500);
+            stepHiddenPages(Infinity);
+        });
 
         scrollWrap.addEventListener('scroll', () => {
             if (isComplete || isCrawling || isTurnstileVisible()) return;
