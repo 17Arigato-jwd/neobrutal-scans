@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.13
+// @version      2026-11-21.15
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -777,8 +777,8 @@
             from { opacity: 1; transform: translateX(0); }
             to   { opacity: 0; transform: translateX(28px); }
         }
-        /* Keep [role="dialog"] full-screen backdrop clean; style only non-empty content panel (skip our own dialogs, backdrops & Turnstile) */
-        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(.md-own-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(.md-own-dialog):not(:has(iframe[src*="cloudflare"]))) {
+        /* Case A: [role="dialog"] is a full-screen backdrop wrapping a single panel child (e.g. Chapters modal) */
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):not(.settings-dialog):not(.md-own-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])):not(:has(> :nth-child(2))) {
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
@@ -791,19 +791,26 @@
             box-shadow: none !important;
             max-height: none !important;
         }
-        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(.md-own-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])), [aria-modal="true"]:not(.settings-dialog):not(.md-own-dialog):not(:has(iframe[src*="cloudflare"]))) > :not(:empty):not([class*="backdrop" i]):not([class*="overlay" i]):not([class*="scrim" i]),
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):not(.settings-dialog):not(.md-own-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])):not(:has(> :nth-child(2))) > :only-child,
+        /* Case B: [role="dialog"] IS the card panel itself with header + body children (e.g. Reader Settings modal) */
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):not(.settings-dialog):not(.md-own-dialog):not(#md-toast):not(:has(iframe[src*="cloudflare"])):has(> :nth-child(2)),
         html[data-md-site="comix"] dialog[open]:not(:has(iframe[src*="cloudflare"])) {
             background: var(--card) !important;
             color: var(--ink) !important;
             border: var(--bw) solid var(--bd) !important;
-            border-radius: 14px !important;
-            box-shadow: 6px 6px 0 var(--bd) !important;
+            border-radius: 16px !important;
+            box-shadow: 7px 7px 0 var(--bd) !important;
             font-family: var(--f-sans) !important;
             max-height: min(86dvh, 740px) !important;
-            max-width: min(560px, calc(100vw - 32px)) !important;
+            max-width: min(540px, calc(100vw - 32px)) !important;
             overflow-y: auto !important;
             overscroll-behavior: contain !important;
             animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        /* Clean divider between Reader Settings header & body (no nested floating boxes) */
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"]):not(.settings-dialog):not(.md-own-dialog):has(> :nth-child(2)) > :first-child {
+            border-bottom: 2px solid var(--bd) !important;
+            background: var(--soft) !important;
         }
         html[data-md-site="comix"] .settings-dialog__panel {
             animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
@@ -847,6 +854,10 @@
         }
         html[data-md-site="comix"][data-md-theme="light"] :is([role="dialog"]:not(.md-own-dialog), [aria-modal="true"]:not(.md-own-dialog), dialog[open]) :is(button:not(.settings-custom__preset), a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) {
             color: #111111 !important;
+        }
+        /* Force all nested text/spans/icons inside active chapter rows & active dialog buttons to inherit contrast color */
+        html[data-md-site="comix"] :is([role="dialog"]:not(.md-own-dialog), [aria-modal="true"]:not(.md-own-dialog), dialog[open]) :is(button:not(.settings-custom__preset), a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) * {
+            color: inherit !important;
         }
         /* Keep preset color circles showing their diagonal 2-color split; use a crisp ring for active state */
         html[data-md-site="comix"] .settings-custom__preset[aria-pressed="true"] {
@@ -2545,19 +2556,19 @@
             box-shadow: -6px 0 0 var(--bd) !important;
             animation: mdDrawerIn .22s cubic-bezier(0.2, 0, 0, 1) both;
         }
-        /* Dynamically anchor page progress bar to the right edge of the manga images; hide in fullscreen */
-        html[data-md-site="comix"][data-md-page="chapter"] .rpage-progress {
+        /* Dynamically anchor VERTICAL progress rail beside manga images; leave Top / Bottom / Off modes controlled by Comix Settings! */
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage-progress:is(.rpage-progress--left, .rpage-progress--right) {
             position: fixed !important;
             left: calc(50% + min(calc(50vw - 14px), calc((var(--md-base) * var(--md-zoom)) / 2 + 10px))) !important;
             right: auto !important;
             top: 64px !important;
-            bottom: 18px !important;
+            bottom: var(--md-prog-bottom, 18px) !important;
             width: 6px !important;
             z-index: 90 !important;
             border-radius: 999px !important;
-            transition: left .22s cubic-bezier(0.2, 0, 0, 1), opacity .18s ease-out !important;
+            transition: left .22s cubic-bezier(0.2, 0, 0, 1), opacity .14s ease-out !important;
         }
-        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-progress {
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-progress:is(.rpage-progress--left, .rpage-progress--right) {
             left: auto !important;
             right: 6px !important;
         }
@@ -2566,8 +2577,8 @@
             display: none !important;
             opacity: 0 !important;
         }
-        /* Fade out progress rail once user scrolls past manga images into chapter-ending / comments */
-        html[data-md-site="comix"][data-md-page="chapter"][data-md-past-images="1"] .rpage-progress {
+        /* Fade out vertical progress rail once user scrolls past manga images into chapter-ending / comments */
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-past-images="1"] .rpage-progress:is(.rpage-progress--left, .rpage-progress--right) {
             opacity: 0 !important;
             pointer-events: none !important;
         }
@@ -4629,17 +4640,43 @@
             if (fsBtn) fsBtn.setAttribute('aria-pressed', String(isFs));
         });
 
-        const syncProgressVisibility = () => {
-            if (detectPage() !== 'chapter') { delete root.dataset.mdPastImages; return; }
-            const ending = $('.rpage-chap-ending, .rpage-main .cm-widget, .rpage > .cm-widget');
-            const past = !!(ending && ending.getBoundingClientRect().top < innerHeight * 0.9);
-            if (past) root.dataset.mdPastImages = '1';
-            else delete root.dataset.mdPastImages;
+        let progRaf = 0;
+        const syncProgressBounds = () => {
+            progRaf = 0;
+            if (detectPage() !== 'chapter') {
+                delete root.dataset.mdPastImages;
+        root.style.removeProperty('--md-prog-bottom');
+                root.style.removeProperty('--md-prog-bottom');
+                return;
+            }
+            const pages = $$('.rpage-page[data-page]');
+            const lastPage = pages.length ? pages[pages.length - 1] : null;
+            const ending = $('.rpage-chap-ending');
+            let cutoffY = Infinity;
+            if (lastPage) cutoffY = Math.min(cutoffY, lastPage.getBoundingClientRect().bottom);
+            if (ending) cutoffY = Math.min(cutoffY, ending.getBoundingClientRect().top - 12);
+            if (!isFinite(cutoffY)) {
+                delete root.dataset.mdPastImages;
+                root.style.setProperty('--md-prog-bottom', '18px');
+                return;
+            }
+            if (cutoffY <= 84) {
+                root.dataset.mdPastImages = '1';
+            } else {
+                delete root.dataset.mdPastImages;
+                const bottomPx = Math.max(18, Math.round(innerHeight - cutoffY));
+                root.style.setProperty('--md-prog-bottom', bottomPx + 'px');
+            }
         };
+        const scheduleProgBounds = () => { if (!progRaf) progRaf = requestAnimationFrame(syncProgressBounds); };
+        // Capture phase catches scroll on window, document, .rpage, AND .rpage-main!
+        document.addEventListener('scroll', scheduleProgBounds, { passive: true, capture: true });
+        addEventListener('resize', scheduleProgBounds, { passive: true });
+        scheduleProgBounds();
 
         addEventListener('scroll', () => {
             if (detectPage() !== 'chapter') return;
-            syncProgressVisibility();
+            scheduleProgBounds();
             const y = scrollY, dy = y - last;
             if (Math.abs(dy) < 8) return;
             last = y;
