@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.4
+// @version      2026-11-21.6
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -193,7 +193,7 @@
         '.rpage-cmpanel__follow',
         '[data-md-auth-hide="1"]',
     ];
-    const UI_ZONES = '#md-hero, #md-continue-reading, #md-rbar, #md-dock, #md-sel-bar, #md-all-chaps, #md-toast, #md-top';
+    const UI_ZONES = '#md-hero, #md-continue-reading, #md-rbar, #md-dock, #md-sel-bar, #md-all-chaps, #md-lib-btn, #md-lib-modal, #md-list-picker, #md-series-save, #md-toast, #md-top';
     const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], [role="dialog"], [aria-modal="true"], #md-rbar, #md-dock, #md-toast, #md-top, .topnav, .rpage-cmpanel, .settings-dialog';
 
     const root = document.documentElement;
@@ -270,6 +270,8 @@
         pause: SVG('<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>'),
         compress: SVG('<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>'),
         shrinkW: SVG('<path d="M3 12h6m-3-3 3 3-3 3M21 12h-6m3-3-3 3 3 3"/>'),
+        bookmark: SVG('<path d="M6 4h12a1 1 0 0 1 1 1v16l-7-4-7 4V5a1 1 0 0 1 1-1z"/>'),
+        trash: SVG('<path d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14"/>'),
         swapIcon: (a, b) => `<span class="md-iswap"><span class="md-i md-i-a">${a}</span><span class="md-i md-i-b">${b}</span></span>`,
     };
 
@@ -948,6 +950,172 @@
         html[data-md-site="comix"] :is(.settings-seg__btn, .settings-dialog__save, .settings-dialog__reset, .settings-custom__reset):active {
             transform: scale(0.96) !important;
         }
+
+        /* ===== MINIMIZED / COLLAPSED SECTIONS & COVER + BUTTON ===== */
+        html[data-md-site="comix"] :is(.mpage__details-shell-toggle, .mpage__side button[aria-expanded="false"], .side-col button[aria-expanded="false"], [class*="shell-toggle" i], [class*="collapse-bar" i], [class*="minimized" i]) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 10px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 800 !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] :is(.mpage__details-shell-toggle, .mpage__side button[aria-expanded="false"], .side-col button[aria-expanded="false"], [class*="shell-toggle" i], [class*="collapse-bar" i], [class*="minimized" i]):hover {
+            background: var(--cream) !important;
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"] :is(.mpage__details-shell-toggle, .mpage__side button[aria-expanded="false"], .side-col button[aria-expanded="false"], [class*="shell-toggle" i], [class*="collapse-bar" i], [class*="minimized" i]):active {
+            transform: scale(0.96) !important;
+        }
+        html[data-md-site="comix"] .mpage__side section:has(> button[aria-expanded="false"]),
+        html[data-md-site="comix"] .mpage__side aside:has(> button[aria-expanded="false"]) {
+            background: transparent !important;
+        }
+        html[data-md-site="comix"] :is(.card__action--menu, button[aria-label="Add to library"]) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 999px !important;
+            box-shadow: var(--sh-sm) !important;
+            transition: transform .12s ease-out, background-color .14s ease-out, box-shadow .12s ease-out !important;
+        }
+        html[data-md-site="comix"] :is(.card__action--menu, button[aria-label="Add to library"]):hover {
+            background: var(--yellow) !important;
+            color: var(--on-ink) !important;
+            transform: scale(1.06);
+        }
+        html[data-md-site="comix"][data-md-theme="light"] :is(.card__action--menu, button[aria-label="Add to library"]):hover {
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"] :is(.card__action--menu, button[aria-label="Add to library"])[data-md-saved="1"] {
+            background: var(--yellow) !important;
+            color: var(--on-ink) !important;
+        }
+        html[data-md-site="comix"][data-md-theme="light"] :is(.card__action--menu, button[aria-label="Add to library"])[data-md-saved="1"] {
+            color: #111111 !important;
+        }
+
+        /* ===== LOCAL LIBRARY OVERLAY (#md-lib-modal) & SAVE PICKER (#md-list-picker) ===== */
+        #md-lib-modal, #md-list-picker {
+            position: fixed; inset: 0; z-index: 220;
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px; box-sizing: border-box;
+            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(4px);
+        }
+        #md-lib-modal .md-lib-panel {
+            width: min(980px, calc(100vw - 32px)); max-height: min(88dvh, 820px);
+            display: flex; flex-direction: column; overflow: hidden;
+            background: var(--card); color: var(--ink);
+            border: var(--bw) solid var(--bd); border-radius: 14px; box-shadow: 8px 8px 0 var(--bd);
+            font-family: var(--f-sans); animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        #md-list-picker .md-pick-panel {
+            width: min(440px, calc(100vw - 32px)); max-height: min(84dvh, 640px);
+            display: flex; flex-direction: column; overflow: hidden;
+            background: var(--card); color: var(--ink);
+            border: var(--bw) solid var(--bd); border-radius: 14px; box-shadow: 6px 6px 0 var(--bd);
+            font-family: var(--f-sans); animation: mdDialogIn .18s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        .md-modal-head {
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            padding: 14px 18px; border-bottom: 2px solid var(--bd); background: var(--soft);
+        }
+        .md-modal-head h2 { margin: 0; font: 900 18px/1.2 var(--f-sans); text-transform: uppercase; letter-spacing: .02em; color: var(--ink); }
+        .md-modal-close {
+            width: 34px; height: 34px; display: inline-grid; place-items: center;
+            background: var(--card); color: var(--ink); border: 2px solid var(--bd); border-radius: 8px; box-shadow: var(--sh-sm); cursor: pointer;
+            transition: transform .12s ease-out, background-color .14s ease-out;
+        }
+        .md-modal-close:hover { background: var(--pink); color: #ffffff; }
+        .md-modal-close:active { transform: scale(0.96); }
+        .md-lib-tabs {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+            padding: 12px 18px; border-bottom: 2px solid var(--bd); background: var(--card);
+        }
+        .md-lib-tab {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+            background: var(--soft); color: var(--ink); border: 2px solid var(--bd); border-radius: 8px; box-shadow: var(--sh-sm);
+            font: 800 12.5px/1 var(--f-sans); cursor: pointer;
+            transition: transform .12s ease-out, background-color .14s ease-out, box-shadow .12s ease-out;
+        }
+        .md-lib-tab:hover { background: var(--cream); transform: translate(-1px, -1px); box-shadow: var(--sh); }
+        .md-lib-tab.is-active { background: var(--yellow); color: var(--on-ink); }
+        html[data-md-theme="light"] .md-lib-tab.is-active { color: #111111; }
+        .md-lib-tab .md-tab-cnt { font: 800 11px/1 var(--f-mono); opacity: 0.85; }
+        .md-lib-newform {
+            display: flex; align-items: center; gap: 8px; margin-left: auto;
+        }
+        .md-lib-input {
+            height: 34px; padding: 0 10px; background: var(--soft); color: var(--ink);
+            border: 2px solid var(--bd); border-radius: 8px; font: 700 13px var(--f-sans); outline: none;
+        }
+        .md-lib-btn {
+            height: 34px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px;
+            background: var(--yellow); color: var(--on-ink); border: 2px solid var(--bd); border-radius: 8px; box-shadow: var(--sh-sm);
+            font: 800 12px/1 var(--f-sans); text-transform: uppercase; cursor: pointer;
+            transition: transform .12s ease-out, box-shadow .12s ease-out;
+        }
+        html[data-md-theme="light"] .md-lib-btn { color: #111111; }
+        .md-lib-btn:hover { transform: translate(-1px, -1px); box-shadow: var(--sh); }
+        .md-lib-btn:active { transform: scale(0.96); }
+        .md-lib-btn--danger { background: var(--card); color: var(--ink); }
+        .md-lib-btn--danger:hover { background: var(--pink); color: #ffffff; }
+        .md-lib-body {
+            flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 18px;
+        }
+        .md-lib-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px;
+        }
+        .md-lib-card {
+            position: relative; display: flex; flex-direction: column;
+            background: var(--soft); color: var(--ink); border: var(--bw) solid var(--bd);
+            border-radius: 10px; box-shadow: var(--sh-sm); overflow: hidden;
+            transition: transform .14s ease-out, box-shadow .14s ease-out;
+        }
+        .md-lib-card:hover { transform: translate(-2px, -2px); box-shadow: var(--sh); }
+        .md-lib-poster { display: block; width: 100%; aspect-ratio: 2 / 3; background: var(--card); border-bottom: 2px solid var(--bd); overflow: hidden; }
+        .md-lib-poster img { width: 100%; height: 100%; object-fit: cover; display: block; outline: 1px solid var(--img-outline); outline-offset: -1px; }
+        .md-lib-card-body { padding: 8px 10px 10px; display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; }
+        .md-lib-card-title { font: 800 12.5px/1.3 var(--f-sans); color: var(--ink); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .md-lib-card-rm {
+            position: absolute; top: 6px; right: 6px; width: 26px; height: 26px; display: grid; place-items: center;
+            background: rgba(17, 17, 17, 0.8); color: #ffffff; border: 2px solid #000000; border-radius: 6px; cursor: pointer;
+            opacity: 0; transition: opacity .14s ease-out, background-color .14s ease-out;
+        }
+        .md-lib-card:hover .md-lib-card-rm, .md-lib-card-rm:focus-visible { opacity: 1; }
+        .md-lib-card-rm:hover { background: var(--pink); }
+        .md-lib-empty { padding: 40px 20px; text-align: center; font: 700 14px/1.5 var(--f-sans); color: var(--muted); }
+
+        .md-pick-series { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 2px solid var(--bd); background: var(--card); }
+        .md-pick-thumb { width: 42px; height: 62px; border: 2px solid var(--bd); border-radius: 6px; object-fit: cover; flex-shrink: 0; background: var(--soft); }
+        .md-pick-title { font: 800 14px/1.3 var(--f-sans); color: var(--ink); }
+        .md-pick-lists { flex: 1 1 auto; overflow-y: auto; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+        .md-pick-row {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            padding: 10px 12px; background: var(--soft); color: var(--ink);
+            border: 2px solid var(--bd); border-radius: 9px; box-shadow: var(--sh-sm); cursor: pointer;
+            font: 800 13px/1.2 var(--f-sans); transition: transform .12s ease-out, background-color .14s ease-out;
+        }
+        .md-pick-row:hover { background: var(--cream); transform: translate(-1px, -1px); }
+        .md-pick-row[data-in="1"] { background: var(--yellow); color: var(--on-ink); }
+        html[data-md-theme="light"] .md-pick-row[data-in="1"] { color: #111111; }
+        .md-pick-foot { display: flex; gap: 8px; padding: 12px 16px; border-top: 2px solid var(--bd); background: var(--soft); }
+        .md-pick-foot .md-lib-input { flex: 1 1 auto; min-width: 0; }
+        #md-series-save {
+            display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
+            background: var(--card); color: var(--ink); border: var(--bw) solid var(--bd);
+            border-radius: 8px; box-shadow: var(--sh-sm); font: 800 12.5px/1 var(--f-sans);
+            text-transform: uppercase; letter-spacing: .03em; cursor: pointer; margin-left: 8px;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out;
+        }
+        #md-series-save:hover { background: var(--yellow); color: var(--on-ink); transform: translate(-1px, -1px); box-shadow: var(--sh); }
+        html[data-md-theme="light"] #md-series-save:hover { color: #111111; }
+        #md-series-save[data-md-saved="1"] { background: var(--yellow); color: var(--on-ink); }
+        html[data-md-theme="light"] #md-series-save[data-md-saved="1"] { color: #111111; }
+        #md-series-save:active { transform: scale(0.96); }
 
         /* ===== MAIN COLUMN HEADINGS, CARDS & FOOTER ===== */
         html[data-md-site="comix"] .layout--top .main-col > :not(:first-child) {
@@ -2847,6 +3015,409 @@
     }
 
     /* ====================================================================
+     *  COVER CACHE (Fixes missing Continue Reading & Library thumbnails)
+     * ==================================================================== */
+    function getCoverMap() {
+        const m = store.get('covers', {});
+        return (m && typeof m === 'object' && !Array.isArray(m)) ? m : {};
+    }
+
+    function saveCoverToCache(seriesPath, url) {
+        const clean = imageUrl(url);
+        if (!seriesPath || !clean) return;
+        const map = getCoverMap();
+        if (map[seriesPath] === clean) return;
+        map[seriesPath] = clean;
+        const keys = Object.keys(map);
+        if (keys.length > 400) delete map[keys[0]];
+        store.set('covers', map);
+    }
+
+    function getCachedCover(seriesPath) {
+        if (!seriesPath) return '';
+        return imageUrl(getCoverMap()[seriesPath] || '');
+    }
+
+    function harvestCovers(app) {
+        for (const a of $$('.card[href], .lrow a[href], .side-item a[href]', app)) {
+            const u = route(a.href, SERIES_PATH);
+            if (!u) continue;
+            const host = a.closest('.card, .lrow, .side-item') || a;
+            const img = $('img', host);
+            const src = imageUrl(img?.currentSrc || img?.getAttribute('src'));
+            if (src) saveCoverToCache(u.pathname, src);
+        }
+        if (detectPage() === 'overview') {
+            const img = $('.mpage__poster img', app);
+            const src = imageUrl(img?.currentSrc || img?.getAttribute('src'));
+            if (src) saveCoverToCache(location.pathname, src);
+        }
+    }
+
+    const coverFetchPending = new Set();
+    async function backfillSeriesCover(seriesPath) {
+        if (!seriesPath || coverFetchPending.has(seriesPath)) return '';
+        const cached = getCachedCover(seriesPath);
+        if (cached) return cached;
+        coverFetchPending.add(seriesPath);
+        try {
+            const res = await fetch(seriesPath, { credentials: 'same-origin' });
+            if (!res.ok) return '';
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const img = $('.mpage__poster img', doc);
+            const found = imageUrl(img?.getAttribute('src') || $('meta[property="og:image"]', doc)?.content, location.origin);
+            if (found) {
+                saveCoverToCache(seriesPath, found);
+                return found;
+            }
+        } catch (_) {}
+        finally { coverFetchPending.delete(seriesPath); }
+        return '';
+    }
+
+    /* ====================================================================
+     *  LOCAL LIBRARY & CUSTOM LISTS (Top Bar Button + Cover '+' Interceptor)
+     * ==================================================================== */
+    const DEFAULT_LISTS = [
+        { id: 'reading', name: 'Reading', items: [] },
+        { id: 'plan', name: 'Plan to Read', items: [] },
+        { id: 'completed', name: 'Completed', items: [] },
+    ];
+
+    function getLibrary() {
+        const data = store.get('lists', null);
+        if (data && Array.isArray(data.lists) && data.lists.length) return data;
+        const init = { lists: DEFAULT_LISTS.map(l => ({ ...l, items: [] })) };
+        store.set('lists', init);
+        return init;
+    }
+
+    function saveLibrary(data) {
+        store.set('lists', data);
+        syncSavedBadges();
+    }
+
+    function isSeriesSaved(seriesPath) {
+        if (!seriesPath) return false;
+        return getLibrary().lists.some(l => l.items.some(it => it.path === seriesPath));
+    }
+
+    function toggleSeriesInList(listId, series) {
+        const lib = getLibrary();
+        const list = lib.lists.find(l => l.id === listId);
+        if (!list) return false;
+        const idx = list.items.findIndex(it => it.path === series.path);
+        let added = false;
+        if (idx >= 0) {
+            list.items.splice(idx, 1);
+        } else {
+            list.items.unshift({
+                path: series.path,
+                title: toTitleCase(series.title),
+                cover: imageUrl(series.cover) || getCachedCover(series.path),
+                addedAt: Date.now(),
+            });
+            added = true;
+        }
+        saveLibrary(lib);
+        return added;
+    }
+
+    function createCustomList(name) {
+        const clean = String(name || '').trim().slice(0, 40);
+        if (!clean) return null;
+        const lib = getLibrary();
+        const existing = lib.lists.find(l => l.name.toLowerCase() === clean.toLowerCase());
+        if (existing) return existing;
+        const nl = { id: 'list_' + Date.now().toString(36), name: clean, items: [] };
+        lib.lists.push(nl);
+        saveLibrary(lib);
+        return nl;
+    }
+
+    function deleteCustomList(listId) {
+        const lib = getLibrary();
+        if (lib.lists.length <= 1) { toast('Keep at least one list'); return; }
+        lib.lists = lib.lists.filter(l => l.id !== listId);
+        saveLibrary(lib);
+    }
+
+    function syncSavedBadges() {
+        for (const btn of $$('.card__action--menu, button[aria-label="Add to library"]')) {
+            const host = btn.closest('.card, .lrow, .side-item');
+            const a = host && (host.matches('a[href]') ? host : $('a[href*="/title/"]', host));
+            const u = a && route(a.href, SERIES_PATH);
+            if (!u) continue;
+            const saved = isSeriesSaved(u.pathname);
+            btn.dataset.mdSaved = saved ? '1' : '0';
+            btn.title = saved ? 'Saved in Library (click to manage lists)' : 'Save to local list';
+        }
+        const serBtn = $('#md-series-save');
+        if (serBtn && SERIES_PATH.test(location.pathname)) {
+            const saved = isSeriesSaved(location.pathname);
+            serBtn.dataset.mdSaved = saved ? '1' : '0';
+            serBtn.innerHTML = `${saved ? ICON.check : ICON.plus}<span>${saved ? 'In Library' : 'Add to List'}</span>`;
+        }
+    }
+
+    function openListPicker(series) {
+        $('#md-list-picker')?.remove();
+        const cover = imageUrl(series.cover) || getCachedCover(series.path);
+        if (cover) saveCoverToCache(series.path, cover);
+
+        const overlay = document.createElement('div');
+        overlay.id = 'md-list-picker';
+        overlay.innerHTML = `
+            <div class="md-pick-panel" role="dialog" aria-label="Save to local list">
+                <div class="md-modal-head">
+                    <h2>Save to List</h2>
+                    <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
+                </div>
+                <div class="md-pick-series">
+                    ${cover ? `<img class="md-pick-thumb" src="${cover}" alt="">` : '<div class="md-pick-thumb"></div>'}
+                    <div class="md-pick-title"></div>
+                </div>
+                <div class="md-pick-lists"></div>
+                <form class="md-pick-foot">
+                    <input type="text" class="md-lib-input" placeholder="New list name…" maxlength="40" aria-label="New list name">
+                    <button type="submit" class="md-lib-btn">${ICON.plus}<span>Create</span></button>
+                </form>
+            </div>
+        `;
+        $('.md-pick-title', overlay).textContent = toTitleCase(series.title);
+        const listWrap = $('.md-pick-lists', overlay);
+
+        function renderLists() {
+            const lib = getLibrary();
+            listWrap.textContent = '';
+            for (const l of lib.lists) {
+                const inList = l.items.some(it => it.path === series.path);
+                const row = document.createElement('button');
+                row.type = 'button';
+                row.className = 'md-pick-row';
+                row.dataset.in = inList ? '1' : '0';
+                row.innerHTML = `<span></span><span>${inList ? '✓ Saved' : '+ Add'}</span>`;
+                row.firstElementChild.textContent = `${l.name} (${l.items.length})`;
+                row.addEventListener('click', () => {
+                    const added = toggleSeriesInList(l.id, { ...series, cover });
+                    toast(added ? `Added to ${l.name}` : `Removed from ${l.name}`, 1600);
+                    renderLists();
+                });
+                listWrap.appendChild(row);
+            }
+        }
+
+        const close = () => overlay.remove();
+        $('.md-modal-close', overlay).addEventListener('click', close);
+        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        $('.md-pick-foot', overlay).addEventListener('submit', e => {
+            e.preventDefault();
+            const inp = $('.md-lib-input', overlay);
+            const nl = createCustomList(inp.value);
+            if (!nl) return;
+            toggleSeriesInList(nl.id, { ...series, cover });
+            inp.value = '';
+            toast(`Created "${nl.name}" & saved series`, 1800);
+            renderLists();
+        });
+
+        renderLists();
+        document.body.appendChild(overlay);
+    }
+
+    function openLibraryModal() {
+        $('#md-lib-modal')?.remove();
+        let activeListId = '__all__';
+
+        const overlay = document.createElement('div');
+        overlay.id = 'md-lib-modal';
+        overlay.innerHTML = `
+            <div class="md-lib-panel" role="dialog" aria-label="My Local Library">
+                <div class="md-modal-head">
+                    <h2>My Library</h2>
+                    <button type="button" class="md-modal-close" aria-label="Close">${ICON.stop}</button>
+                </div>
+                <div class="md-lib-tabs"></div>
+                <div class="md-lib-body"></div>
+            </div>
+        `;
+        const tabsEl = $('.md-lib-tabs', overlay);
+        const bodyEl = $('.md-lib-body', overlay);
+
+        function renderLibrary() {
+            const lib = getLibrary();
+            const allMap = new Map();
+            lib.lists.forEach(l => l.items.forEach(it => { if (!allMap.has(it.path)) allMap.set(it.path, it); }));
+
+            tabsEl.textContent = '';
+            const makeTab = (id, label, count) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'md-lib-tab' + (activeListId === id ? ' is-active' : '');
+                b.innerHTML = `<span></span><span class="md-tab-cnt">${count}</span>`;
+                b.firstElementChild.textContent = label;
+                b.addEventListener('click', () => { activeListId = id; renderLibrary(); });
+                tabsEl.appendChild(b);
+            };
+            makeTab('__all__', 'All Saved', allMap.size);
+            lib.lists.forEach(l => makeTab(l.id, l.name, l.items.length));
+
+            const form = document.createElement('form');
+            form.className = 'md-lib-newform';
+            form.innerHTML = `<input type="text" class="md-lib-input" placeholder="New list…" maxlength="40"><button type="submit" class="md-lib-btn">${ICON.plus}<span>Add List</span></button>`;
+            form.addEventListener('submit', e => {
+                e.preventDefault();
+                const inp = $('input', form);
+                const nl = createCustomList(inp.value);
+                if (!nl) return;
+                activeListId = nl.id;
+                renderLibrary();
+                toast(`Created list "${nl.name}"`, 1600);
+            });
+            tabsEl.appendChild(form);
+
+            bodyEl.textContent = '';
+            const activeList = lib.lists.find(l => l.id === activeListId);
+            if (activeList && lib.lists.length > 1) {
+                const topRow = document.createElement('div');
+                topRow.style.cssText = 'display:flex;justify-content:flex-end;margin-bottom:12px;';
+                const delBtn = document.createElement('button');
+                delBtn.type = 'button';
+                delBtn.className = 'md-lib-btn md-lib-btn--danger';
+                delBtn.innerHTML = `${ICON.trash}<span>Delete "${activeList.name}"</span>`;
+                delBtn.addEventListener('click', () => {
+                    deleteCustomList(activeList.id);
+                    activeListId = '__all__';
+                    renderLibrary();
+                    toast('List deleted', 1500);
+                });
+                topRow.appendChild(delBtn);
+                bodyEl.appendChild(topRow);
+            }
+
+            const items = activeList ? activeList.items : [...allMap.values()];
+            if (!items.length) {
+                const empty = document.createElement('div');
+                empty.className = 'md-lib-empty';
+                empty.textContent = 'No series saved here yet. Hover any cover and click the + button (or use "Add to List" on a series page) to save it locally.';
+                bodyEl.appendChild(empty);
+                return;
+            }
+
+            const grid = document.createElement('div');
+            grid.className = 'md-lib-grid';
+            for (const it of items) {
+                const card = document.createElement('article');
+                card.className = 'md-lib-card';
+                const cover = imageUrl(it.cover) || getCachedCover(it.path);
+                const poster = document.createElement('a');
+                poster.className = 'md-lib-poster';
+                poster.href = it.path;
+                if (cover) {
+                    const img = document.createElement('img');
+                    img.src = cover;
+                    img.alt = it.title;
+                    img.loading = 'lazy';
+                    poster.appendChild(img);
+                } else {
+                    backfillSeriesCover(it.path).then(found => {
+                        if (!found || !poster.isConnected) return;
+                        const img = document.createElement('img');
+                        img.src = found;
+                        img.alt = it.title;
+                        poster.appendChild(img);
+                    });
+                }
+                const rm = document.createElement('button');
+                rm.type = 'button';
+                rm.className = 'md-lib-card-rm';
+                rm.title = activeList ? `Remove from ${activeList.name}` : 'Manage lists';
+                rm.innerHTML = activeList ? ICON.stop : ICON.plus;
+                rm.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (activeList) {
+                        toggleSeriesInList(activeList.id, it);
+                        renderLibrary();
+                        toast(`Removed from ${activeList.name}`, 1500);
+                    } else {
+                        openListPicker(it);
+                    }
+                });
+                const body = document.createElement('div');
+                body.className = 'md-lib-card-body';
+                const titleLink = document.createElement('a');
+                titleLink.className = 'md-lib-card-title';
+                titleLink.href = it.path;
+                titleLink.textContent = toTitleCase(it.title);
+                body.appendChild(titleLink);
+                card.append(rm, poster, body);
+                grid.appendChild(card);
+            }
+            bodyEl.appendChild(grid);
+        }
+
+        const close = () => overlay.remove();
+        $('.md-modal-close', overlay).addEventListener('click', close);
+        overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
+        renderLibrary();
+        document.body.appendChild(overlay);
+    }
+
+    function mountLibraryTopBtn(app) {
+        const right = $('header.topnav .topnav__right', app);
+        if (!right || $('#md-lib-btn', right)) return;
+        const btn = document.createElement('button');
+        btn.id = 'md-lib-btn';
+        btn.type = 'button';
+        btn.className = 'icon-btn';
+        btn.title = 'My Local Library & Lists';
+        btn.setAttribute('aria-label', 'My Local Library');
+        btn.innerHTML = ICON.bookmark;
+        btn.addEventListener('click', () => openLibraryModal());
+        const settings = $('.settings', right);
+        if (settings) settings.before(btn);
+        else right.prepend(btn);
+    }
+
+    function mountSeriesSaveBtn(app) {
+        if (detectPage() !== 'overview') return;
+        const readBtn = $('.mpage__read', app);
+        if (!readBtn || $('#md-series-save', app)) return;
+        const btn = document.createElement('button');
+        btn.id = 'md-series-save';
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+            const title = $('.mpage__title', app)?.textContent.trim() || document.title;
+            const img = $('.mpage__poster img', app);
+            const cover = imageUrl(img?.currentSrc || img?.getAttribute('src')) || getCachedCover(location.pathname);
+            openListPicker({ path: location.pathname, title, cover });
+        });
+        readBtn.after(btn);
+        syncSavedBadges();
+    }
+
+    // Intercept Comix's cover '+' ("Add to library") button so it opens our local list picker instead of login
+    document.addEventListener('click', e => {
+        const target = e.target instanceof Element ? e.target : null;
+        if (!target || target.closest(UI_ZONES)) return;
+        const plusBtn = target.closest('.card__action--menu, button[aria-label="Add to library"], button[title="Add to library"]');
+        if (!plusBtn) return;
+        const host = plusBtn.closest('.card, .lrow, .side-item');
+        if (!host) return;
+        const link = host.matches('a[href]') ? host : $('a[href*="/title/"]', host);
+        const u = link && route(link.href, SERIES_PATH);
+        if (!u) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        const title = ($('.card__title, .lrow__title, .side-item__title, h3, h2', host)?.textContent || link.getAttribute('title') || link.textContent || 'Series').trim();
+        const img = $('img', host);
+        const cover = imageUrl(img?.currentSrc || img?.getAttribute('src')) || getCachedCover(u.pathname);
+        openListPicker({ path: u.pathname, title, cover });
+    }, true);
+
+    /* ====================================================================
      *  CONTINUE READING SHELF (#md-continue-reading)
      * ==================================================================== */
     let historyNode = null;
@@ -2907,7 +3478,7 @@
             const pct = page && totalPages ? Math.min(100, Math.round((page / totalPages) * 100)) : (page > 1 ? 35 : 10);
             const resumeHref = item.url + (page > 1 ? '#page=' + page : '');
             const displayTitle = toTitleCase(item.title);
-            const cover = imageUrl(item.cover);
+            const cover = imageUrl(item.cover) || getCachedCover(item.seriesPath);
 
             const card = document.createElement('article');
             card.className = 'md-cr-card';
@@ -2941,6 +3512,22 @@
                 img.decoding = 'async';
                 img.className = 'md-cr-img';
                 thumbLink.appendChild(img);
+            } else if (item.seriesPath) {
+                backfillSeriesCover(item.seriesPath).then(found => {
+                    if (!found) return;
+                    const hist = historyItems();
+                    const match = hist.find(x => x.seriesPath === item.seriesPath);
+                    if (match && !match.cover) { match.cover = found; saveHistory(hist); }
+                    if (thumbLink.isConnected && !$('img', thumbLink)) {
+                        const img = document.createElement('img');
+                        img.src = found;
+                        img.alt = displayTitle;
+                        img.loading = 'lazy';
+                        img.decoding = 'async';
+                        img.className = 'md-cr-img';
+                        thumbLink.appendChild(img);
+                    }
+                });
             }
             const progress = document.createElement('div');
             progress.className = 'md-cr-progress';
@@ -3041,7 +3628,7 @@
             label: context.label,
             page,
             totalPages,
-            cover: imageUrl(context.cover) || imageUrl(old?.cover),
+            cover: imageUrl(context.cover) || imageUrl(old?.cover) || getCachedCover(context.seriesPath),
         });
         saveHistory(items.filter((item, i) => !i || item.seriesPath !== context.seriesPath));
         lastTracked = context.url;
@@ -3858,6 +4445,9 @@
             }
             entry.releases.push(item);
         }
+        for (const entry of map.values()) {
+            entry.releases.sort((a, b) => a.group.localeCompare(b.group, undefined, { sensitivity: 'base' }));
+        }
         return [...map.values()].sort((a, b) => b.sortNum - a.sortNum);
     }
 
@@ -3886,71 +4476,110 @@
 
     const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-    async function fetchAllChaptersApi(hid, seriesPath, onProgress) {
-        if (!hid || isTurnstileVisible()) return { items: [], complete: false, blocked: isTurnstileVisible() };
-        // Give Comix's own initial chapter request a brief moment to be sniffed
-        if (!sniffedChapterApi.byHid.has(hid)) await sleep(220);
+    async function fetchAllChaptersApi(hid, seriesPath, onProgress, opts = {}) {
+        const startPage = opts.startPage || 1;
+        const existingRaw = Array.isArray(opts.existingRaw) ? opts.existingRaw.slice() : [];
+        if (!hid || isTurnstileVisible()) {
+            return { items: existingRaw, complete: false, blocked: isTurnstileVisible(), nextPage: startPage, lastPage: opts.lastPage || 0, workingTpl: opts.workingTpl || null };
+        }
+        if (!opts.workingTpl && !sniffedChapterApi.byHid.has(hid)) await sleep(250);
 
         const cached = sniffedChapterApi.byHid.get(hid);
         const baseTemplates = [];
+        if (opts.workingTpl) baseTemplates.push(opts.workingTpl);
         if (cached?.url) baseTemplates.push(cached.url);
         if (sniffedChapterApi.templateUrl) {
             baseTemplates.push(sniffedChapterApi.templateUrl.replace(/\/(?:manga|title|comic|series)\/[^/]+\/chapters/i, `/manga/${hid}/chapters`));
         }
-        baseTemplates.push(`/api/v2/manga/${hid}/chapters?limit=100&order[number]=desc&page=1`);
+        baseTemplates.push(`/api/v2/manga/${hid}/chapters?limit=100&per_page=100&order[number]=desc&page=1`);
 
         const buildPageUrl = (tpl, pageNum) => {
             const u = new URL(tpl, location.origin);
             u.searchParams.set('limit', '100');
+            u.searchParams.set('per_page', '100');
             u.searchParams.set('page', String(pageNum));
             return u.href;
         };
 
-        let workingTpl = null;
+        async function fetchJsonWithBackoff(url, pNum, totalEst) {
+            const delays = [0, 5500, 11000];
+            for (let attempt = 0; attempt < delays.length; attempt++) {
+                if (delays[attempt] > 0) {
+                    onProgress?.(pNum, totalEst, null, `Rate limit hit at page ${pNum} — retrying in ${Math.round(delays[attempt] / 1000)}s…`);
+                    await sleep(delays[attempt]);
+                }
+                if (isTurnstileVisible()) return { status: 403, json: null };
+                try {
+                    const res = await fetch(url, { credentials: 'same-origin' });
+                    if (res.status === 429) continue;
+                    if (res.status === 403) return { status: 403, json: null };
+                    if (!res.ok) return { status: res.status, json: null };
+                    return { status: 200, json: await res.json() };
+                } catch (_) {
+                    if (attempt === delays.length - 1) return { status: 0, json: null };
+                }
+            }
+            return { status: 429, json: null };
+        }
+
+        let workingTpl = opts.workingTpl || null;
         let firstJson = null;
-        for (const tpl of baseTemplates) {
-            if (isTurnstileVisible()) return { items: [], complete: false, blocked: true };
-            try {
-                const res = await fetch(buildPageUrl(tpl, 1), { credentials: 'same-origin' });
-                if (res.status === 403 || res.status === 429) return { items: [], complete: false, blocked: true };
-                if (!res.ok) continue;
-                const json = await res.json();
-                if (extractApiChapterItems(json).length) {
+        let lastPage = opts.lastPage || 1;
+        let pStart = startPage;
+
+        if (startPage === 1) {
+            for (const tpl of baseTemplates) {
+                const { status, json } = await fetchJsonWithBackoff(buildPageUrl(tpl, 1), 1, 1);
+                if (status === 403 || status === 429) {
+                    return { items: existingRaw, complete: false, blocked: true, nextPage: 1, lastPage: 0, workingTpl: tpl };
+                }
+                if (status === 200 && json && extractApiChapterItems(json).length) {
                     workingTpl = tpl;
                     firstJson = json;
                     break;
                 }
-            } catch (_) {}
+            }
+            if (!workingTpl || !firstJson) {
+                return { items: existingRaw, complete: false, blocked: false, nextPage: 1, lastPage: 0, workingTpl: null };
+            }
+            const page1Items = extractApiChapterItems(firstJson);
+            existingRaw.push(...page1Items.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
+            const pag = firstJson.result?.pagination || firstJson.pagination || firstJson.meta || {};
+            const perPage = Number(pag.limit || pag.per_page || page1Items.length || 20);
+            const totalItems = Number(pag.total || 0);
+            lastPage = Math.min(120, Math.max(
+                Number(pag.last_page || pag.total_pages || 1),
+                totalItems > 0 && perPage > 0 ? Math.ceil(totalItems / perPage) : 1
+            ));
+            onProgress?.(1, lastPage, existingRaw);
+            pStart = 2;
         }
-        if (!workingTpl || !firstJson) return { items: [], complete: false, blocked: false };
-
-        const allRaw = [...extractApiChapterItems(firstJson)];
-        const pag = firstJson.result?.pagination || firstJson.pagination || firstJson.meta || {};
-        const lastPage = Math.min(100, Number(pag.last_page || pag.total_pages || Math.ceil((pag.total || allRaw.length) / (pag.limit || pag.per_page || 100)) || 1));
-
-        onProgress?.(1, lastPage, allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
 
         let complete = true;
         let blocked = false;
-        for (let p = 2; p <= lastPage; p++) {
-            await sleep(420); // Polite pacing so Cloudflare Turnstile never triggers
-            if (isTurnstileVisible()) { complete = false; blocked = true; break; }
-            try {
-                const res = await fetch(buildPageUrl(workingTpl, p), { credentials: 'same-origin' });
-                if (res.status === 403 || res.status === 429) { complete = false; blocked = true; break; }
-                if (!res.ok) { complete = false; break; }
-                const json = await res.json();
-                const items = extractApiChapterItems(json);
-                if (!items.length) break;
-                allRaw.push(...items);
-                onProgress?.(p, lastPage, allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
-            } catch (_) {
+        let nextPage = lastPage + 1;
+
+        for (let p = pStart; p <= lastPage; p++) {
+            await sleep(lastPage > 20 ? 550 : 350);
+            const { status, json } = await fetchJsonWithBackoff(buildPageUrl(workingTpl, p), p, lastPage);
+            if (status === 403 || status === 429) {
                 complete = false;
+                blocked = true;
+                nextPage = p;
                 break;
             }
+            if (status !== 200 || !json) {
+                complete = false;
+                nextPage = p;
+                break;
+            }
+            const items = extractApiChapterItems(json);
+            if (!items.length) break;
+            existingRaw.push(...items.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean));
+            onProgress?.(p, lastPage, existingRaw);
         }
 
-        return { items: allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean), complete, blocked };
+        return { items: existingRaw, complete, blocked, nextPage, lastPage, workingTpl };
     }
 
     let seriesState = null;
@@ -4019,7 +4648,7 @@
         const sortBtn = document.createElement('button');
         sortBtn.type = 'button';
         sortBtn.className = 'md-ch-sort';
-        sortBtn.textContent = 'Newest ↓';
+        sortBtn.textContent = 'Ch. Highest ↓';
 
         const totalBadge = document.createElement('span');
         totalBadge.className = 'md-ch-badge';
@@ -4316,7 +4945,7 @@
 
         sortBtn.addEventListener('click', () => {
             sortDesc = !sortDesc;
-            sortBtn.textContent = sortDesc ? 'Newest ↓' : 'Oldest ↑';
+            sortBtn.textContent = sortDesc ? 'Ch. Highest ↓' : 'Ch. Lowest ↑';
             renderRows();
         });
 
@@ -4340,6 +4969,7 @@
         let collectedRaw = [...scrapeDomChapters(chaptersSection)];
         let isComplete = false;
         let isCrawling = false;
+        let apiResumeState = null;
 
         function hasMoreHiddenPages() {
             const nextBtn = $('nav.npager button[aria-label="Next page"]', chaptersSection);
@@ -4347,12 +4977,24 @@
         }
 
         function refreshMoreBar(pausedForChallenge = false) {
-            if (isComplete || isCrawling || !hasMoreHiddenPages()) {
+            if (isComplete || isCrawling) {
+                moreBar.hidden = true;
+                return;
+            }
+            if (!apiResumeState && !hasMoreHiddenPages()) {
                 moreBar.hidden = true;
                 return;
             }
             moreBar.hidden = false;
-            loadMoreBtn.textContent = pausedForChallenge ? 'Resume loading' : 'Load next page';
+            if (apiResumeState) {
+                loadMoreBtn.textContent = pausedForChallenge
+                    ? `Resume from page ${apiResumeState.nextPage}/${apiResumeState.lastPage}`
+                    : `Continue loading (${apiResumeState.nextPage}/${apiResumeState.lastPage})`;
+                loadAllBtn.hidden = true;
+            } else {
+                loadMoreBtn.textContent = pausedForChallenge ? 'Resume loading' : 'Load next page';
+                loadAllBtn.hidden = false;
+            }
         }
 
         function restoreCleanUrl() {
@@ -4381,7 +5023,62 @@
             });
         }
 
+        async function runApiLoad(resumeOpts = {}) {
+            if (isCrawling) return;
+            isCrawling = true;
+            loadingAll = true;
+            moreBar.hidden = true;
+            const hid = extractSeriesHid(seriesPath);
+            setLoader(true, resumeOpts.startPage ? `Resuming chapters (${resumeOpts.startPage}/${resumeOpts.lastPage})…` : 'Loading all chapters…');
+            try {
+                const result = await fetchAllChaptersApi(hid, seriesPath, (p, total, partial, customMsg) => {
+                    if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                    if (partial) {
+                        collectedRaw = partial;
+                        groups = groupChaptersByNumber(collectedRaw);
+                        renderRows();
+                    }
+                    setLoader(true, customMsg || `Loading all chapters (${p}/${total})…`);
+                }, resumeOpts);
+
+                if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                if (result.items.length) {
+                    collectedRaw = result.items;
+                    groups = groupChaptersByNumber(collectedRaw);
+                    isComplete = result.complete;
+                    apiResumeState = result.complete ? null : (result.workingTpl && result.lastPage > 1 ? {
+                        startPage: result.nextPage,
+                        nextPage: result.nextPage,
+                        lastPage: result.lastPage,
+                        workingTpl: result.workingTpl,
+                    } : null);
+                    if (isComplete || collectedRaw.length >= 20) {
+                        writeChapCache(seriesPath, collectedRaw, isComplete);
+                    }
+                }
+                restoreCleanUrl();
+                isCrawling = false;
+                loadingAll = false;
+                setLoader(false);
+                renderRows();
+                refreshMoreBar(result.blocked);
+                if (result.blocked) toast('Paused for verification/rate-limit — click Resume to load remaining chapters.', 3500);
+            } catch (_) {
+                if (seriesState?.path !== seriesPath || !box.isConnected) return;
+                isCrawling = false;
+                loadingAll = false;
+                setLoader(false);
+                restoreCleanUrl();
+                renderRows();
+                refreshMoreBar(false);
+            }
+        }
+
         async function stepHiddenPages(maxSteps = 1) {
+            if (apiResumeState) {
+                await runApiLoad({ ...apiResumeState, existingRaw: collectedRaw });
+                return;
+            }
             if (isCrawling || isComplete) return;
             if (isTurnstileVisible()) {
                 refreshMoreBar(true);
@@ -4395,7 +5092,6 @@
             let steps = 0;
 
             try {
-                // If user landed on ?page=32 from an older URL, jump back to page 1 first so we don't miss recent chapters
                 const activeNum = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
                 if (activeNum > 1 && collectedRaw.length <= 20) {
                     const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
@@ -4440,20 +5136,16 @@
                     renderRows();
                     steps++;
 
-                    if (steps < maxSteps) await sleep(650); // Human-paced delay to avoid Turnstile
+                    if (steps < maxSteps) await sleep(650);
                 }
 
                 if (!hasMoreHiddenPages()) isComplete = true;
-                writeChapCache(seriesPath, collectedRaw, isComplete);
-
-                // Always return URL to clean page 1 so reloads never get stuck on ?page=32
+                if (isComplete || collectedRaw.length >= 20) writeChapCache(seriesPath, collectedRaw, isComplete);
                 if (isComplete) {
                     const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
                     if (p1 && !p1.classList.contains('is-active')) p1.click();
-                    restoreCleanUrl();
-                } else {
-                    restoreCleanUrl();
                 }
+                restoreCleanUrl();
             } finally {
                 isCrawling = false;
                 loadingAll = false;
@@ -4467,7 +5159,6 @@
         loadMoreBtn.addEventListener('click', () => stepHiddenPages(3));
         loadAllBtn.addEventListener('click', () => stepHiddenPages(Infinity));
 
-        // Gentle infinite scroll: loads 1 more page when scrolling near bottom (if not already complete)
         scrollWrap.addEventListener('scroll', () => {
             if (isComplete || isCrawling || isTurnstileVisible()) return;
             if (scrollWrap.scrollTop + scrollWrap.clientHeight >= scrollWrap.scrollHeight - 80) {
@@ -4475,46 +5166,25 @@
             }
         }, { passive: true });
 
-        // Boot sequence: 1) Check 15-min sessionStorage cache -> 2) Try polite limit=100 API -> 3) Clean on-demand / infinite-scroll pager
+        // Always strip stale ?page=N from URL on mount
+        restoreCleanUrl();
+
         const cachedData = readChapCache(seriesPath);
-        if (cachedData && cachedData.items.length >= collectedRaw.length) {
+        if (cachedData && cachedData.complete && cachedData.items.length >= 20) {
             collectedRaw = cachedData.items;
-            isComplete = !!cachedData.complete;
+            isComplete = true;
             loadingAll = false;
             groups = groupChaptersByNumber(collectedRaw);
-            restoreCleanUrl();
             renderRows();
             refreshMoreBar(false);
         } else {
-            const hid = extractSeriesHid(seriesPath);
-            setLoader(true, 'Loading chapters…');
-            fetchAllChaptersApi(hid, seriesPath, (p, total, partial) => {
-                if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                collectedRaw = partial;
-                groups = groupChaptersByNumber(collectedRaw);
-                setLoader(true, `Loading all chapters (${p}/${total})…`);
-                renderRows();
-            }).then(result => {
-                if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                if (result.items.length) {
-                    collectedRaw = result.items;
-                    isComplete = result.complete;
-                    groups = groupChaptersByNumber(collectedRaw);
-                    writeChapCache(seriesPath, collectedRaw, isComplete);
-                }
-                loadingAll = false;
-                setLoader(false);
-                restoreCleanUrl();
-                renderRows();
-                refreshMoreBar(result.blocked);
-            }).catch(() => {
-                if (seriesState?.path !== seriesPath || !box.isConnected) return;
-                loadingAll = false;
-                setLoader(false);
-                restoreCleanUrl();
-                renderRows();
-                refreshMoreBar(false);
-            });
+            // If DOM started on page > 1 (from an old ?page=32 bookmark), click page 1 immediately
+            const activeNum = Number($('nav.npager .npager__num.is-active', chaptersSection)?.textContent?.trim() || '1');
+            if (activeNum > 1) {
+                const p1 = $$('nav.npager .npager__num', chaptersSection).find(b => b.textContent.trim() === '1');
+                if (p1) p1.click();
+            }
+            runApiLoad({ startPage: 1, existingRaw: [] });
         }
     }
 
@@ -4576,6 +5246,9 @@
 
         tagDropdowns(app);
         enhanceSettingsPresets();
+        harvestCovers(app);
+        mountLibraryTopBtn(app);
+        syncSavedBadges();
         tagUserProfile(app);
         purgeAuthUI(app);
         renderCommentScores(app);
@@ -4599,6 +5272,7 @@
 
         if (page === 'overview') {
             setupCoverBackdrop(app);
+            mountSeriesSaveBtn(app);
             const chapters = $('.mpage__chapters', app);
             if (chapters && ($('.mchap-row__primary[href]', chapters) || $('#md-all-chaps', chapters))) {
                 mountSeriesChapters(chapters, path);
