@@ -3,7 +3,7 @@
 [![Userscript](https://img.shields.io/badge/Userscript-Tampermonkey%20%7C%20Violentmonkey-black?style=for-the-badge&logo=tampermonkey)](https://github.com/17Arigato-jwd/neobrutal-scans)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-A high-contrast **Neobrutalist skin and debloater suite** for **DemonicScans / MangaDemon**, **Asura Scans** (both comic and novel sides), **MangaRead**, and **Comix**. It eliminates popunders, invasive ad slots, reader membership popups, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with interactive hero carousels, continue-reading shelves, zoom controls, offline `.cbz` exports, and multi-chapter batch ZIP downloads.
+A high-contrast **Neobrutalist skin and debloater suite** for **DemonicScans / MangaDemon**, **Asura Scans** (both comic and novel sides), **MangaRead**, and **Comix**. It eliminates popunders, invasive ad slots, reader membership popups, and account nags, replaces cluttered layouts with bold neobrutalist typography and borders, and supercharges the reading experience with interactive hero carousels, continue-reading shelves, zoom & stretch controls, offline `.cbz` / `.pdf` exports, and multi-chapter batch ZIP downloads.
 
 ---
 
@@ -21,7 +21,7 @@ Choose the dedicated script for your site:
 | Site / Dedicated Script | Site / Dedicated Script |
 |---|---|
 | **Asura Scans Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js) | **Comix Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--21.17-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js) |
-| **High-contrast Neobrutalism skin** with zero-flash dark/light toggle, minimalist floating reader dock with zoom (50%–200%) & contrast switcher, novel reader overhaul, and multi-chapter batch ZIP downloader.<br>*Domains:* `asurascans.com`, `*.asurascans.com` | **Full-site Neobrutalism & Settings theme sync**, sign-in nag removal & ad neutralizer, hero banner carousel, local reading history shelf (`.nb-history`), floating reader dock, `.cbz` packaging with `ComicInfo.xml`, and batch ZIP & PDF exporter.<br>*Domains:* `comix.to`, `*.comix.to` |
+| **High-contrast Neobrutalism skin** with zero-flash dark/light toggle, minimalist floating reader dock with zoom (50%–200%) & contrast switcher, novel reader overhaul, and multi-chapter batch ZIP downloader.<br>*Domains:* `asurascans.com`, `*.asurascans.com` | **Full-site Neobrutalism & 4-theme Settings sync**, offline Local Library & custom lists, sign-in nag removal & ad neutralizer, hero banner carousel with 3D tilt, single scrollable chapter list with scanlation-group dropdowns, deduplicated batch ZIP & PDF exporter (up to 500 chapters), and floating reader dock with stretch-to-width.<br>*Domains:* `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` |
 | 👉 **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)** | 👉 **[Install Comix Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)** |
 | **Demonic Scans Dedicated** *(MangaDemon)*<br>[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **MangaRead Dedicated** *(mangaread.org)*<br>[![Version](https://img.shields.io/badge/version-2026--11--20.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) |
 | **Popunder killer & membership popup immunity**, Netflix-style hero carousel with falling progress timer, cookie-stored Continue Reading shelf, 3-tier podium leaderboard, single-chapter `.cbz` export, and comic ↔ novel reader formatting.<br>*Domains:* `demonicscans.org`, `mangademon.org`, & mirrors | **4-layer ad & popunder debloater**, hero carousel, series cover blur backdrop, restructured wpDiscuz comments with collapsible trees & live indicators, sticky bottom reader bar, `.cbz` export, and multi-chapter batch ZIP downloader.<br>*Domains:* `mangaread.org`, `*.mangaread.org` |
@@ -83,13 +83,14 @@ Your userscript manager will automatically detect the script and prompt you to c
 ---
 
 ### Comix Dedicated Features
-- **Full-Site Neobrutalism & Theme Sync**: High-contrast neobrutalist aesthetic with solid borders, hard shadows, custom palettes (Light, Dark, Custom), and full synchronization with the site's own Settings.
-- **Featured Hero Carousel**: Prominent hero banner on `/home` showcasing top series with Title Case metadata, chapter badge, dynamic view formatting, and falling vertical progress bar (5.5s timer with pause-on-hover/focus).
-- **Continue Reading Shelf**: Local reading history shelf (`.nb-history`) tracking recent series, chapter titles, page progress, and read timestamps directly in `localStorage`.
-- **Floating Reader Dock**: Minimal bottom dock with dynamic zoom (50% to 200%), reading mode toggle, background selector (Paper, Charcoal, Black, Theme), and chapter navigation.
-- **Single Chapter `.cbz` Packaging**: One-click Comic Book Zip exporter embedding standard `ComicInfo.xml` metadata and parallel image downloading.
-- **Multi-Chapter Batch Downloader & PDF Export**: Download multiple selected chapters in a consolidated ZIP archive or export directly to PDF from series pages (`/title/*`).
-- **Promotion & Sign-In Debloater**: Automatic removal of sponsored homepage banners, PWA install prompts, ending promotional banners, sign-in UI nags, and distracting third-party frames.
+- **Full-Site Neobrutalism & 4-Theme Settings Sync**: High-contrast neobrutalist aesthetic with solid black borders, hard drop shadows, and four synchronized themes (Main, Dark, Light, Custom) linked bidirectionally with the site's native Settings modal, including real-time RGB input binding.
+- **Client-Side Local Library & Custom Lists**: Full client-side library modal (`#md-lib-modal`) accessible from the top navigation bar (`#md-lib-btn`). Manage in-progress titles with a "Currently Reading" shelf and create custom-named collections (e.g., Plan to Read, Completed, Dropped), complete with an interactive "Save to Library" picker (`#md-series-save`) on series pages and synchronized shelf badges.
+- **Netflix-Style Featured Hero Banner**: 10-slide hero carousel (`#md-hero`) with falling vertical progress timer (5.5s), auto-centered thumbnail strip, smooth pause-on-hover/focus, stationary title line-box, and responsive 3D hover tilt on PC book covers.
+- **Persistent Continue Reading Shelf**: Local cookie- and `localStorage`-stored shelf (`#md-continue-reading`) positioned on the home route, displaying reading progress percentages, last read chapter, and instant jump links.
+- **Single Scrollable Chapter List & Scanlation Deduplication**: Complete series chapter view (`#md-all-chaps`) grouping multiple scanlation releases under unified chapter rows with scanlation-group dropdown selectors.
+- **Deduplicated Multi-Chapter Batch Exporter (ZIP & PDF)**: Deduplicated "Select All" downloader selecting unique chapters while automatically skipping duplicate scanlation groups, supporting exports of up to 500 chapters per batch into consolidated ZIP archives or formatted PDF documents.
+- **Unified Reader Top Bar & Floating Dock**: Synchronized top bar (`#md-rbar`) with live comment count attribution and chapter status, paired with an auto-hiding floating bottom reader dock (`#md-dock`). Includes animated reader tools, zoom presets (50% to 200%), stretch-to-width mode, paper/charcoal/black/theme background toggle, full keyboard navigation (`[`/`]`, `-`/`=`, `B`), and auto-hiding during downward scroll.
+- **Comprehensive De-Bloater & Privacy Shield**: Intercepts cross-origin `window.open` popups, neutralizes ad iframes (doubleclick, googlesyndication, a-ads), hides intrusive sign-in/register nags, strips reaction/like buttons, hides home announcements and PWA prompts, and flattens comment threads with clean, read-only score badges.
 
 ---
 
@@ -142,16 +143,16 @@ To modify settings, open your userscript manager's dashboard, select your instal
 | **DemonicScans** | `demonicscans.org`, `mangademon.org`, `mangademon.com`, `mangademon.cc`, `mangademon.me`, `mgdemon.org`, `demonreader.org` | Popunder killer, Membership popup immunity, Netflix hero carousel, Continue Reading shelf, 3-tier podium leaderboard, .cbz download, Novel reader |
 | **MangaRead** | `mangaread.org`, `*.mangaread.org` | 4-layer ad & popunder debloater, Hero carousel, Series backdrop, AJAX load-more animations, wpDiscuz dynamic comments, .cbz export, Batch ZIP downloader |
 | **Asura Scans** | `asurascans.com`, `*.asurascans.com` | High-contrast Neobrutalism skin, Dark mode, Reader dock, Zoom controls, Novel reader formatting, Multi-chapter batch ZIP downloader |
-| **Comix** | `comix.to`, `*.comix.to` | High-contrast Neobrutalism skin, Theme sync, Featured hero carousel, Local reading history, Reader tools & backgrounds, .cbz export with ComicInfo.xml, Multi-chapter batch ZIP & PDF exporter, Promotion & sign-in debloater |
+| **Comix** | `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` | Full-site Neobrutalism, 4-theme Settings sync, Offline Library & custom lists, Hero carousel with 3D tilt, Deduplicated chapter list & group dropdowns, 500-chapter batch ZIP & PDF exporter, Reader dock with stretch-to-width, Ad & sign-in debloater |
 
 ---
 
 ## Permissions Explained
 
 - `@run-at document-start`: Injected early to neutralize ad listeners, poison membership popup triggers, and apply theme datasets before initial paint, eliminating white flashes.
-- `@grant unsafeWindow`: Bypasses sandbox boundaries to neutralize malicious ad network globals and hook dialog prototypes directly in the page window.
-- `GM_xmlhttpRequest`: Required to fetch raw comic panel image data across CDNs without CORS restrictions for assembling `.cbz` / `.zip` archives.
-- `@connect`: Grants explicit permissions to access comic image domains (such as `cdn.asurascans.com`, `demoniclibs.com`, `librarydm.com`, `readermc.org`, `mangafirst.org`, `mangaread.org`).
+- `@grant unsafeWindow`: Bypasses sandbox boundaries to neutralize malicious ad network globals, hook dialog prototypes, and mirror theme sync directly in the page window.
+- `GM_xmlhttpRequest` / `GM.xmlHttpRequest`: Required to fetch raw comic panel image data across CDNs without CORS restrictions for assembling `.cbz` / `.zip` archives and compiling `.pdf` files.
+- `@connect`: Grants explicit permissions to access comic image domains (such as `cdn.asurascans.com`, `demoniclibs.com`, `librarydm.com`, `readermc.org`, `mangafirst.org`, `mangaread.org`, `comix.to`, `comix.ws`).
 
 ---
 
@@ -159,21 +160,23 @@ To modify settings, open your userscript manager's dashboard, select your instal
 
 - [x] **Multi-Site Expansion**
   - [x] Dedicated edition for `mangaread.org` with 4-layer ad purging, hero carousel, dynamic comments, and batch downloader.
-  - [x] Dedicated edition for `comix.to` with featured carousel, reading history, reader dock, and CBZ/batch ZIP export.
+  - [x] Dedicated edition for `comix.to` & `comix.ws` with offline library, custom lists, deduplicated scanlation group chapter lists, PDF & batch ZIP exports, and stretch-to-width reader tools.
   - [x] Separate version control and dedicated install links for each site.
 - [x] **Homepage & Browsing Overhaul**
   - [x] **Netflix-style Featured Hero**: Full banner with falling progress bar, pause-on-hover, view pills, and stationary title box.
-  - [x] **Continue Reading Section**: Persistent cookie shelf for tracking reading progress and resuming chapters on DemonicScans.
+  - [x] **Continue Reading Section**: Persistent shelf for tracking reading progress and resuming chapters on DemonicScans and Comix.
+  - [x] **Offline Library & Lists**: Client-side library modal (`#md-lib-modal`) and custom collections with synced badges for Comix.
   - [x] **Standardized 2:3 Card Geometry**: Zero height variance, clamped 2-line titles, and uniform grid sizing.
   - [x] **3-Tier Podium Leaderboard**: Elevated gold/silver/bronze podium design on DemonicScans leaderboard.
   - [x] **Advanced Search Poster Cards**: High-contrast bottom black gradient overlay for enhanced readability.
 - [x] **Reader & Anti-Ad Hardening**
   - [x] **Reader Membership Popup Immunity**: Neutralized `#subpanel` dialog, scroll locking, and 700px PayPal promotion box.
+  - [x] **Global Popup & Ad Neutralizer**: Neutralized cross-origin popups, tracker globals, and intrusive sign-in/rate overlays on Comix.
   - [x] **Immersive Auto-Hiding Navigation**: Header and dock slide away while reading down and return on upward scroll.
   - [x] **Bottom Dock Chapter Selector**: Interactive chapter selection dropdown directly inside `#md-dock`.
-  - [x] **Smart Comments & GIF Support**: Automatic "Top" sorting, spam word filtering, and preservation of GIF/media reactions.
+  - [x] **Smart Comments & Read-Only Scores**: Automatic "Top" sorting and media reactions on DemonicScans; stripped thread lines and clean read-only scores on Comix.
 - [x] **Visual Polish & Animations**
-  - [x] **Sliding Pill Theme Toggle**: Smooth knob sliding animation with persistent theme storage.
+  - [x] **Sliding Pill & Settings Theme Sync**: Smooth knob sliding animation with persistent theme storage and native 4-theme Settings sync on Comix.
   - [x] **Staggered AJAX Animations**: Pop-in animation for newly loaded cards on MangaRead.
   - [x] **Dynamic Blurred Series Backdrop**: Elevated series header with background cover blur on MangaRead.
 
