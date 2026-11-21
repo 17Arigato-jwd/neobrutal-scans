@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.1
-// @description  Neobrutalist skin and debloater for Comix (comix.to): full-site Neobrutalism, sign-in UI removal, synced Settings themes (Main/Dark/Light/Custom), Netflix-style hero carousel, Continue Reading shelf, styled comments & user profiles, deduplicated Select All batch ZIP/PDF downloader, and unified Top + Bottom reader bars.
+// @version      2026-11-21.2
+// @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
 // @supportURL   https://github.com/17Arigato-jwd/neobrutal-scans/issues
@@ -69,6 +69,44 @@
     }
     neutralizePopups();
 
+    const sniffedChapterApi = { templateUrl: null, byHid: new Map() };
+    function extractApiChapterItems(json) {
+        if (!json || typeof json !== 'object') return [];
+        const r = json.result || json.data || json;
+        if (Array.isArray(r)) return r;
+        if (Array.isArray(r.items)) return r.items;
+        if (Array.isArray(r.chapters)) return r.chapters;
+        if (Array.isArray(r.list)) return r.list;
+        return [];
+    }
+    (function installChapterApiSniffer() {
+        const win = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;
+        const origFetch = typeof win.fetch === 'function' ? win.fetch.bind(win) : null;
+        if (!origFetch || win.__mdComixFetchHooked) return;
+        win.__mdComixFetchHooked = true;
+        try {
+            win.fetch = function (input, init) {
+                const p = origFetch(input, init);
+                try {
+                    const reqUrl = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+                    if (reqUrl && /\/chapters\b/i.test(reqUrl)) {
+                        const u = new URL(reqUrl, location.href);
+                        const m = u.origin === location.origin && u.pathname.match(/\/manga\/([^/]+)\/chapters/i);
+                        if (m) {
+                            sniffedChapterApi.templateUrl = u.pathname + u.search;
+                            p.then(res => res && res.ok && res.clone().json().then(json => {
+                                if (extractApiChapterItems(json).length) {
+                                    sniffedChapterApi.byHid.set(m[1], { url: u.href, json });
+                                }
+                            }).catch(() => {})).catch(() => {});
+                        }
+                    }
+                } catch (_) {}
+                return p;
+            };
+        } catch (_) {}
+    })();
+
     /* ====================================================================
      *  CONFIG & STATE INITIALIZATION
      * ==================================================================== */
@@ -80,6 +118,7 @@
         hidePromotions: true,
         hideAuthUI: true,
         hideUserCollections: true,
+        hideHomeAnnouncements: true,
         historyLimit: 16,
         themeDefault: 'dark',
         reader: {
@@ -87,7 +126,7 @@
             zoomSteps: [0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.15, 1.3, 1.5, 1.75, 2],
             concurrency: 4,
         },
-        batchLimit: 200,
+        batchLimit: 500,
         readerDockOnTap: true,
         dockHideOnScroll: true,
         dockScrollPx: 150,
@@ -130,19 +169,19 @@
         '.mrec-vote',
         '.cm-item--editor',
         '.cm-widget__announcement',
-        '.cm-item__ctrls',
         '.cm-item__ctrl--like',
         '.cm-item__ctrl--dislike',
         '.cm-item__ctrl--reply',
         '.cm-item__ctrl--menu',
+        '.cm-item__menu',
         '.rpage-chap-ending__like',
         '.rpage-cmpanel__like',
         '.rpage-cmpanel__like-attribution',
         '.rpage-cmpanel__follow',
         '[data-md-auth-hide="1"]',
     ];
-    const UI_ZONES = '#md-hero, #md-continue-reading, #md-rbar, #md-dock, #md-sel-bar, #md-toast, #md-top';
-    const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], #md-rbar, #md-dock, #md-toast, #md-top, .topnav, .rpage-cmpanel, .settings-dialog';
+    const UI_ZONES = '#md-hero, #md-continue-reading, #md-rbar, #md-dock, #md-sel-bar, #md-all-chaps, #md-toast, #md-top';
+    const TAP_IGNORE = 'a, button, input, select, textarea, label, summary, details, dialog, iframe, [role="button"], [role="dialog"], [aria-modal="true"], #md-rbar, #md-dock, #md-toast, #md-top, .topnav, .rpage-cmpanel, .settings-dialog';
 
     const root = document.documentElement;
     root.dataset.mdSite = 'comix';
@@ -214,7 +253,36 @@
         expand: SVG('<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>'),
         stretch: SVG('<path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4"/>'),
         scroll: SVG('<polygon points="7 5 19 12 7 19 7 5"/>'),
+        pause: SVG('<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>'),
+        compress: SVG('<path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"/>'),
+        shrinkW: SVG('<path d="M3 12h6m-3-3 3 3-3 3M21 12h-6m3-3-3 3 3 3"/>'),
+        swapIcon: (a, b) => `<span class="md-iswap"><span class="md-i md-i-a">${a}</span><span class="md-i md-i-b">${b}</span></span>`,
     };
+
+    function fmtRelTime(ts) {
+        if (!ts) return '';
+        if (typeof ts === 'string' && !/^\d+$/.test(ts) && isNaN(Date.parse(ts))) return ts.trim();
+        const ms = typeof ts === 'number' ? (ts < 1e12 ? ts * 1000 : ts) : (/^\d+$/.test(ts) ? (Number(ts) < 1e12 ? Number(ts) * 1000 : Number(ts)) : Date.parse(ts));
+        if (!ms || isNaN(ms)) return '';
+        const diff = Math.max(0, Math.floor((Date.now() - ms) / 1000));
+        if (diff < 60) return 'now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 2592000) return Math.floor(diff / 86400) + 'd ago';
+        if (diff < 31536000) return Math.floor(diff / 2592000) + 'mo ago';
+        return Math.floor(diff / 31536000) + 'y ago';
+    }
+
+    function parseCompactInt(raw) {
+        const s = String(raw || '').replace(/,/g, '').trim().toLowerCase();
+        if (!s) return 0;
+        const m = s.match(/^(-?\d+(?:\.\d+)?)\s*([km])?$/);
+        if (!m) return parseInt(s, 10) || 0;
+        let n = parseFloat(m[1]);
+        if (m[2] === 'k') n *= 1000;
+        else if (m[2] === 'm') n *= 1000000;
+        return Math.round(n);
+    }
 
     function toTitleCase(str) {
         if (!str) return '';
@@ -493,6 +561,7 @@
         /* ===== LAYER 1 DE-BLOAT & USER COLLECTIONS REMOVAL ===== */
         ${CONFIG.hidePromotions ? PROMOTIONS.join(', ') + ' { display: none !important; visibility: hidden !important; height: 0 !important; pointer-events: none !important; }' : ''}
         ${CONFIG.hideUserCollections ? 'html[data-md-site="comix"] section.section:has(.hcoll-swiper), html[data-md-site="comix"] section.section:has(.hcoll-section__more) { display: none !important; }' : ''}
+        ${CONFIG.hideHomeAnnouncements ? 'html[data-md-site="comix"][data-md-page="list"] :is(aside.announce, .announce, .announce--accent) { display: none !important; }' : ''}
 
         /* ===== BASE, TYPOGRAPHY & CANVAS ===== */
         html[data-md-site="comix"] {
@@ -609,6 +678,86 @@
             display: none !important;
         }
 
+        /* ===== UNIVERSAL THEMED DIALOGS, READER SETTINGS, CHAPTER LIST & DRAWERS ===== */
+        @keyframes mdDialogIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes mdDialogOut {
+            from { opacity: 1; transform: translateY(0) scale(1); }
+            to   { opacity: 0; transform: translateY(8px) scale(0.97); }
+        }
+        @keyframes mdDrawerIn {
+            from { opacity: 0; transform: translateX(28px); }
+            to   { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes mdDrawerOut {
+            from { opacity: 1; transform: translateX(0); }
+            to   { opacity: 0; transform: translateX(28px); }
+        }
+        html[data-md-site="comix"] :is([role="dialog"]:not(.settings-dialog):not(#md-toast), [aria-modal="true"]:not(.settings-dialog), dialog[open]) {
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 14px !important;
+            box-shadow: 6px 6px 0 var(--bd) !important;
+            font-family: var(--f-sans) !important;
+            max-height: min(88dvh, 760px) !important;
+            animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        html[data-md-site="comix"] .settings-dialog__panel {
+            animation: mdDialogIn .2s cubic-bezier(0.2, 0, 0, 1) both;
+        }
+        html[data-md-site="comix"] .md-closing {
+            animation: mdDialogOut .15s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+            pointer-events: none !important;
+        }
+        html[data-md-site="comix"] .rpage-cmpanel.md-closing {
+            animation: mdDrawerOut .16s cubic-bezier(0.4, 0, 1, 1) forwards !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(h1, h2, h3, h4, label, strong) {
+            color: var(--ink) !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(p, small, .muted, [class*="hint" i], [class*="desc" i], [class*="sub" i]) {
+            color: var(--muted) !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) button:not(.settings-custom__preset):not(.md-no-style) {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            font-family: var(--f-sans) !important;
+            font-weight: 700 !important;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) button:not(.settings-custom__preset):not(.md-no-style):hover:not(:disabled) {
+            background: var(--cream) !important;
+            transform: translate(-1px, -1px);
+            box-shadow: var(--sh) !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) button:not(.settings-custom__preset):not(.md-no-style):active:not(:disabled) {
+            transform: scale(0.96) !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(button, a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) {
+            background: var(--yellow) !important;
+            color: var(--on-ink) !important;
+            border-color: var(--bd) !important;
+            font-weight: 900 !important;
+        }
+        html[data-md-site="comix"][data-md-theme="light"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(button, a, li, [role="option"], [role="radio"]):is([aria-pressed="true"], [aria-checked="true"], [aria-selected="true"], .is-active, .is-on, .is-current, .active) {
+            color: #111111 !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) input[type="range"] {
+            accent-color: var(--yellow) !important;
+        }
+        html[data-md-site="comix"] :is([role="dialog"], [aria-modal="true"], dialog[open]) :is(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]), select) {
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            font-family: var(--f-sans) !important;
+        }
         /* ===== SETTINGS DIALOG (Viewport-clamped, never cropped, scrollable body) & DROPDOWNS ===== */
         html[data-md-site="comix"] .settings-dialog {
             display: flex !important;
@@ -1193,6 +1342,49 @@
             display: inline-flex !important;
             gap: 6px !important;
         }
+        html[data-md-site="comix"] :is(.cm-item, .cm-item--has-replies, .cm-item__main, .cm-item__detail, .cm-item__replies, .cm-item__avatar)::before,
+        html[data-md-site="comix"] :is(.cm-item, .cm-item--has-replies, .cm-item__main, .cm-item__detail, .cm-item__replies, .cm-item__avatar)::after {
+            display: none !important;
+            content: none !important;
+            border: 0 !important;
+            background: none !important;
+        }
+        html[data-md-site="comix"] :is(.cm-item__main, .cm-item__detail, .cm-item__replies, .cm-item__avatar) {
+            border-left: 0 !important;
+            box-shadow: none !important;
+        }
+        html[data-md-site="comix"] ul.cm-item__replies {
+            border-left: 0 !important;
+            padding-left: 14px !important;
+            margin-left: 0 !important;
+            margin-top: 8px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            list-style: none !important;
+        }
+        html[data-md-site="comix"] .cm-item__ctrls {
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            margin-top: 8px !important;
+        }
+        html[data-md-site="comix"] .md-cm-score {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 5px !important;
+            padding: 3px 9px !important;
+            background: var(--soft) !important;
+            color: var(--ink) !important;
+            border: 1.5px solid var(--bd) !important;
+            border-radius: 999px !important;
+            font: 800 11.5px/1.1 var(--f-mono) !important;
+            font-variant-numeric: tabular-nums !important;
+            pointer-events: none !important;
+            user-select: none !important;
+        }
+        html[data-md-site="comix"] .md-cm-score[data-sign="pos"] { background: var(--cream) !important; }
+        html[data-md-site="comix"] .md-cm-score[data-sign="neg"] { opacity: 0.78; }
         html[data-md-site="comix"] ul.cm-items {
             display: flex !important;
             flex-direction: column !important;
@@ -1324,6 +1516,64 @@
             overflow: hidden !important;
             flex-shrink: 0 !important;
         }
+        html[data-md-site="comix"] .mpage__chapters[data-md-unified="1"] :is(.mchap-toolbar, .mchap-list, .mchap-foot) {
+            display: none !important;
+        }
+        #md-all-chaps {
+            background: var(--card); color: var(--ink); border: var(--bw) solid var(--bd);
+            border-radius: 14px; box-shadow: var(--sh); overflow: hidden; margin: 8px 4px 16px 0;
+        }
+        #md-all-chaps .md-ch-head {
+            display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+            padding: 10px 12px; background: var(--soft); border-bottom: 2px solid var(--bd);
+        }
+        #md-all-chaps .md-ch-search {
+            flex: 1 1 180px; min-width: 140px; height: 36px; padding: 0 11px;
+            background: var(--card); color: var(--ink); border: 2px solid var(--bd);
+            border-radius: 8px; font: 700 13px var(--f-sans); box-shadow: var(--sh-sm); outline: none;
+        }
+        #md-all-chaps .md-ch-sort {
+            height: 36px; padding: 0 12px; background: var(--card); color: var(--ink);
+            border: 2px solid var(--bd); border-radius: 8px; box-shadow: var(--sh-sm);
+            font: 800 12px var(--f-sans); text-transform: uppercase; letter-spacing: .03em; cursor: pointer;
+            transition: transform .12s ease-out, box-shadow .12s ease-out, background-color .14s ease-out;
+        }
+        #md-all-chaps .md-ch-sort:hover { background: var(--yellow); color: #111111; transform: translate(-1px, -1px); box-shadow: var(--sh); }
+        html[data-md-theme="dark"] #md-all-chaps .md-ch-sort:hover { color: #ffffff; }
+        #md-all-chaps .md-ch-sort:active { transform: scale(0.96); }
+        #md-all-chaps .md-ch-badge {
+            padding: 4px 10px; background: var(--card); color: var(--muted); border: 1.5px solid var(--bd);
+            border-radius: 999px; font: 800 11.5px/1 var(--f-mono); font-variant-numeric: tabular-nums; margin-left: auto;
+        }
+        #md-all-chaps .md-ch-scroll {
+            max-height: min(620px, 68vh); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin;
+        }
+        #md-all-chaps .md-ch-row {
+            display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+            border-bottom: 1.5px solid rgba(17, 17, 17, 0.14); background: var(--card);
+            transition: background-color .12s ease-out;
+        }
+        html[data-md-theme="dark"] #md-all-chaps .md-ch-row { border-bottom-color: rgba(255, 255, 255, 0.09); }
+        #md-all-chaps .md-ch-row:last-child { border-bottom: 0; }
+        #md-all-chaps .md-ch-row:hover { background: var(--cream); }
+        #md-all-chaps .md-ch-row[data-md-sel="1"] { background: var(--yellow); }
+        html[data-md-theme="dark"] #md-all-chaps .md-ch-row[data-md-sel="1"] { background: rgba(124, 92, 255, 0.34); }
+        #md-all-chaps .md-ch-link {
+            flex: 1 1 auto; min-width: 0; display: flex; align-items: baseline; gap: 8px; color: var(--ink); overflow: hidden;
+        }
+        #md-all-chaps .md-ch-num { flex: 0 0 auto; font: 900 13.5px/1.2 var(--f-mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+        #md-all-chaps .md-ch-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 13px/1.3 var(--f-sans); color: var(--muted); }
+        #md-all-chaps .md-ch-meta { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+        #md-all-chaps .md-group-pill {
+            padding: 3px 9px; background: var(--soft); color: var(--ink); border: 1.5px solid var(--bd);
+            border-radius: 999px; font: 700 11px/1.2 var(--f-mono); max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        #md-all-chaps .md-group-sel {
+            height: 28px; max-width: 190px; padding: 0 8px; background: var(--soft); color: var(--ink);
+            border: 2px solid var(--bd); border-radius: 7px; box-shadow: var(--sh-sm); font: 800 11.5px var(--f-mono); cursor: pointer;
+        }
+        #md-all-chaps .md-ch-time { min-width: 56px; text-align: right; font: 700 11px/1 var(--f-mono); font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
+        #md-all-chaps .md-ch-empty { padding: 24px 16px; text-align: center; font: 700 13px var(--f-mono); color: var(--muted); }
         html[data-md-site="comix"] .mchap-toolbar { padding: 10px; border-radius: 14px !important; }
         html[data-md-site="comix"] .mchap-list {
             background: var(--card) !important;
@@ -1592,10 +1842,15 @@
             box-shadow: 10px 10px 0 #000000;
             transform: rotate(6.5deg);
             transform-origin: bottom center;
-            transition: box-shadow .22s ease-out;
+            transition: transform .24s cubic-bezier(0.2, 0, 0, 1), box-shadow .22s ease-out;
             pointer-events: none;
         }
-        #md-hero .md-hero-card:hover .md-hero-card-art { box-shadow: 14px 14px 0 #000000; }
+        @media (hover: hover) and (pointer: fine) {
+            #md-hero .md-hero-card:hover .md-hero-card-art {
+                transform: rotate(3.2deg) translateY(-6px) scale(1.015);
+                box-shadow: 14px 14px 0 #000000;
+            }
+        }
         #md-hero .md-hero-card::after { content: ""; position: absolute; inset: -16px -64px -16px -16px; z-index: 10; }
         #md-hero .md-hero-card img {
             display: block;
@@ -1711,7 +1966,13 @@
             max-width: calc(var(--md-base) * var(--md-zoom)) !important;
             width: 100% !important;
             margin-inline: auto !important;
-            transition: max-width .18s ease-out;
+            transition: max-width .22s cubic-bezier(0.2, 0, 0, 1);
+        }
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage--long-strip .rpage-page[data-page],
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-page[data-page],
+        html[data-md-site="comix"][data-md-page="chapter"][data-md-stretch="1"] .rpage-main__inner {
+            max-width: 100vw !important;
+            width: 100% !important;
         }
         html[data-md-site="comix"][data-md-page="chapter"] .rpage--long-strip .rpage-page__img {
             display: block !important;
@@ -1730,7 +1991,19 @@
             background: var(--card) !important;
             color: var(--ink) !important;
             border-left: var(--bw) solid var(--bd) !important;
+            box-shadow: -6px 0 0 var(--bd) !important;
+            animation: mdDrawerIn .22s cubic-bezier(0.2, 0, 0, 1) both;
         }
+        .md-iswap { position: relative; display: inline-grid; place-items: center; width: 18px; height: 18px; }
+        .md-iswap .md-i {
+            grid-area: 1 / 1; display: inline-flex; align-items: center; justify-content: center;
+            transition: transform .22s cubic-bezier(0.2, 0, 0, 1), opacity .2s ease-out, filter .2s ease-out;
+        }
+        .md-iswap .md-i-a { opacity: 1; transform: scale(1); filter: blur(0px); }
+        .md-iswap .md-i-b { opacity: 0; transform: scale(0.25); filter: blur(4px); }
+        button[aria-pressed="true"] .md-iswap .md-i-a { opacity: 0; transform: scale(0.25); filter: blur(4px); }
+        button[aria-pressed="true"] .md-iswap .md-i-b { opacity: 1; transform: scale(1); filter: blur(0px); }
+        #md-dock [data-act="stretch"][aria-pressed="true"] .md-iswap { transform: scaleX(1.14); transition: transform .2s cubic-bezier(0.2, 0, 0, 1); }
         html[data-md-site="comix"] .rpage-chap-ending__nav-btn {
             background: var(--card) !important;
             color: var(--ink) !important;
@@ -2086,6 +2359,50 @@
             }
         }
     }
+
+    function renderCommentScores(app) {
+        for (const ctrls of $$('.cm-item__ctrls', app)) {
+            const likeEl = $('.cm-item__ctrl--like', ctrls);
+            const dislikeEl = $('.cm-item__ctrl--dislike', ctrls);
+            if (!likeEl && !dislikeEl) continue;
+            const likes = parseCompactInt(likeEl?.textContent);
+            const dislikes = parseCompactInt(dislikeEl?.textContent);
+            const score = likes - dislikes;
+            const label = score > 0 ? `+${score}` : String(score);
+            let pill = $('.md-cm-score', ctrls);
+            if (!pill) {
+                pill = document.createElement('span');
+                pill.className = 'md-cm-score';
+                ctrls.prepend(pill);
+            }
+            if (pill.dataset.score !== label) {
+                pill.dataset.score = label;
+                pill.dataset.sign = score > 0 ? 'pos' : score < 0 ? 'neg' : 'zero';
+                pill.setAttribute('aria-label', 'Score: ' + label);
+                pill.textContent = (score >= 0 ? '▲ ' : '▼ ') + label;
+            }
+        }
+    }
+
+    (function installDialogCloseAnimator() {
+        document.addEventListener('click', e => {
+            if (reducedMotion.matches || e.__mdAnimatedClose) return;
+            const target = e.target instanceof Element ? e.target : null;
+            if (!target || target.closest(UI_ZONES)) return;
+            const closeBtn = target.closest('[role="dialog"] [aria-label*="close" i], [role="dialog"] [class*="close" i], .rpage-cmpanel__close, .settings-dialog__close');
+            if (!closeBtn) return;
+            const panel = closeBtn.closest('.settings-dialog__panel, .rpage-cmpanel, [role="dialog"], [aria-modal="true"]');
+            if (!panel || panel.classList.contains('md-closing')) return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            panel.classList.add('md-closing');
+            setTimeout(() => {
+                const synthetic = new MouseEvent('click', { bubbles: true, cancelable: true });
+                synthetic.__mdAnimatedClose = true;
+                closeBtn.dispatchEvent(synthetic);
+            }, 150);
+        }, true);
+    })();
 
     function tagDropdowns(app) {
         const browseWrap = $('.topnav .browse', app);
@@ -2882,12 +3199,24 @@
         dl: null,
         zoom: 1,
         bg: 'theme',
+        stretch: false,
+        autoscroll: false,
         job: null,
         chromeBound: false,
         keysBound: false,
     };
 
     const nativeBtn = sel => $(sel);
+
+    function applyStretch(on, silent = true) {
+        reader.stretch = !!on;
+        if (reader.stretch) root.dataset.mdStretch = '1';
+        else delete root.dataset.mdStretch;
+        store.set('stretch', reader.stretch);
+        const b = reader.dock && $('[data-act="stretch"]', reader.dock);
+        if (b) b.setAttribute('aria-pressed', String(reader.stretch));
+        if (!silent) toast(reader.stretch ? 'Stretched to fit width' : 'Standard page width', 1400);
+    }
 
     function applyZoom(z) {
         const steps = CONFIG.reader.zoomSteps;
@@ -2900,6 +3229,7 @@
     }
 
     function stepZoom(dir) {
+        if (reader.stretch) applyStretch(false, true);
         const steps = CONFIG.reader.zoomSteps;
         let best = 0, minDiff = Infinity;
         steps.forEach((s, i) => { const d = Math.abs(s - reader.zoom); if (d < minDiff) { minDiff = d; best = i; } });
@@ -2992,6 +3322,11 @@
             });
         }
 
+        document.addEventListener('fullscreenchange', () => {
+            const fsBtn = reader.dock && $('[data-act="fullscreen"]', reader.dock);
+            if (fsBtn) fsBtn.setAttribute('aria-pressed', String(!!document.fullscreenElement));
+        });
+
         addEventListener('scroll', () => {
             if (detectPage() !== 'chapter') return;
             const y = scrollY, dy = y - last;
@@ -3043,13 +3378,25 @@
         if (reader.dock) {
             const nPrev = nativeBtn('.rpage-floatctl button[aria-label="Previous chapter"]');
             const nNext = nativeBtn('.rpage-floatctl button[aria-label="Next chapter"]');
-            const nStretch = nativeBtn('.rpage-bottombar button[aria-label="Stretch to fit width"]');
+            const nAuto = nativeBtn('.rpage-floatctl button[aria-label*="auto-scroll" i]');
             const prevBtn = $('[data-act="prev"]', reader.dock);
             const nextBtn = $('[data-act="next"]', reader.dock);
+            const chapBtn = $('[data-act="chapters"]', reader.dock);
             const stretchBtn = $('[data-act="stretch"]', reader.dock);
+            const autoBtn = $('[data-act="autoscroll"]', reader.dock);
+            const fsBtn = $('[data-act="fullscreen"]', reader.dock);
+            const chapOpen = !!$('[role="dialog"]:not(.settings-dialog) a[href*="-chapter-"], [aria-modal="true"]:not(.settings-dialog) a[href*="-chapter-"]');
             if (prevBtn) prevBtn.disabled = !nPrev || nPrev.disabled;
             if (nextBtn) nextBtn.disabled = !nNext || nNext.disabled;
-            if (stretchBtn && nStretch) stretchBtn.setAttribute('aria-pressed', nStretch.getAttribute('aria-pressed') || 'false');
+            if (chapBtn) chapBtn.setAttribute('aria-pressed', String(chapOpen));
+            if (stretchBtn) stretchBtn.setAttribute('aria-pressed', String(reader.stretch));
+            if (fsBtn) fsBtn.setAttribute('aria-pressed', String(!!document.fullscreenElement));
+            if (autoBtn && nAuto) {
+                const lbl = (nAuto.getAttribute('aria-label') || '').toLowerCase();
+                const isRunning = /stop|pause/.test(lbl) || nAuto.getAttribute('aria-pressed') === 'true' || nAuto.classList.contains('is-active');
+                reader.autoscroll = isRunning;
+                autoBtn.setAttribute('aria-pressed', String(isRunning));
+            }
         }
     }
 
@@ -3058,6 +3405,7 @@
             reader.init = true;
             applyBg(store.get('bg', 'theme'));
             applyZoom(store.get('zoom', 1));
+            applyStretch(store.get('stretch', false), true);
             bindReaderChrome();
             bindReaderKeys();
         }
@@ -3093,20 +3441,20 @@
             if (CONFIG.readerDockOnTap) d.classList.add('hide');
 
             const btn = (act, icon, title, label) =>
-                `<button type="button" data-act="${act}" title="${title}" aria-label="${title}">${icon}${label ? `<span class="md-lbl">${label}</span>` : ''}</button>`;
+                `<button type="button" data-act="${act}" title="${title}" aria-label="${title}" aria-pressed="false">${icon}${label ? `<span class="md-lbl">${label}</span>` : ''}</button>`;
 
             d.innerHTML =
                 btn('prev', ICON.prev, 'Previous chapter (←)') +
-                btn('chapters', ICON.list, 'Chapter list') +
+                btn('chapters', ICON.swapIcon(ICON.list, ICON.stop), 'Chapter list') +
                 btn('next', ICON.next, 'Next chapter (→)') +
                 '<span class="md-sep" aria-hidden="true"></span>' +
                 btn('zoom-out', ICON.minus, 'Zoom out (-)') +
                 `<button type="button" class="md-zoom" data-act="zoom-reset" title="Reset zoom (0)" aria-label="Reset zoom">${Math.round(reader.zoom * 100)}%</button>` +
                 btn('zoom-in', ICON.plus, 'Zoom in (+)') +
                 '<span class="md-sep" aria-hidden="true"></span>' +
-                btn('stretch', ICON.stretch, 'Stretch to fit width') +
-                btn('autoscroll', ICON.scroll, 'Auto-scroll (P)') +
-                btn('fullscreen', ICON.expand, 'Fullscreen (F)') +
+                btn('stretch', ICON.swapIcon(ICON.stretch, ICON.shrinkW), 'Stretch to fit width') +
+                btn('autoscroll', ICON.swapIcon(ICON.scroll, ICON.pause), 'Auto-scroll (P)') +
+                btn('fullscreen', ICON.swapIcon(ICON.expand, ICON.compress), 'Fullscreen (F)') +
                 btn('bg', ICON.bg, 'Background colour (B)') +
                 '<button type="button" class="md-dl" data-act="download" title="Download chapter as CBZ"></button>';
 
@@ -3120,19 +3468,28 @@
                 if (!b || b.disabled) return;
                 switch (b.dataset.act) {
                     case 'prev': nativeBtn('.rpage-floatctl button[aria-label="Previous chapter"]')?.click(); break;
-                    case 'chapters': nativeBtn('.rpage-floatctl .rpage-floatctl__chap, .rpage-floatctl button[aria-label="Chapter list"]')?.click(); break;
+                    case 'chapters': {
+                        nativeBtn('.rpage-floatctl .rpage-floatctl__chap, .rpage-floatctl button[aria-label="Chapter list"]')?.click();
+                        setTimeout(() => syncReaderBars(context), 60);
+                        break;
+                    }
                     case 'next': nativeBtn('.rpage-floatctl button[aria-label="Next chapter"]')?.click(); break;
                     case 'zoom-out': stepZoom(-1); break;
                     case 'zoom-in': stepZoom(1); break;
-                    case 'zoom-reset': applyZoom(1); toast('Zoom: 100%', 1200); break;
+                    case 'zoom-reset': applyStretch(false, true); applyZoom(1); toast('Zoom: 100%', 1200); break;
                     case 'stretch': {
+                        const nextStretch = !reader.stretch;
+                        applyStretch(nextStretch, false);
                         const ns = nativeBtn('.rpage-bottombar button[aria-label="Stretch to fit width"]');
-                        if (ns) { ns.click(); setTimeout(() => syncReaderBars(context), 40); }
+                        if (ns && (ns.getAttribute('aria-pressed') === 'true') !== nextStretch) ns.click();
                         break;
                     }
                     case 'autoscroll': {
                         const na = nativeBtn('.rpage-floatctl button[aria-label*="auto-scroll" i]');
                         if (na) na.click();
+                        reader.autoscroll = !reader.autoscroll;
+                        b.setAttribute('aria-pressed', String(reader.autoscroll));
+                        setTimeout(() => syncReaderBars(context), 80);
                         break;
                     }
                     case 'fullscreen': {
@@ -3140,6 +3497,7 @@
                         if (nf) nf.click();
                         else if (!document.fullscreenElement) root.requestFullscreen?.();
                         else document.exitFullscreen?.();
+                        setTimeout(() => syncReaderBars(context), 80);
                         break;
                     }
                     case 'bg': cycleBg(); break;
@@ -3160,6 +3518,7 @@
         reader.dl = null;
         delete root.dataset.mdBg;
         delete root.dataset.mdNavhide;
+        delete root.dataset.mdStretch;
         root.style.removeProperty('--nb-reader-bg');
     }
 
@@ -3178,16 +3537,149 @@
         hero.prepend(bg);
     }
 
-    let selection = null;
+    function extractSeriesHid(seriesPath) {
+        const data = initialData();
+        if (data?.queries) {
+            for (const val of Object.values(data.queries)) {
+                if (val && typeof val === 'object' && val.hid && route(val.url, SERIES_PATH)?.pathname === seriesPath) {
+                    return String(val.hid);
+                }
+            }
+        }
+        const m = seriesPath.match(/^\/title\/([a-z0-9]+)(?:-|$)/i);
+        return m ? m[1] : null;
+    }
+
+    function normalizeApiChapter(item, seriesPath) {
+        const id = String(item.chapter_id ?? item.id ?? item.hid ?? '');
+        if (!id) return null;
+        const numRaw = item.number ?? item.chap ?? item.chapter;
+        const numStr = numRaw !== null && numRaw !== undefined && String(numRaw).trim() !== '' ? String(Number(numRaw)) : null;
+        const slugNum = numStr !== null ? numStr : '0';
+        const url = item.url && route(item.url, CHAPTER_PATH)
+            ? route(item.url, CHAPTER_PATH).pathname
+            : `${seriesPath}/${id}-chapter-${slugNum}`;
+        const group = item.scanlation_group?.name || item.group_name || item.scanlation_group_name || item.group?.name || item.uploader?.username || 'Unknown Group';
+        const title = (item.name || item.title || '').trim();
+        const time = fmtRelTime(item.created_at || item.updated_at || item.published_at || '');
+        const label = numStr !== null ? `Chapter ${numStr}` : (title || `Chapter ${id}`);
+        const key = numStr !== null ? ('ch:' + numStr) : ('id:' + id);
+        return { id, url, number: numStr, sortNum: numStr !== null ? Number(numStr) : -1, title, group: String(group).trim() || 'Unknown Group', time, label, key };
+    }
+
+    function scrapeDomChapters(chaptersSection) {
+        const out = [];
+        for (const row of $$('.mchap-row', chaptersSection)) {
+            const anchor = $('.mchap-row__primary[href]', row);
+            const url = route(anchor?.href, CHAPTER_PATH);
+            if (!url) continue;
+            const [, , id, slug] = url.pathname.match(CHAPTER_PATH);
+            const rawCh = $('.mchap-row__ch', anchor)?.textContent.trim() || '';
+            const numMatch = rawCh.match(/(\d+(?:\.\d+)?)/) || slug.match(/^(\d+(?:\.\d+)?)/);
+            const numStr = numMatch ? String(Number(numMatch[1])) : null;
+            const title = $('.mchap-row__title', anchor)?.textContent.trim() || '';
+            const group = $('.mchap-row__group', row)?.textContent.trim() || $('.mchap-row__uploader', row)?.textContent.trim() || 'Unknown Group';
+            const time = $('.mchap-row__time', row)?.textContent.trim() || '';
+            const label = numStr !== null ? `Chapter ${numStr}` : (rawCh || `Chapter ${slug}`);
+            const key = numStr !== null ? ('ch:' + numStr) : ('id:' + id);
+            out.push({ id, url: url.pathname, number: numStr, sortNum: numStr !== null ? Number(numStr) : -1, title, group, time, label, key });
+        }
+        return out;
+    }
+
+    function groupChaptersByNumber(rawList) {
+        const map = new Map();
+        const seenIds = new Set();
+        for (const item of rawList) {
+            if (!item || seenIds.has(item.id)) continue;
+            seenIds.add(item.id);
+            let entry = map.get(item.key);
+            if (!entry) {
+                entry = { key: item.key, number: item.number, sortNum: item.sortNum, label: item.label, activeIdx: 0, releases: [] };
+                map.set(item.key, entry);
+            }
+            entry.releases.push(item);
+        }
+        return [...map.values()].sort((a, b) => b.sortNum - a.sortNum);
+    }
+
+    async function fetchAllChaptersApi(hid, seriesPath) {
+        if (!hid) return [];
+        const cached = sniffedChapterApi.byHid.get(hid);
+        const baseTemplates = [];
+        if (cached?.url) baseTemplates.push(cached.url);
+        if (sniffedChapterApi.templateUrl) {
+            baseTemplates.push(sniffedChapterApi.templateUrl.replace(/\/manga\/[^/]+\/chapters/i, `/manga/${hid}/chapters`));
+        }
+        baseTemplates.push(
+            `/api/v2/manga/${hid}/chapters?limit=100&order[number]=desc&page=1`,
+            `/api/v2/manga/${hid}/chapters?limit=100&page=1`
+        );
+
+        const buildPageUrl = (tpl, pageNum) => {
+            const u = new URL(tpl, location.origin);
+            u.searchParams.set('limit', '100');
+            u.searchParams.set('page', String(pageNum));
+            return u.href;
+        };
+
+        let workingTpl = null;
+        let firstJson = null;
+        for (const tpl of baseTemplates) {
+            try {
+                const res = await fetch(buildPageUrl(tpl, 1), { credentials: 'same-origin' });
+                if (!res.ok) continue;
+                const json = await res.json();
+                if (extractApiChapterItems(json).length) {
+                    workingTpl = tpl;
+                    firstJson = json;
+                    break;
+                }
+            } catch (_) {}
+        }
+        if (!workingTpl || !firstJson) return [];
+
+        const allRaw = [...extractApiChapterItems(firstJson)];
+        const pag = firstJson.result?.pagination || firstJson.pagination || firstJson.meta || {};
+        const lastPage = Math.min(30, Number(pag.last_page || pag.total_pages || Math.ceil((pag.total || allRaw.length) / (pag.limit || pag.per_page || 100)) || 1));
+
+        if (lastPage > 1) {
+            const pages = [];
+            for (let p = 2; p <= lastPage; p++) pages.push(p);
+            let idx = 0;
+            async function worker() {
+                while (idx < pages.length) {
+                    const p = pages[idx++];
+                    try {
+                        const res = await fetch(buildPageUrl(workingTpl, p), { credentials: 'same-origin' });
+                        if (!res.ok) continue;
+                        allRaw.push(...extractApiChapterItems(await res.json()));
+                    } catch (_) {}
+                }
+            }
+            await Promise.all(Array.from({ length: Math.min(4, pages.length) }, worker));
+        }
+
+        return allRaw.map(it => normalizeApiChapter(it, seriesPath)).filter(Boolean);
+    }
+
+    let seriesState = null;
     let batchJob = null;
 
-    function mountSelection(chapters) {
-        if (selection?.node.isConnected) return;
+    function mountSeriesChapters(chaptersSection, seriesPath) {
+        if (seriesState && seriesState.path === seriesPath && seriesState.box.isConnected) return;
+        if (seriesState?.box.isConnected) seriesState.box.remove();
+        if (seriesState?.bar.isConnected) seriesState.bar.remove();
+
+        const selected = new Map();
+        let groups = groupChaptersByNumber(scrapeDomChapters(chaptersSection));
+        let sortDesc = true;
+        let filterQuery = '';
+        let lastClickedIndex = -1;
+        let loadingAll = true;
 
         const bar = document.createElement('div');
         bar.id = 'md-sel-bar';
-        const selected = new Map();
-        let lastClickedIndex = -1;
 
         const modeBtn = document.createElement('button');
         modeBtn.type = 'button';
@@ -3197,7 +3689,7 @@
         const allBtn = document.createElement('button');
         allBtn.type = 'button';
         allBtn.textContent = 'Select All';
-        allBtn.title = 'Select all unique chapters (skips duplicate scanlation groups)';
+        allBtn.title = 'Select all chapters across the entire series (no duplicates)';
         allBtn.hidden = true;
 
         const zipBtn = document.createElement('button');
@@ -3220,17 +3712,45 @@
         statusEl.className = 'md-sel-status';
         statusEl.setAttribute('role', 'status');
 
-        function extractRowInfo(row) {
-            const anchor = $('.mchap-row__primary[href]', row);
-            const url = route(anchor?.href, CHAPTER_PATH);
-            if (!url) return null;
-            const [, , id, slug] = url.pathname.match(CHAPTER_PATH);
-            const rawCh = $('.mchap-row__ch', anchor)?.textContent.trim() || '';
-            const numMatch = rawCh.match(/(\d+(?:\.\d+)?)/) || slug.match(/^(\d+(?:\.\d+)?)/);
-            const number = numMatch ? String(Number(numMatch[1])) : null;
-            const label = rawCh ? rawCh.replace(/^Ch\.?\s*/i, 'Chapter ') : 'Chapter ' + (number ?? slug);
-            const dedupeKey = number !== null ? ('ch:' + number) : ('lbl:' + label.toLowerCase());
-            return { id, url: url.pathname, label, number, dedupeKey };
+        bar.append(modeBtn, allBtn, zipBtn, pdfBtn, countEl, statusEl);
+
+        const box = document.createElement('div');
+        box.id = 'md-all-chaps';
+
+        const head = document.createElement('div');
+        head.className = 'md-ch-head';
+
+        const searchInput = document.createElement('input');
+        searchInput.type = 'search';
+        searchInput.className = 'md-ch-search';
+        searchInput.placeholder = 'Filter chapter # or title…';
+        searchInput.setAttribute('aria-label', 'Filter chapters');
+
+        const sortBtn = document.createElement('button');
+        sortBtn.type = 'button';
+        sortBtn.className = 'md-ch-sort';
+        sortBtn.textContent = 'Newest ↓';
+
+        const totalBadge = document.createElement('span');
+        totalBadge.className = 'md-ch-badge';
+        totalBadge.textContent = groups.length + ' chapters';
+
+        head.append(searchInput, sortBtn, totalBadge);
+
+        const scrollWrap = document.createElement('div');
+        scrollWrap.className = 'md-ch-scroll';
+        box.append(head, scrollWrap);
+
+        function visibleGroups() {
+            const q = filterQuery.trim().toLowerCase();
+            let list = groups.slice().sort((a, b) => sortDesc ? (b.sortNum - a.sortNum) : (a.sortNum - b.sortNum));
+            if (q) {
+                list = list.filter(g => {
+                    const rel = g.releases[g.activeIdx] || g.releases[0];
+                    return (g.label + ' ' + (rel?.title || '') + ' ' + g.releases.map(r => r.group).join(' ')).toLowerCase().includes(q);
+                });
+            }
+            return list;
         }
 
         function updateUi() {
@@ -3241,6 +3761,140 @@
             const busy = !!batchJob;
             zipBtn.disabled = (!selected.size && (!busy || batchJob.fmt !== 'zip')) || (busy && batchJob.fmt !== 'zip');
             pdfBtn.disabled = (!selected.size && (!busy || batchJob.fmt !== 'pdf')) || (busy && batchJob.fmt !== 'pdf');
+            totalBadge.textContent = loadingAll ? `${groups.length} chapters…` : `${groups.length} chapters`;
+        }
+
+        function renderRows() {
+            const selecting = bar.hasAttribute('data-selecting');
+            const list = visibleGroups();
+            scrollWrap.textContent = '';
+
+            if (!list.length) {
+                const empty = document.createElement('div');
+                empty.className = 'md-ch-empty';
+                empty.textContent = filterQuery ? 'No chapters match your filter.' : 'Loading chapters…';
+                scrollWrap.appendChild(empty);
+                updateUi();
+                return;
+            }
+
+            const frag = document.createDocumentFragment();
+            list.forEach((g, idx) => {
+                const rel = g.releases[g.activeIdx] || g.releases[0];
+                const isSel = selected.has(g.key);
+
+                const row = document.createElement('div');
+                row.className = 'md-ch-row';
+                row.dataset.key = g.key;
+                if (isSel) row.dataset.mdSel = '1';
+
+                if (selecting) {
+                    const ck = document.createElement('input');
+                    ck.type = 'checkbox';
+                    ck.className = 'md-ck';
+                    ck.checked = isSel;
+                    ck.setAttribute('aria-label', 'Select ' + g.label);
+                    ck.addEventListener('click', e => { e.stopPropagation(); toggleGroup(list, idx, e.shiftKey); });
+                    row.appendChild(ck);
+                }
+
+                const link = document.createElement('a');
+                link.className = 'md-ch-link';
+                link.href = rel.url;
+                const numSpan = document.createElement('span');
+                numSpan.className = 'md-ch-num';
+                numSpan.textContent = g.number !== null ? `Ch. ${g.number}` : g.label;
+                link.appendChild(numSpan);
+                if (rel.title) {
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'md-ch-title';
+                    titleSpan.textContent = rel.title;
+                    link.appendChild(titleSpan);
+                }
+                row.appendChild(link);
+
+                const meta = document.createElement('div');
+                meta.className = 'md-ch-meta';
+
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'md-ch-time';
+                timeSpan.textContent = rel.time;
+
+                if (g.releases.length > 1) {
+                    const sel = document.createElement('select');
+                    sel.className = 'md-group-sel';
+                    sel.setAttribute('aria-label', 'Scanlation group for ' + g.label);
+                    g.releases.forEach((r, rIdx) => {
+                        const opt = document.createElement('option');
+                        opt.value = String(rIdx);
+                        opt.textContent = r.group;
+                        if (rIdx === g.activeIdx) opt.selected = true;
+                        sel.appendChild(opt);
+                    });
+                    sel.addEventListener('click', e => e.stopPropagation());
+                    sel.addEventListener('change', e => {
+                        e.stopPropagation();
+                        g.activeIdx = Number(sel.value) || 0;
+                        const activeRel = g.releases[g.activeIdx] || g.releases[0];
+                        link.href = activeRel.url;
+                        timeSpan.textContent = activeRel.time;
+                        if (selected.has(g.key)) selected.set(g.key, activeRel);
+                    });
+                    meta.appendChild(sel);
+                } else {
+                    const pill = document.createElement('span');
+                    pill.className = 'md-group-pill';
+                    pill.textContent = rel.group;
+                    pill.title = rel.group;
+                    meta.appendChild(pill);
+                }
+
+                meta.appendChild(timeSpan);
+                row.appendChild(meta);
+
+                row.addEventListener('click', e => {
+                    if (!bar.hasAttribute('data-selecting')) return;
+                    if (e.target.closest('select, .md-ck')) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleGroup(list, idx, e.shiftKey);
+                });
+
+                frag.appendChild(row);
+            });
+
+            scrollWrap.appendChild(frag);
+            updateUi();
+        }
+
+        function toggleGroup(list, idx, shiftKey) {
+            const g = list[idx];
+            if (!g) return;
+            const targetState = !selected.has(g.key);
+
+            if (shiftKey && lastClickedIndex >= 0 && lastClickedIndex < list.length) {
+                const start = Math.min(lastClickedIndex, idx);
+                const end = Math.max(lastClickedIndex, idx);
+                for (let i = start; i <= end; i++) {
+                    const item = list[i];
+                    const rel = item.releases[item.activeIdx] || item.releases[0];
+                    if (targetState) {
+                        if (selected.size < CONFIG.batchLimit) selected.set(item.key, rel);
+                    } else {
+                        selected.delete(item.key);
+                    }
+                }
+            } else {
+                const rel = g.releases[g.activeIdx] || g.releases[0];
+                if (targetState) {
+                    if (selected.size < CONFIG.batchLimit) selected.set(g.key, rel);
+                    else { statusEl.textContent = 'Select up to ' + CONFIG.batchLimit + ' chapters per export.'; toast(statusEl.textContent); }
+                } else {
+                    selected.delete(g.key);
+                }
+            }
+            lastClickedIndex = idx;
+            renderRows();
         }
 
         async function runBatch(fmt, btn) {
@@ -3250,7 +3904,7 @@
             }
             if (!selected.size) return;
             const series = $('.mpage__title')?.textContent.trim() || 'Comix';
-            const list = [...selected.values()];
+            const list = [...selected.values()].sort((a, b) => a.sortNum - b.sortNum);
             const ctl = new AbortController();
             batchJob = { fmt, ctl };
             btn.dataset.state = 'busy';
@@ -3326,117 +3980,59 @@
                 lastClickedIndex = -1;
                 statusEl.textContent = '';
             }
-            sync();
+            renderRows();
         });
 
-        // Deduplicated Select All: selects every unique chapter number once, skipping duplicate scanlation groups
         allBtn.addEventListener('click', () => {
             if (selected.size > 0) {
                 selected.clear();
                 statusEl.textContent = '';
             } else {
-                const rows = $$('.mchap-row', chapters);
-                const seenKeys = new Set();
-                let skippedDupes = 0;
-                for (const row of rows) {
+                const list = visibleGroups();
+                for (const g of list) {
                     if (selected.size >= CONFIG.batchLimit) break;
-                    const info = extractRowInfo(row);
-                    if (!info) continue;
-                    if (seenKeys.has(info.dedupeKey)) {
-                        skippedDupes++;
-                        continue;
-                    }
-                    seenKeys.add(info.dedupeKey);
-                    selected.set(info.id, info);
+                    selected.set(g.key, g.releases[g.activeIdx] || g.releases[0]);
                 }
-                const msg = skippedDupes > 0
-                    ? `Selected ${selected.size} unique chapters (skipped ${skippedDupes} group duplicates)`
-                    : `Selected ${selected.size} chapters`;
+                const msg = `Selected all ${selected.size} unique chapters`;
                 statusEl.textContent = msg;
-                toast(msg, 2400);
+                toast(msg, 2200);
             }
-            sync();
+            renderRows();
+        });
+
+        searchInput.addEventListener('input', () => {
+            filterQuery = searchInput.value;
+            renderRows();
+        });
+
+        sortBtn.addEventListener('click', () => {
+            sortDesc = !sortDesc;
+            sortBtn.textContent = sortDesc ? 'Newest ↓' : 'Oldest ↑';
+            renderRows();
         });
 
         zipBtn.addEventListener('click', () => runBatch('zip', zipBtn));
         pdfBtn.addEventListener('click', () => runBatch('pdf', pdfBtn));
 
-        function toggleRow(row, index, shiftKey) {
-            const rows = $$('.mchap-row', chapters);
-            const info = extractRowInfo(row);
-            if (!info) return;
-            const targetState = !selected.has(info.id);
+        chaptersSection.dataset.mdUnified = '1';
+        const secHead = $('.mpage__sec-head', chaptersSection);
+        if (secHead) secHead.after(bar, box);
+        else chaptersSection.prepend(bar, box);
 
-            if (shiftKey && lastClickedIndex >= 0 && lastClickedIndex < rows.length) {
-                const start = Math.min(lastClickedIndex, index);
-                const end = Math.max(lastClickedIndex, index);
-                for (let i = start; i <= end; i++) {
-                    const rInfo = extractRowInfo(rows[i]);
-                    if (!rInfo) continue;
-                    if (targetState) {
-                        if (selected.size < CONFIG.batchLimit) selected.set(rInfo.id, rInfo);
-                    } else {
-                        selected.delete(rInfo.id);
-                    }
-                }
-            } else {
-                if (targetState) {
-                    if (selected.size < CONFIG.batchLimit) selected.set(info.id, info);
-                    else { statusEl.textContent = 'Select up to ' + CONFIG.batchLimit + ' chapters per export.'; toast(statusEl.textContent); }
-                } else {
-                    selected.delete(info.id);
-                }
-            }
-            lastClickedIndex = index;
-            sync();
-        }
+        seriesState = { path: seriesPath, bar, box };
+        renderRows();
 
-        if (!chapters.dataset.mdSelBound) {
-            chapters.dataset.mdSelBound = '1';
-            chapters.addEventListener('click', e => {
-                if (!bar.hasAttribute('data-selecting')) return;
-                const row = e.target.closest('.mchap-row');
-                if (!row || e.target.classList.contains('md-ck')) return;
-                e.preventDefault();
-                e.stopPropagation();
-                const rows = $$('.mchap-row', chapters);
-                toggleRow(row, rows.indexOf(row), e.shiftKey);
-            }, true);
-        }
-
-        function sync() {
-            const selecting = bar.hasAttribute('data-selecting');
-            const rows = $$('.mchap-row', chapters);
-            rows.forEach((row, index) => {
-                const info = extractRowInfo(row);
-                let check = $('.md-ck', row);
-                if (!selecting || !info) {
-                    check?.remove();
-                    row.closest('.mchap-item')?.removeAttribute('data-md-sel');
-                    return;
-                }
-                if (check?.dataset.chapterId !== info.id) {
-                    check?.remove();
-                    check = document.createElement('input');
-                    check.type = 'checkbox';
-                    check.className = 'md-ck';
-                    check.dataset.chapterId = info.id;
-                    check.setAttribute('aria-label', 'Select ' + info.label);
-                    check.addEventListener('click', e => { e.stopPropagation(); toggleRow(row, index, e.shiftKey); });
-                    row.prepend(check);
-                }
-                check.checked = selected.has(info.id);
-                row.closest('.mchap-item')?.toggleAttribute('data-md-sel', check.checked);
-            });
-            updateUi();
-        }
-
-        bar.append(modeBtn, allBtn, zipBtn, pdfBtn, countEl, statusEl);
-        const toolbar = $('.mchap-toolbar', chapters);
-        if (toolbar) toolbar.after(bar);
-        else chapters.prepend(bar);
-        selection = { node: bar, sync };
-        sync();
+        const hid = extractSeriesHid(seriesPath);
+        fetchAllChaptersApi(hid, seriesPath).then(allChapters => {
+            if (seriesState?.path !== seriesPath || !box.isConnected) return;
+            loadingAll = false;
+            groups = groupChaptersByNumber(allChapters.length ? allChapters : scrapeDomChapters(chaptersSection));
+            renderRows();
+        }).catch(() => {
+            if (seriesState?.path !== seriesPath || !box.isConnected) return;
+            loadingAll = false;
+            renderRows();
+        });
     }
 
     /* ====================================================================
@@ -3490,6 +4086,7 @@
         if (path !== currentPath) {
             if (batchJob) batchJob.ctl.abort(CANCELLED);
             if (page !== 'chapter') unmountReader();
+            if (page !== 'overview') seriesState = null;
             currentPath = path;
             lastTracked = null;
         }
@@ -3497,6 +4094,7 @@
         tagDropdowns(app);
         tagUserProfile(app);
         purgeAuthUI(app);
+        renderCommentScores(app);
         addExtras();
         optimizeImages(app);
 
@@ -3518,9 +4116,8 @@
         if (page === 'overview') {
             setupCoverBackdrop(app);
             const chapters = $('.mpage__chapters', app);
-            if (chapters && ($('.mchap-row__primary[href]', chapters) || selection?.node.isConnected)) {
-                mountSelection(chapters);
-                selection?.sync();
+            if (chapters && ($('.mchap-row__primary[href]', chapters) || $('#md-all-chaps', chapters))) {
+                mountSeriesChapters(chapters, path);
             }
         }
 
