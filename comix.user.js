@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Comix Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.16
+// @version      2026-11-21.17
 // @description  Neobrutalist skin and debloater for Comix (comix.to): themed dialogs & drawers, animated reader tools + working stretch-to-width, single scrollable full-series chapter list with scanlation-group dropdowns & full-series Select All, read-only comment scores without thread lines, hidden home announcements, and PC hero hover tilt.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -2604,6 +2604,25 @@
             border: var(--bw) solid var(--bd) !important;
             border-radius: 12px !important;
             box-shadow: var(--sh) !important;
+        }
+        /* Fix RTL/LTR horizontal paged mode: make chapter-ending + comments occupy a full centered 100vw slide so adjacent manga pages never bleed in */
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage:not(.rpage--long-strip) .rpage-chap-ending {
+            flex: 0 0 100vw !important;
+            min-width: 100vw !important;
+            width: 100vw !important;
+            max-width: 100vw !important;
+            max-height: 100dvh !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain !important;
+            box-sizing: border-box !important;
+            padding: 72px clamp(16px, 5vw, 64px) 96px !important;
+            margin: 0 !important;
+            scroll-snap-align: start !important;
+        }
+        html[data-md-site="comix"][data-md-page="chapter"] .rpage:not(.rpage--long-strip) .rpage-chap-ending > * {
+            max-width: 780px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
         }
         .md-iswap { position: relative; display: inline-grid; place-items: center; width: 18px; height: 18px; }
         .md-iswap .md-i {
