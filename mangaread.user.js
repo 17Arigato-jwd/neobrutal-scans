@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.6
+// @version      2026-11-21.7
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -7096,6 +7096,108 @@
             }
             .md-more-menu a:active { transform: scale(0.96) !important; }
         }
+        /* ================================================================
+         *  v2026-11-21.7 ROOT-CAUSE MOBILE FIXES:
+         *  - True vertical centering in mobile top bar (zero .main-navigation top padding)
+         *  - Zero right-edge clipping of #md-theme (static .search-navigation, strict box-sizing)
+         *  - High-specificity mobile sub-nav visibility (beats html:not([data-md-subnav-open="1"]))
+         * ================================================================ */
+        @media (max-width: 768px) {
+            /* Beat desktop html:not([data-md-subnav-open="1"]) specificity so sub-nav is ALWAYS visible on mobile */
+            html:not([data-md-subnav-open="1"]) header.site-header .c-sub-header-nav,
+            html[data-md-subnav-open="1"] header.site-header .c-sub-header-nav,
+            html body header.site-header .c-sub-header-nav {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                overflow: visible !important;
+            }
+
+            /* Kill Madara's extra top padding/positioning on .main-navigation & .search-navigation */
+            html body header.site-header .c-header__top,
+            html body header.site-header .c-header__top .main-navigation,
+            html body header.site-header .c-header__top .col-12,
+            html body header.site-header .c-header__top [class*="col-"] {
+                padding: 0 !important;
+                margin: 0 !important;
+                min-height: 0 !important;
+            }
+            html body header.site-header .main-navigation_wrap {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                min-height: 60px !important;
+                height: 60px !important;
+                padding: 0 12px !important;
+                margin: 0 !important;
+                gap: 8px !important;
+                width: 100% !important;
+                max-width: 100vw !important;
+                box-sizing: border-box !important;
+                position: relative !important;
+            }
+            html body header.site-header .wrap_branding {
+                position: static !important;
+                display: flex !important;
+                align-items: center !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+            }
+            html body header.site-header .wrap_branding a.logo {
+                display: inline-flex !important;
+                align-items: center !important;
+                height: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            html body header.site-header .wrap_branding a.logo img,
+            html body header.site-header .wrap_branding img {
+                max-height: 42px !important;
+                height: 36px !important;
+                width: auto !important;
+                max-width: 185px !important;
+                object-fit: contain !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            html body header.site-header .search-navigation,
+            html body header.site-header .search-navigation__wrap {
+                position: static !important;
+                right: auto !important;
+                left: auto !important;
+                top: auto !important;
+                transform: none !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                flex: 0 0 auto !important;
+                width: auto !important;
+            }
+            html body header.site-header .search-navigation .main-menu-search {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 7px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                position: static !important;
+            }
+            html body header.site-header #md-theme {
+                position: static !important;
+                right: auto !important;
+                transform: none !important;
+                width: 54px !important;
+                min-width: 54px !important;
+                height: 32px !important;
+                min-height: 32px !important;
+                margin: 0 !important;
+                flex: 0 0 54px !important;
+            }
+        }
     `;
 
     function injectStyles() {
@@ -8848,17 +8950,22 @@
 
     let trimTimer = 0;
     function trimHeroGap() {
-        const hero = document.getElementById('md-hero');
-        if (!hero) return;
+        // Clear any previously applied trim first so Continue Reading is never overlapped
+        $$('[data-md-trim="1"]').forEach(el => {
+            el.style.removeProperty('margin-top');
+            delete el.dataset.mdTrim;
+        });
+        const anchor = document.getElementById('md-continue-reading') || document.getElementById('md-hero');
+        if (!anchor || innerWidth > 768) return;
+        const anchorRect = anchor.getBoundingClientRect();
+        if (anchorRect.height <= 0) return;
         const next = [...document.querySelectorAll('.c-blog__heading, .page-content-listing, .page-listing-item')]
-            .find(e => e.getBoundingClientRect().top >= hero.getBoundingClientRect().bottom - 2 && e.getBoundingClientRect().height > 0);
+            .find(e => !anchor.contains(e) && e.getBoundingClientRect().top >= anchorRect.bottom - 2 && e.getBoundingClientRect().height > 0);
         if (!next) return;
-        if (next.dataset.mdTrim) { next.style.removeProperty('margin-top'); delete next.dataset.mdTrim; }
-        if (innerWidth > 768) return;
-        const gap = next.getBoundingClientRect().top - hero.getBoundingClientRect().bottom;
-        if (gap > 44) {
+        const gap = next.getBoundingClientRect().top - anchorRect.bottom;
+        if (gap > 44 && gap < 180) {
             const mt = parseFloat(getComputedStyle(next).marginTop) || 0;
-            next.style.setProperty('margin-top', (mt - (gap - 26)) + 'px', 'important');
+            next.style.setProperty('margin-top', (mt - (gap - 20)) + 'px', 'important');
             next.dataset.mdTrim = '1';
         }
     }
