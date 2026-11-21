@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.10
+// @version      2026-11-21.13
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -7815,6 +7815,673 @@
                 border-top: 1.5px dashed var(--bd) !important;
             }
         }
+        /* ================================================================
+         *  v2026-11-21.11 POLISH:
+         *  - Text-only underlined top-left breadcrumb (tight spacing)
+         *  - Unboxed 5 thick-bordered stars (no duplicate 4.5 score)
+         *  - Compressed 2-row mobile video player (zero right clipping)
+         *  - True centered 100% chapter images on mobile (zero left gutter)
+         *  - Redesigned @better-ui / @impeccable Advanced Search cards
+         * ================================================================ */
+
+        /* 1. Series Overview Breadcrumb: tight spacing, top-left, underlined text only (no box) */
+        html[data-md-page="overview"] .profile-manga {
+            padding-top: 8px !important;
+        }
+        html[data-md-page="overview"] .c-breadcrumb-wrapper,
+        html[data-md-page="overview"] .c-breadcrumb,
+        html[data-md-page="overview"] ol.breadcrumb {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            padding: 0 !important;
+            margin: 0 0 8px !important;
+            justify-content: flex-start !important;
+            text-align: left !important;
+        }
+        html[data-md-page="overview"] ol.breadcrumb li,
+        html[data-md-page="overview"] ol.breadcrumb li a {
+            color: var(--ink) !important;
+            font: 700 12.5px/1.3 'DM Sans', sans-serif !important;
+            text-decoration: underline !important;
+            text-underline-offset: 3px !important;
+            text-decoration-thickness: 1.5px !important;
+        }
+        html[data-md-page="overview"] ol.breadcrumb li + li::before {
+            text-decoration: none !important;
+            color: var(--muted) !important;
+        }
+
+        /* 2. Series Overview Stars: unboxed, 5 thick black-bordered stars, no duplicate 4.5 */
+        html[data-md-page="overview"] .post-total-rating {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 2px 0 6px !important;
+            margin: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+        }
+        html[data-md-page="overview"] .post-total-rating .score,
+        html[data-md-page="overview"] .post-total-rating .total_votes {
+            display: none !important;
+        }
+        html[data-md-page="overview"] .post-total-rating i,
+        html[data-md-page="overview"] .post-total-rating .ion-ios-star,
+        html[data-md-page="overview"] .post-total-rating .ion-ios-star-half,
+        html[data-md-page="overview"] .post-total-rating .ion-ios-star-outline {
+            font-size: 24px !important;
+            line-height: 1 !important;
+            -webkit-text-stroke: 1.8px var(--bd) !important;
+            paint-order: stroke fill !important;
+            filter: drop-shadow(1.5px 1.5px 0 var(--bd)) !important;
+            margin-right: 2px !important;
+        }
+
+        /* 3. Custom Video Player: responsive 2-row bar & zero overflow in comment cards */
+        html body #wpdcom .wpd-comment-right {
+            min-width: 0 !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+        }
+        .md-vid-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+        }
+        .md-vid-bar {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            padding: 8px 10px !important;
+        }
+        .md-vid-seek-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+        }
+        .md-vid-act-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            width: 100%;
+        }
+        .md-vid-act-row .md-vid-btn {
+            flex: 1 1 0;
+            height: 30px;
+        }
+
+        /* 4. Redesigned Advanced Search Cards (@better-ui + @impeccable) */
+        .c-tabs-item__content.md-sc-clean {
+            display: grid !important;
+            grid-template-columns: 96px minmax(0, 1fr) !important;
+            gap: 12px !important;
+            align-items: stretch !important;
+            padding: 12px !important;
+            margin: 0 0 12px !important;
+            background: var(--card) !important;
+            border: var(--bw) solid var(--bd) !important;
+            border-radius: 12px !important;
+            box-shadow: var(--sh) !important;
+        }
+        .c-tabs-item__content.md-sc-clean .post-content,
+        .c-tabs-item__content.md-sc-clean .tab-meta {
+            display: none !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb,
+        .c-tabs-item__content.md-sc-clean .c-image-hover {
+            position: relative !important;
+            width: 96px !important;
+            aspect-ratio: 2 / 3 !important;
+            border-radius: 8px !important;
+            border: 2px solid var(--bd) !important;
+            overflow: hidden !important;
+            margin: 0 !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            box-shadow: inset 0 0 0 1px oklch(0 0 0 / 0.1);
+            pointer-events: none;
+        }
+        html[data-md-theme="dark"] .c-tabs-item__content.md-sc-clean .tab-thumb::after {
+            box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.1);
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb img {
+            transition: none !important;
+            transform: none !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-summary {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 7px !important;
+            min-width: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        .c-tabs-item__content.md-sc-clean .post-title h3,
+        .c-tabs-item__content.md-sc-clean .post-title h4,
+        .c-tabs-item__content.md-sc-clean .post-title a {
+            font-family: 'DM Sans', system-ui, sans-serif !important;
+            font-size: 15.5px !important;
+            font-weight: 800 !important;
+            line-height: 1.25 !important;
+            color: var(--ink) !important;
+            margin: 0 !important;
+            text-decoration: none !important;
+            display: -webkit-box !important;
+            -webkit-line-clamp: 2 !important;
+            -webkit-box-orient: vertical !important;
+            overflow: hidden !important;
+        }
+        .md-sc-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+        }
+        .md-sc-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1.5px solid var(--bd);
+            background: var(--bg);
+            color: var(--ink);
+            font: 800 11px/1.2 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+        .md-sc-pill.is-status {
+            background: var(--primary);
+            color: #ffffff;
+        }
+        .md-sc-pill.is-rate {
+            background: var(--card);
+        }
+        .md-sc-genres {
+            font: 600 12px/1.3 'DM Sans', sans-serif;
+            color: var(--muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .md-sc-foot {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding-top: 4px;
+        }
+        .md-sc-chap {
+            display: inline-flex !important;
+            align-items: center !important;
+            padding: 5px 10px !important;
+            border-radius: 7px !important;
+            border: 2px solid var(--bd) !important;
+            background: var(--bg) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12px/1 'JetBrains Mono', monospace !important;
+            text-decoration: none !important;
+            transition: transform 0.14s ease, background-color 0.14s ease, color 0.14s ease !important;
+        }
+        .md-sc-chap:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+        .md-sc-chap:active { transform: scale(0.96) !important; }
+        .md-sc-date {
+            font: 700 11px/1 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        /* 5. True Dead-Center 100% Chapter Images on Mobile (zero left gutter) */
+        @media (max-width: 768px) {
+            html[data-md-page="chapter"] .site-content,
+            html[data-md-page="chapter"] .c-page-content,
+            html[data-md-page="chapter"] .c-page-content .container,
+            html[data-md-page="chapter"] .c-page-content .row,
+            html[data-md-page="chapter"] .main-col,
+            html[data-md-page="chapter"] .main-col-inner,
+            html[data-md-page="chapter"] .entry-content,
+            html[data-md-page="chapter"] .entry-content_wrap,
+            html[data-md-page="chapter"] .read-container,
+            html[data-md-page="chapter"] .reading-content,
+            html[data-md-page="chapter"] .reading-content .page-break {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+            }
+            html[data-md-page="chapter"] .reading-content img {
+                display: block !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                min-width: 0 !important;
+                height: auto !important;
+                margin: 0 auto !important;
+            }
+        }
+        /* ================================================================
+         *  v2026-11-21.12 POLISH:
+         *  - Fixed Advanced Search page search bar icon & results heading
+         *  - Clean single-border Advanced Search card thumbnails & alignment
+         *  - Zero excess gap above series overview breadcrumb
+         *  - Unboxed .post-rating + thick flat 2D all-sides black star borders
+         *  - Thicker edge-attached progress rail (#md-progress)
+         * ================================================================ */
+
+        /* 1. Advanced Search page search bar & magnifying glass button */
+        .c-search-header__wrapper .search-content form,
+        .c-search-header__wrapper form.search-form {
+            display: flex !important;
+            align-items: stretch !important;
+            gap: 0 !important;
+            width: 100% !important;
+        }
+        .c-search-header__wrapper .search-content input[type="text"],
+        .c-search-header__wrapper .search-content input[type="search"],
+        .c-search-header__wrapper form.search-form input[type="text"] {
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            height: 44px !important;
+            padding: 8px 12px !important;
+            box-sizing: border-box !important;
+        }
+        .c-search-header__wrapper .search-content input[type="submit"],
+        .c-search-header__wrapper .search-content button[type="submit"],
+        .c-search-header__wrapper .search-content .search-submit {
+            flex: 0 0 48px !important;
+            width: 48px !important;
+            min-width: 48px !important;
+            height: 44px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            text-align: center !important;
+            box-sizing: border-box !important;
+        }
+
+        /* 2. Readable "XYZ RESULTS FOR ___" heading (no inner box, no clipped query) */
+        html body .tab-wrap .c-blog__heading,
+        html body .tab-wrap .c-blog__heading.style-2 {
+            border: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+            background-image: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            flex: 1 1 auto !important;
+            min-width: 0 !important;
+            overflow: visible !important;
+        }
+        html body .tab-wrap .c-blog__heading h1,
+        html body .tab-wrap .c-blog__heading h2,
+        html body .tab-wrap .c-blog__heading h3,
+        html body .tab-wrap .c-blog__heading h4,
+        html body .tab-wrap .c-blog__heading .h4 {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            line-height: 1.3 !important;
+            word-break: break-word !important;
+        }
+
+        /* 3. Clean single-border Advanced Search card thumbnail & flush alignment */
+        .c-tabs-item__content.md-sc-clean {
+            align-items: start !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 96px !important;
+            height: auto !important;
+            aspect-ratio: 2 / 3 !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb::after {
+            display: none !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb .c-image-hover {
+            width: 100% !important;
+            height: 100% !important;
+            aspect-ratio: 2 / 3 !important;
+            border: 2px solid var(--bd) !important;
+            border-radius: 8px !important;
+            box-shadow: var(--sh-sm) !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+            display: block !important;
+            box-sizing: border-box !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb img {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+            display: block !important;
+            border: none !important;
+            border-radius: 0 !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-summary {
+            justify-content: flex-start !important;
+            gap: 6px !important;
+        }
+
+        /* 4. Tight spacing between sub-nav bar and Series Overview breadcrumb (beats dark + div.profile-manga specificity) */
+        html[data-md-page="overview"] body .site-content,
+        html[data-md-page="overview"] body div.profile-manga,
+        html[data-md-theme="dark"][data-md-page="overview"] body div.profile-manga,
+        html[data-md-page="overview"] body div.profile-manga > .container,
+        html[data-md-page="overview"] body div.profile-manga > .container > .row,
+        html[data-md-page="overview"] body div.profile-manga .col-12,
+        html[data-md-page="overview"] body .c-breadcrumb-wrapper {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        html[data-md-page="overview"] body div.profile-manga,
+        html[data-md-theme="dark"][data-md-page="overview"] body div.profile-manga {
+            padding-top: 10px !important;
+        }
+
+        /* 5. Unboxed Rating Stars (beats div.summary_content .post-rating specificity in both themes) */
+        html[data-md-page="overview"] body div.summary_content .post-rating,
+        html[data-md-theme="dark"][data-md-page="overview"] body div.summary_content .post-rating,
+        html[data-md-page="overview"] body .post-rating,
+        html[data-md-page="overview"] body .post-total-rating {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 0 6px !important;
+        }
+        html[data-md-page="overview"] .post-rating .score,
+        html[data-md-page="overview"] .post-total-rating .score {
+            display: none !important;
+        }
+        html[data-md-page="overview"] .post-rating i,
+        html[data-md-page="overview"] .post-total-rating i,
+        html[data-md-page="overview"] .post-rating .ion-ios-star,
+        html[data-md-page="overview"] .post-rating .ion-ios-star-half,
+        html[data-md-page="overview"] .post-rating .ion-ios-star-outline {
+            font-size: 26px !important;
+            line-height: 1 !important;
+            -webkit-text-stroke: 2.6px #000000 !important;
+            paint-order: stroke fill !important;
+            filter: none !important;
+            text-shadow: none !important;
+            margin-right: 3px !important;
+        }
+
+        /* 6. Thicker Progress Rail attached flush to the screen edges */
+        #md-progress {
+            top: 0 !important;
+            right: 0 !important;
+            bottom: var(--md-prog-bottom, 0px) !important;
+            width: 10px !important;
+            border-radius: 0 !important;
+            border: none !important;
+            border-left: 2px solid var(--bd) !important;
+            background: rgba(127, 127, 127, 0.28) !important;
+        }
+        #md-progress:hover { width: 12px !important; }
+        #md-progress[data-side="left"] {
+            left: 0 !important;
+            right: auto !important;
+            border-left: none !important;
+            border-right: 2px solid var(--bd) !important;
+        }
+        #md-progress-fill {
+            border-radius: 0 !important;
+        }
+        /* ================================================================
+         *  v2026-11-21.13 POLISH:
+         *  - Bigger, thicker flat-2D all-sides black borders on overview stars
+         *  - Tight thumbnail padding + flush-left Title alignment on search cards
+         *  - 1-line alt titles + full-width Info button + expandable gradient overlay
+         * ================================================================ */
+
+        /* 1. Extra-thick flat 2D all-sides black borders on overview stars */
+        html[data-md-page="overview"] body div.summary_content .post-rating i,
+        html[data-md-page="overview"] body .post-rating i,
+        html[data-md-page="overview"] body .post-total-rating i {
+            font-size: 32px !important;
+            line-height: 1 !important;
+            -webkit-text-stroke: 4.6px #000000 !important;
+            paint-order: stroke fill !important;
+            text-shadow:
+                -2.2px -2.2px 0 #000000,
+                 2.2px -2.2px 0 #000000,
+                -2.2px  2.2px 0 #000000,
+                 2.2px  2.2px 0 #000000,
+                 0px   -2.5px 0 #000000,
+                 0px    2.5px 0 #000000,
+                -2.5px  0px   0 #000000,
+                 2.5px  0px   0 #000000 !important;
+            filter: none !important;
+            margin-right: 5px !important;
+        }
+
+        /* 2. Tight thumbnail padding & flush-left alignment on Advanced Search cards */
+        .c-tabs-item__content.md-sc-clean {
+            position: relative !important;
+            overflow: hidden !important;
+            grid-template-columns: 98px minmax(0, 1fr) !important;
+            gap: 10px !important;
+            padding: 7px 10px 7px 7px !important;
+            border-radius: 12px !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-thumb {
+            width: 98px !important;
+        }
+        .c-tabs-item__content.md-sc-clean .post-title,
+        .c-tabs-item__content.md-sc-clean .post-title h3,
+        .c-tabs-item__content.md-sc-clean .post-title h4,
+        .c-tabs-item__content.md-sc-clean .post-title a {
+            margin: 0 !important;
+            padding: 0 !important;
+            text-indent: 0 !important;
+            text-align: left !important;
+        }
+        .c-tabs-item__content.md-sc-clean .tab-summary {
+            gap: 5px !important;
+            align-items: stretch !important;
+        }
+        .md-sc-alt {
+            font: 600 11.5px/1.25 'DM Sans', sans-serif !important;
+            color: var(--muted) !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .md-sc-info-btn {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            padding: 6px 10px !important;
+            margin: 2px 0 !important;
+            border-radius: 7px !important;
+            border: 2px solid var(--bd) !important;
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            box-shadow: var(--sh-sm) !important;
+            font: 800 12px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+            cursor: pointer !important;
+            box-sizing: border-box !important;
+            transition: transform 0.14s ease, box-shadow 0.14s ease !important;
+        }
+        .md-sc-info-btn:active { transform: scale(0.97) !important; }
+
+        /* 3. Flat-Color Info Overlay with Info-Button-to-Card Clip-Path Morph */
+        .md-sc-overlay {
+            position: absolute !important;
+            inset: 0 !important;
+            z-index: 8 !important;
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            padding: 8px 10px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 5px !important;
+            overflow: hidden !important;
+            opacity: 0 !important;
+            clip-path: var(--md-ov-clip, inset(44% 8px 36% 114px round 7px)) !important;
+            pointer-events: none !important;
+            transition: clip-path 0.28s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.14s ease !important;
+        }
+        .c-tabs-item__content.md-sc-clean.is-info-open .md-sc-overlay {
+            opacity: 1 !important;
+            clip-path: inset(0px 0px 0px 0px round 9px) !important;
+            pointer-events: auto !important;
+        }
+        .md-sc-ov-pill.md-sc-ov-star {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .md-sc-overlay { transition: opacity 0.12s ease !important; }
+        }
+        .c-tabs-item__content.md-sc-clean.is-info-open.is-ov-expanded {
+            display: block !important;
+            padding: 0 !important;
+        }
+        .c-tabs-item__content.md-sc-clean.is-info-open.is-ov-expanded > :not(.md-sc-overlay) {
+            display: none !important;
+        }
+        .c-tabs-item__content.md-sc-clean.is-info-open.is-ov-expanded .md-sc-overlay {
+            position: relative !important;
+            inset: auto !important;
+            overflow: visible !important;
+        }
+        .md-sc-ov-hd {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .md-sc-ov-title {
+            font: 800 14px/1.2 'DM Sans', sans-serif;
+            color: #ffffff;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .md-sc-ov-close {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            flex: 0 0 26px;
+            border-radius: 6px;
+            border: 2px solid #000000;
+            background: #ffffff;
+            color: #111111;
+            box-shadow: 2px 2px 0 #000000;
+            cursor: pointer;
+            padding: 0;
+        }
+        .md-sc-ov-close svg { width: 14px; height: 14px; }
+        .md-sc-ov-close:active { transform: scale(0.95); }
+        .md-sc-ov-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .md-sc-ov-pill {
+            padding: 2px 8px;
+            border-radius: 6px;
+            border: 2px solid #000000;
+            background: #ffffff;
+            color: #111111;
+            box-shadow: 2px 2px 0 #000000;
+            font: 800 11px/1.2 'JetBrains Mono', monospace;
+        }
+        .md-sc-ov-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font: 600 12px/1.3 'DM Sans', sans-serif;
+            color: #ffffff;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+        }
+        .md-sc-ov-row b {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            text-transform: uppercase;
+            opacity: 0.92;
+        }
+        .md-sc-ov-genres {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .md-sc-ov-genres > b {
+            font: 800 11px/1 'JetBrains Mono', monospace;
+            text-transform: uppercase;
+            color: #ffffff;
+        }
+        .md-sc-ov-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .md-sc-ov-tag {
+            padding: 2px 7px;
+            border-radius: 5px;
+            border: 1.5px solid #000000;
+            background: rgba(255, 255, 255, 0.92);
+            color: #111111;
+            font: 700 11px/1.2 'DM Sans', sans-serif;
+        }
+        .md-sc-ov-tag.is-extra { display: none; }
+        .md-sc-overlay.genres-expanded .md-sc-ov-tag.is-extra { display: inline-flex; }
+        .md-sc-ov-more {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin-top: auto !important;
+            padding: 5px 10px !important;
+            border-radius: 7px !important;
+            border: 2px solid #000000 !important;
+            background: #111111 !important;
+            color: #ffffff !important;
+            box-shadow: 2px 2px 0 #000000 !important;
+            font: 800 11px/1 'JetBrains Mono', monospace !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.04em !important;
+            cursor: pointer !important;
+            box-sizing: border-box !important;
+        }
+        .md-sc-ov-more:active { transform: scale(0.97) !important; }
     `;
 
     function injectStyles() {
@@ -8687,7 +9354,11 @@
             autoScrollCarry += autoScrollSpeed * dt;
             const step = Math.trunc(autoScrollCarry);
             if (step !== 0) {
-                window.scrollBy(0, step);
+                try {
+                    window.scrollBy({ top: step, left: 0, behavior: 'instant' });
+                } catch (_) {
+                    window.scrollBy(0, step);
+                }
                 autoScrollCarry -= step;
             }
             if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) {
@@ -8757,7 +9428,7 @@
                 const pct = Math.max(0, Math.min(100, ((scrollY - firstTop) / span) * 100));
                 rail.style.setProperty('--md-prog-pct', pct.toFixed(1) + '%');
                 // Clamp bottom edge so rail ends with the last chapter image and never enters comments
-                const distFromBottom = Math.max(12, Math.round(innerHeight - lastRect.bottom + 8));
+                const distFromBottom = Math.max(0, Math.round(innerHeight - lastRect.bottom));
                 rail.style.setProperty('--md-prog-bottom', distFromBottom + 'px');
                 rail.style.opacity = lastRect.bottom < 48 ? '0' : '1';
                 // Update Continue Reading percentage silently
@@ -10234,7 +10905,7 @@
                     <div class="md-set-sec">
                         <span class="md-set-lbl">Auto-Scroll Speed</span>
                         <div class="md-range-row">
-                            <input type="range" id="md-set-speed" min="60" max="400" step="10" value="${speed}">
+                            <input type="range" id="md-set-speed" min="40" max="800" step="20" value="${speed}">
                             <span class="md-range-val" id="md-set-speed-val">${speed} px/s</span>
                         </div>
                     </div>
@@ -10257,7 +10928,7 @@
             const spInp = $('#md-set-speed', wrap);
             const spVal = $('#md-set-speed-val', wrap);
             const syncSpeed = () => {
-                const v = Math.max(60, Math.min(400, Number(spInp.value) || 150));
+                const v = Math.max(40, Math.min(800, Number(spInp.value) || 150));
                 autoScrollSpeed = v;
                 store.set('autoScrollSpeed', v);
                 spVal.textContent = v + ' px/s';
@@ -10631,12 +11302,16 @@
 
             const bar = document.createElement('div');
             bar.className = 'md-vid-bar';
-            bar.innerHTML = `<button type="button" class="md-vid-btn md-vid-play" aria-label="Play or pause">${ICON.scroll}</button>
-                <input type="range" class="md-vid-seek" min="0" max="1000" value="0" aria-label="Seek">
-                <span class="md-vid-time">0:00 / 0:00</span>
-                <button type="button" class="md-vid-btn md-vid-mute" aria-label="Mute or unmute">${ICON_VOL}</button>
-                <button type="button" class="md-vid-btn md-vid-dl" title="Download video" aria-label="Download video">${ICON.down}</button>
-                <button type="button" class="md-vid-btn md-vid-fs" title="Fullscreen" aria-label="Fullscreen">${ICON.expand}</button>`;
+            bar.innerHTML = `<div class="md-vid-seek-row">
+                    <input type="range" class="md-vid-seek" min="0" max="1000" value="0" aria-label="Seek">
+                    <span class="md-vid-time">0:00 / 0:00</span>
+                </div>
+                <div class="md-vid-act-row">
+                    <button type="button" class="md-vid-btn md-vid-play" aria-label="Play or pause">${ICON.scroll}</button>
+                    <button type="button" class="md-vid-btn md-vid-mute" aria-label="Mute or unmute">${ICON_VOL}</button>
+                    <button type="button" class="md-vid-btn md-vid-dl" title="Download video" aria-label="Download video">${ICON.down}</button>
+                    <button type="button" class="md-vid-btn md-vid-fs" title="Fullscreen" aria-label="Fullscreen">${ICON.expand}</button>
+                </div>`;
             wrap.appendChild(bar);
 
             const playBtn = $('.md-vid-play', bar);
@@ -10685,11 +11360,145 @@
     }
 
     function tagVerboseSearchMeta() {
-        $$('.c-tabs-item__content .post-content_item').forEach(row => {
-            if (row.dataset.mdMetaTagged) return;
-            row.dataset.mdMetaTagged = '1';
-            const heading = (row.querySelector('.summary-heading')?.textContent || '').trim().toLowerCase();
-            if (/alternative|author|artist/.test(heading)) row.classList.add('md-search-verbose');
+        $$('.c-tabs-item__content').forEach(card => {
+            if (card.dataset.mdScRefined) return;
+            const summary = card.querySelector('.tab-summary');
+            const titleEl = card.querySelector('.post-title h3, .post-title h4');
+            if (!summary || !titleEl) return;
+            card.dataset.mdScRefined = '1';
+
+            let altTitles = [], authors = '', artists = '', status = '', release = '', genres = [];
+            $$('.post-content_item', card).forEach(row => {
+                const h = (row.querySelector('.summary-heading')?.textContent || '').trim().toLowerCase();
+                const c = row.querySelector('.summary-content');
+                if (!c) return;
+                const txt = c.textContent.replace(/\s+/g, ' ').trim();
+                if (h.includes('alternative')) {
+                    altTitles = txt.split(/[,;\/|]+/).map(s => s.trim()).filter(Boolean);
+                } else if (h.includes('author')) {
+                    authors = txt;
+                } else if (h.includes('artist')) {
+                    artists = txt;
+                } else if (h.includes('status')) {
+                    status = txt;
+                } else if (h.includes('release')) {
+                    release = txt;
+                } else if (h.includes('genre')) {
+                    const as = $$('a', c).map(a => a.textContent.trim()).filter(Boolean);
+                    genres = as.length ? as : txt.split(',').map(s => s.trim()).filter(Boolean);
+                }
+            });
+
+            const rating = (card.querySelector('.tab-meta .score, .post-total-rating .score')?.textContent || '').trim();
+            const chapA = card.querySelector('.tab-meta .chapter a, .tab-meta a.btn-link');
+            const chapLabel = chapA ? chapA.textContent.replace(/\s+/g, ' ').trim() : '';
+            const chapHref = chapA ? chapA.href : '';
+            const rawDate = (card.querySelector('.tab-meta .post-on, .tab-meta .meta-item.post-on')?.textContent || '').replace(/\s+/g, ' ').trim();
+            const cleanDate = rawDate.replace(/\s+\d{2}:\d{2}(?::\d{2})?$/, '').trim();
+
+            if (altTitles.length) {
+                const altEl = document.createElement('div');
+                altEl.className = 'md-sc-alt';
+                altEl.textContent = altTitles.join(' • ');
+                summary.appendChild(altEl);
+            }
+
+            const infoBtn = document.createElement('button');
+            infoBtn.type = 'button';
+            infoBtn.className = 'md-sc-info-btn';
+            infoBtn.textContent = 'Info';
+            infoBtn.setAttribute('aria-expanded', 'false');
+            summary.appendChild(infoBtn);
+
+            const genresEl = document.createElement('div');
+            genresEl.className = 'md-sc-genres';
+            if (genres.length) genresEl.textContent = genres.slice(0, 4).join(' · ');
+            summary.appendChild(genresEl);
+
+            const foot = document.createElement('div');
+            foot.className = 'md-sc-foot';
+            if (chapLabel && chapHref) {
+                foot.innerHTML += `<a class="md-sc-chap" href="${chapHref.replace(/"/g, '&quot;')}">${chapLabel.replace(/</g, '&lt;')}</a>`;
+            }
+            if (cleanDate) {
+                foot.innerHTML += `<span class="md-sc-date">${cleanDate.replace(/</g, '&lt;')}</span>`;
+            }
+            summary.appendChild(foot);
+
+            // Expandable orange-red (header-gradient) Info Overlay covering the card
+            const overlay = document.createElement('div');
+            overlay.className = 'md-sc-overlay';
+            overlay.setAttribute('aria-hidden', 'true');
+
+            const esc = s => String(s || '').replace(/</g, '&lt;');
+            const hasManyGenres = genres.length > 4;
+            const genresTagsHtml = genres.map((g, idx) =>
+                `<span class="md-sc-ov-tag${hasManyGenres && idx >= 4 ? ' is-extra' : ''}">${esc(g)}</span>`
+            ).join('');
+
+            overlay.innerHTML = `<div class="md-sc-ov-hd">
+                    <span class="md-sc-ov-title">${esc(titleEl.textContent.trim())}</span>
+                    <button type="button" class="md-sc-ov-close" aria-label="Close info">${ICON.stop}</button>
+                </div>
+                <div class="md-sc-ov-pills">
+                    ${rating ? `<span class="md-sc-ov-pill md-sc-ov-star"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><polygon points="12 2.4 15 8.4 21.6 9.4 16.8 14 17.9 20.6 12 17.5 6.1 20.6 7.2 14 2.4 9.4 9 8.4" fill="#ffd43b" stroke="#000000" stroke-width="2.4" stroke-linejoin="round"/></svg><span>${esc(rating)} / 5</span></span>` : ''}
+                    ${status ? `<span class="md-sc-ov-pill">${esc(status)}</span>` : ''}
+                    ${release ? `<span class="md-sc-ov-pill">${esc(release)}</span>` : ''}
+                </div>
+                <div class="md-sc-ov-grid">
+                    ${authors ? `<div class="md-sc-ov-row"><b>Author(s):</b> <span>${esc(authors)}</span></div>` : ''}
+                    ${artists ? `<div class="md-sc-ov-row"><b>Artist(s):</b> <span>${esc(artists)}</span></div>` : ''}
+                </div>
+                ${genres.length ? `<div class="md-sc-ov-genres">
+                    <div class="md-sc-ov-tags">${genresTagsHtml}</div>
+                </div>` : ''}
+                ${hasManyGenres ? '<button type="button" class="md-sc-ov-more">See more &#9660;</button>' : ''}`;
+
+            card.appendChild(overlay);
+
+            const closeBtn = $('.md-sc-ov-close', overlay);
+            const moreBtn = $('.md-sc-ov-more', overlay);
+            const syncMorphClip = () => {
+                const cr = card.getBoundingClientRect();
+                const br = infoBtn.getBoundingClientRect();
+                if (!cr.width || !cr.height || !br.width) return;
+                const t = Math.max(0, Math.round(br.top - cr.top));
+                const r = Math.max(0, Math.round(cr.right - br.right));
+                const b = Math.max(0, Math.round(cr.bottom - br.bottom));
+                const l = Math.max(0, Math.round(br.left - cr.left));
+                overlay.style.setProperty('--md-ov-clip', `inset(${t}px ${r}px ${b}px ${l}px round 7px)`);
+            };
+            infoBtn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                syncMorphClip();
+                overlay.getBoundingClientRect();
+                card.classList.add('is-info-open');
+                overlay.setAttribute('aria-hidden', 'false');
+                infoBtn.setAttribute('aria-expanded', 'true');
+            });
+            closeBtn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                card.classList.remove('is-ov-expanded');
+                overlay.classList.remove('genres-expanded');
+                if (moreBtn) moreBtn.innerHTML = 'See more &#9660;';
+                syncMorphClip();
+                card.classList.remove('is-info-open');
+                overlay.setAttribute('aria-hidden', 'true');
+                infoBtn.setAttribute('aria-expanded', 'false');
+            });
+            if (moreBtn) {
+                moreBtn.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const expanded = overlay.classList.toggle('genres-expanded');
+                    card.classList.toggle('is-ov-expanded', expanded);
+                    moreBtn.innerHTML = expanded ? 'See less &#9650;' : 'See more &#9660;';
+                });
+            }
+
+            card.classList.add('md-sc-clean');
         });
     }
 
