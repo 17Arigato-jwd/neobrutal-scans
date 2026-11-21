@@ -7,6 +7,28 @@ A high-contrast **Neobrutalist skin and debloater suite** for **DemonicScans / M
 
 ---
 
+## Table of Contents
+
+- [Quick Install](#quick-install)
+  - [Prerequisites](#prerequisites)
+  - [One-Click Installation](#one-click-installation)
+- [Features](#features)
+  - [Neobrutalism Design System](#neobrutalism-design-system)
+  - [Netflix-Style Featured Hero Banner](#netflix-style-home--featured-hero-carousel)
+- [Dedicated Extension Details](#dedicated-extension-details)
+  - [Asura Scans Dedicated Features](#asura-scans-dedicated-features)
+  - [DemonicScans Dedicated Features](#demonicscans-dedicated-features)
+  - [MangaRead Dedicated Features](#mangaread-dedicated-features)
+  - [Comix Dedicated Features](#comix-dedicated-features)
+- [Supercharged Reader Dock & Offline Tools](#supercharged-reader-dock--offline-tools)
+- [Configuration](#configuration)
+- [Userscript Permissions](#userscript-permissions)
+- [Roadmap & Progress](#roadmap--progress)
+- [Testing & Quality Assurance](#testing--quality-assurance)
+- [License](#license)
+
+---
+
 ## Quick Install
 
 ### Prerequisites
@@ -18,14 +40,12 @@ Install a userscript manager extension in your browser:
 
 Choose the dedicated script for your site:
 
-| Site / Dedicated Script | Site / Dedicated Script |
-|---|---|
-| **Asura Scans Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js) | **Comix Dedicated**<br>[![Version](https://img.shields.io/badge/version-2026--11--21.19-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js) |
-| **High-contrast Neobrutalism skin** with zero-flash dark/light toggle, minimalist floating reader dock with zoom (50%–200%) & contrast switcher, novel reader overhaul, and multi-chapter batch ZIP downloader.<br>*Domains:* `asurascans.com`, `*.asurascans.com` | **Full-site Neobrutalism & 4-theme Settings sync**, offline Local Library & custom lists, sign-in nag removal & ad neutralizer, hero banner carousel with 3D tilt, single scrollable chapter list with scanlation-group dropdowns, deduplicated batch ZIP & PDF exporter (up to 500 chapters), floating reader dock with stretch-to-width, and mobile ergonomics (safe-area insets, touch-friendly docks & horizontal snap tracks).<br>*Domains:* `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` |
-| 👉 **[Install Asura Scans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)** | 👉 **[Install Comix Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)** |
-| **Demonic Scans Dedicated** *(MangaDemon)*<br>[![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **MangaRead Dedicated** *(mangaread.org)*<br>[![Version](https://img.shields.io/badge/version-2026--11--21.16-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) |
-| **Popunder killer & membership popup immunity**, Netflix-style hero carousel with falling progress timer, cookie-stored Continue Reading shelf, 3-tier podium leaderboard, single-chapter `.cbz` export, and comic ↔ novel reader formatting.<br>*Domains:* `demonicscans.org`, `mangademon.org`, & mirrors | **4-layer ad & popunder debloater**, hero carousel, standalone Continue Reading shelf, 2-row mobile reader dock, interactive search card info overlay, custom comment video player, Save to List prompt, static page support, `.cbz` export, and batch ZIP downloader.<br>*Domains:* `mangaread.org`, `*.mangaread.org` |
-| 👉 **[Install DemonicScans Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** | 👉 **[Install MangaRead Dedicated Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)** |
+| Dedicated Extension | Current Version | One-Click Install | Supported Domains |
+|:---|:---:|:---:|:---|
+| **Asura Scans Dedicated** | [![Version](https://img.shields.io/badge/version-2026--11--18.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js) | 👉 **[Install Asura Scans Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)** | `asurascans.com`, `*.asurascans.com` |
+| **Comix Dedicated** | [![Version](https://img.shields.io/badge/version-2026--11--21.19-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js) | 👉 **[Install Comix Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)** | `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` |
+| **Demonic Scans Dedicated** *(MangaDemon)* | [![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | 👉 **[Install DemonicScans Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** | `demonicscans.org`, `mangademon.org`, & mirrors |
+| **MangaRead Dedicated** *(mangaread.org)* | [![Version](https://img.shields.io/badge/version-2026--11--21.16-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) | 👉 **[Install MangaRead Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)** | `mangaread.org`, `*.mangaread.org` |
 
 *(Note: The legacy monolithic combined script has been archived to [`archive/neobrutal-scans.user.js`](archive/neobrutal-scans.user.js)).*
 
@@ -52,6 +72,17 @@ Your userscript manager will automatically detect the script and prompt you to c
 
 ---
 
+## Dedicated Extension Details
+
+### Asura Scans Dedicated Features
+- **Full-Site Neobrutalism Skin**: High-contrast aesthetic with solid black borders, hard drop shadows, and zero-flash Dark/Light theme toggle with persistent storage.
+- **Floating Reader Dock & Zoom Controls**: Minimalist auto-hiding reader dock with dynamic zoom (50% to 200%), background switcher, and chapter navigation.
+- **Novel Reader Formatting**: Clean typography, readable paragraph spacing, and distraction-free formatting tailored specifically for Asura novels.
+- **Multi-Chapter Batch Downloader**: Download multiple selected chapters in a consolidated ZIP archive directly from the series overview page.
+- **Ad Slot Collapsing & De-bloat**: Automatic elimination of empty ad containers, sticky promotional units, and distracting third-party scripts.
+
+---
+
 ### DemonicScans Dedicated Features
 - **Continue Reading Shelf**: Persistent cookie-stored shelf (`#md-continue-reading`) positioned directly under the hero banner showing in-progress series with last read chapter, next chapter quick-access button, and reading progress bar.
 - **Reader Membership Popup Immunity**: Neutralizes `#subpanel` promo dialog, dark backdrop, scroll locking (`html.reader-membership-open`), 700px PayPal promotion widgets, and PubAdX ad releases.
@@ -65,17 +96,6 @@ Your userscript manager will automatically detect the script and prompt you to c
 ---
 
 ### MangaRead Dedicated Features
-
-#### 📱 Mobile Experience Showcase
-
-| Homepage & Hero Carousel | Series Overview & Details | Chapter Reader & Dock |
-|:---:|:---:|:---:|
-| <img src="screenshots/mangaread/mobile_homepage_hero_and_continue_reading.png" width="220" alt="MangaRead Mobile Homepage & Hero Carousel" /> | <img src="screenshots/mangaread/mobile_series_overview_details.png" width="220" alt="MangaRead Mobile Series Overview" /> | <img src="screenshots/mangaread/mobile_chapter_reader_dock.png" width="220" alt="MangaRead Mobile Chapter Reader & Dock" /> |
-
-| Save to List Modal | Search Cards & Info Overlay | Local Library Modal |
-|:---:|:---:|:---:|
-| <img src="screenshots/mangaread/mobile_save_to_list_modal.png" width="220" alt="MangaRead Save to List Modal" /> | <img src="screenshots/mangaread/mobile_search_results_light_mode.png" width="220" alt="MangaRead Search Results with Info Overlay" /> | <img src="screenshots/mangaread/mobile_library_modal_light_mode.png" width="220" alt="MangaRead Library Modal Light Mode" /> |
-
 - **Featured Hero Carousel**: Full hero banner with falling progress bars, view counts, and latest chapter indicators ported to MangaRead homepage.
 - **Dynamic Mobile Hero Spacing**: Automatically calculates and trims excessive vertical margin gaps under `#md-hero` on mobile viewports ($\le 768\text{px}$) on load and resize.
 - **Unified Multi-Row Listing Grid**: Flattens nested row wrappers with `display: contents` into a single responsive grid container (3-columns on desktop $\ge 900\text{px}$, responsive 2-columns on mobile $\le 600\text{px}$), maintaining uniform spacing without ragged rows.
