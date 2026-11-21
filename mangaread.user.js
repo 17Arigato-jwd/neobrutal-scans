@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         MangaRead Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-21.5
+// @version      2026-11-21.6
 // @description  Neobrutalist skin and debloater for MangaRead: removes invasive ads, popunders, and trackers, restyles catalog and overview with bold high-contrast design, and adds reader dock with zoom controls, background switcher, and offline .cbz / batch zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -6843,6 +6843,259 @@
                 max-width: 145px !important;
             }
         }
+        /* ================================================================
+         *  v2026-11-21.6 MOBILE TOP BAR, SEARCH GEAR, SUB-NAV 3-DOTS,
+         *  SEPARATE CONTINUE READING SECTION
+         * ================================================================ */
+
+        /* Continue Reading: proper standalone section under Hero & over Latest Manga Updates */
+        #md-continue-reading {
+            max-width: var(--maxw, 1280px) !important;
+            width: calc(100% - 24px) !important;
+            margin: 18px auto 22px !important;
+            padding: 0 !important;
+            display: block !important;
+            position: relative !important;
+            z-index: 3 !important;
+            clear: both !important;
+            box-sizing: border-box !important;
+        }
+
+        /* Gear icon (Advanced Search) right beside Search button inside collapsible search bar */
+        .search-main-menu form.manga-search-form,
+        header.site-header form.manga-search-form {
+            display: flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+        }
+        a.md-adv-gear {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 40px !important;
+            height: 40px !important;
+            flex: 0 0 40px !important;
+            border-radius: 8px !important;
+            border: var(--bw, 3px) solid var(--bd) !important;
+            background: var(--card) !important;
+            color: var(--ink) !important;
+            box-shadow: var(--sh-sm) !important;
+            text-decoration: none !important;
+            transition: transform 0.14s ease, background-color 0.15s ease, color 0.15s ease !important;
+        }
+        a.md-adv-gear:hover {
+            background: var(--primary) !important;
+            color: #ffffff !important;
+        }
+        a.md-adv-gear:active { transform: scale(0.96) !important; }
+
+        /* 3-dots overflow hidden on desktop */
+        #md-subnav-more { display: none !important; }
+
+        @media (max-width: 768px) {
+            /* Hide useless mobile hamburger menu & desktop Browse button */
+            header.site-header .c-togle__menu,
+            header.site-header .menu_icon__open,
+            header.site-header a.menu_icon__open,
+            header.site-header .mobile-icon,
+            #md-subnav-toggle {
+                display: none !important;
+            }
+
+            /* Mobile Top Bar: vertically centered bigger logo + clean right cluster [Search][Library][Toggle] */
+            html body header.site-header .c-header__top {
+                padding: 0 !important;
+            }
+            html body header.site-header .c-header__top .container,
+            html body header.site-header .c-header__top .row {
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            html body header.site-header .main-navigation_wrap {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                min-height: 60px !important;
+                padding: 8px 12px !important;
+                gap: 8px !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+            }
+            html body header.site-header .wrap_branding {
+                display: flex !important;
+                align-items: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                min-width: 0 !important;
+                flex: 0 1 auto !important;
+            }
+            html body header.site-header .wrap_branding a.logo {
+                display: inline-flex !important;
+                align-items: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                line-height: 0 !important;
+            }
+            html body header.site-header .wrap_branding a.logo img,
+            html body header.site-header .wrap_branding img {
+                max-height: 40px !important;
+                max-width: 175px !important;
+                width: auto !important;
+                height: auto !important;
+                display: block !important;
+            }
+            html body header.site-header .search-navigation {
+                display: flex !important;
+                align-items: center !important;
+                margin: 0 0 0 auto !important;
+                padding: 0 !important;
+                flex: 0 0 auto !important;
+            }
+            html body header.site-header .search-navigation .main-menu-search {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 8px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            html body header.site-header .search-navigation .main-menu-search > li {
+                display: inline-flex !important;
+                align-items: center !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            html body header.site-header a.open-search-main-menu,
+            html body header.site-header .md-hdr-btn {
+                width: 34px !important;
+                height: 34px !important;
+                flex: 0 0 34px !important;
+            }
+            html body header.site-header #md-theme {
+                transform: none !important;
+                min-width: 56px !important;
+                width: 56px !important;
+                height: 32px !important;
+                margin: 0 !important;
+                position: static !important;
+                flex: 0 0 56px !important;
+            }
+
+            /* Compressed mobile search bar with gear icon next to Search button */
+            html body header.site-header .search-main-menu {
+                padding: 8px 10px !important;
+            }
+            html body header.site-header .search-main-menu form.manga-search-form {
+                padding: 4px !important;
+                gap: 6px !important;
+            }
+            html body header.site-header .search-main-menu input.manga-search-field,
+            html body header.site-header .search-main-menu input[type="text"] {
+                height: 38px !important;
+                min-height: 38px !important;
+                padding: 6px 10px !important;
+                font-size: 16px !important;
+                flex: 1 1 auto !important;
+                min-width: 0 !important;
+            }
+            html body header.site-header .search-main-menu input[type="submit"],
+            html body header.site-header .search-main-menu button[type="submit"] {
+                height: 38px !important;
+                padding: 0 12px !important;
+                font-size: 13px !important;
+                flex-shrink: 0 !important;
+            }
+            a.md-adv-gear {
+                width: 38px !important;
+                height: 38px !important;
+                flex: 0 0 38px !important;
+            }
+
+            /* Bigger, taller mobile sub-nav bar + 3-dots dropdown for overflow items */
+            html body header.site-header .c-sub-header-nav {
+                display: block !important;
+                position: relative !important;
+                overflow: visible !important;
+            }
+            html body header.site-header .c-sub-header-nav .sub-nav_list {
+                display: flex !important;
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                gap: 18px !important;
+                min-height: 50px !important;
+                padding: 6px 14px !important;
+                overflow: visible !important;
+            }
+            html body header.site-header .c-sub-header-nav .sub-nav_list > li > a {
+                font-size: 14.5px !important;
+                font-weight: 800 !important;
+                padding: 10px 4px !important;
+                letter-spacing: 0.03em !important;
+            }
+            html body header.site-header .c-sub-header-nav .sub-nav_list > li.md-sub-overflow {
+                display: none !important;
+            }
+            #md-subnav-more {
+                display: inline-flex !important;
+                align-items: center !important;
+                margin-left: auto !important;
+                position: static !important;
+            }
+            .md-more-btn {
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 36px !important;
+                height: 36px !important;
+                border-radius: 8px !important;
+                border: 2px solid transparent !important;
+                background: transparent !important;
+                color: var(--ink) !important;
+                cursor: pointer !important;
+                transition: transform 0.14s ease, background-color 0.15s ease !important;
+            }
+            .md-more-btn:active { transform: scale(0.96) !important; }
+            .md-more-btn[aria-expanded="true"] {
+                background: var(--bg) !important;
+                border-color: var(--bd) !important;
+                box-shadow: var(--sh-sm) !important;
+            }
+            .md-more-menu {
+                display: none;
+                position: absolute !important;
+                top: 100% !important;
+                left: 8px !important;
+                right: 8px !important;
+                z-index: 1005 !important;
+                background: var(--card) !important;
+                border: var(--bw, 3px) solid var(--bd) !important;
+                border-radius: var(--r, 10px) !important;
+                box-shadow: var(--sh-hover, 6px 6px 0 var(--bd)) !important;
+                padding: 10px !important;
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                gap: 8px !important;
+            }
+            .md-more-menu.open { display: grid !important; }
+            .md-more-menu a {
+                display: flex !important;
+                align-items: center !important;
+                padding: 10px 12px !important;
+                border-radius: 8px !important;
+                border: 2px solid var(--bd) !important;
+                background: var(--bg) !important;
+                color: var(--ink) !important;
+                box-shadow: var(--sh-sm) !important;
+                font: 800 13px/1.2 'JetBrains Mono', monospace !important;
+                text-transform: uppercase !important;
+                text-decoration: none !important;
+            }
+            .md-more-menu a:active { transform: scale(0.96) !important; }
+        }
     `;
 
     function injectStyles() {
@@ -8910,13 +9163,12 @@
         <div class="md-cr-wrap" data-fade="none"><div class="md-cr-row">${cards}</div></div>`;
 
         if (!existing) {
-            const listing = $('.c-page-content .main-col .c-blog__heading') || $('.page-content-listing');
-            if (listing && listing.parentElement) {
-                listing.parentElement.insertBefore(shelf, listing);
+            const hero = document.getElementById('md-hero');
+            if (hero) {
+                hero.after(shelf);
             } else {
-                const hero = document.getElementById('md-hero');
-                if (hero) hero.after(shelf);
-                else ($('.site-content') || document.body).prepend(shelf);
+                const pageContent = $('.c-page-content') || $('.site-content') || document.body;
+                pageContent.prepend(shelf);
             }
         }
 
@@ -9493,23 +9745,29 @@
             }
         }
 
-        // 2. Move "Advanced" link (matched reliably by text or selector) into the collapsible search bar
+        // 2. Move/inject Advanced gear icon button right next to Search submit inside the collapsible search bar
         const moveAdv = () => {
-            const advLink = $$('header.site-header a, .search-navigation a').find(a =>
+            const advLinks = $$('header.site-header a, .search-navigation a').filter(a =>
                 !a.closest('.search-main-menu, form.manga-search-form') &&
                 (/^\s*advanced\s*$/i.test(a.textContent || '') || a.matches('.btn-search-adv, .adv-search-link, .adv-search'))
             );
+            const advHref = (advLinks[0] && advLinks[0].href) || '/?s=&post_type=wp-manga';
+            advLinks.forEach(a => {
+                const parentLi = a.closest('li');
+                a.remove();
+                if (parentLi && parentLi.children.length === 0 && !parentLi.textContent.trim()) parentLi.remove();
+            });
             const searchHost = $('.search-main-menu form.manga-search-form')
                 || $('.search-main-menu form')
-                || $('.search-main-menu')
                 || $('header.site-header form.manga-search-form');
-            if (advLink && searchHost && !searchHost.contains(advLink)) {
-                const parentLi = advLink.closest('li');
-                advLink.classList.add('md-adv-in-search');
-                searchHost.appendChild(advLink);
-                if (parentLi && parentLi.children.length === 0 && !parentLi.textContent.trim()) {
-                    parentLi.remove();
-                }
+            if (searchHost && !searchHost.querySelector('.md-adv-gear')) {
+                const gear = document.createElement('a');
+                gear.className = 'md-adv-gear';
+                gear.href = advHref;
+                gear.title = 'Advanced Search';
+                gear.setAttribute('aria-label', 'Advanced Search');
+                gear.innerHTML = ICON.gear;
+                searchHost.appendChild(gear);
             }
         };
         moveAdv();
@@ -9517,6 +9775,54 @@
         if (openSearchBtn && !openSearchBtn.dataset.mdAdvHook) {
             openSearchBtn.dataset.mdAdvHook = '1';
             openSearchBtn.addEventListener('click', () => setTimeout(moveAdv, 60));
+        }
+
+        // 3. Mobile sub-nav 3-dots dropdown containing remaining options (like Genres dropdown)
+        const subList = $('.c-sub-header-nav .sub-nav_list', hdr);
+        if (subList && !document.getElementById('md-subnav-more')) {
+            const items = [...subList.children].filter(el => el.tagName === 'LI' && !el.classList.contains('md-more-li'));
+            if (items.length > 3) {
+                const extraItems = items.slice(3);
+                extraItems.forEach(li => li.classList.add('md-sub-overflow'));
+
+                const moreLi = document.createElement('li');
+                moreLi.id = 'md-subnav-more';
+                moreLi.className = 'md-more-li';
+                const moreBtn = document.createElement('button');
+                moreBtn.type = 'button';
+                moreBtn.className = 'md-more-btn';
+                moreBtn.setAttribute('aria-expanded', 'false');
+                moreBtn.setAttribute('aria-label', 'More categories');
+                moreBtn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg>';
+
+                const menu = document.createElement('div');
+                menu.id = 'md-subnav-more-menu';
+                menu.className = 'md-more-menu';
+                extraItems.forEach(li => {
+                    const a = li.querySelector('a');
+                    if (!a) return;
+                    const clone = document.createElement('a');
+                    clone.href = a.href;
+                    clone.textContent = a.textContent.trim();
+                    menu.appendChild(clone);
+                });
+
+                moreBtn.addEventListener('click', e => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const open = menu.classList.toggle('open');
+                    moreBtn.setAttribute('aria-expanded', String(open));
+                });
+                document.addEventListener('click', e => {
+                    if (!moreLi.contains(e.target) && menu.classList.contains('open')) {
+                        menu.classList.remove('open');
+                        moreBtn.setAttribute('aria-expanded', 'false');
+                    }
+                });
+
+                moreLi.append(moreBtn, menu);
+                subList.appendChild(moreLi);
+            }
         }
     }
 
