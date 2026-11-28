@@ -1,0 +1,70 @@
+name: Bug Report
+description: Report a problem with a Neobrutal Scans userscript.
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues and update to the latest version of your Neobrutal Scans script before submitting.
+        Repeat the steps with the script enabled and disabled to confirm it causes the issue.
+        Remove private information from URLs, screenshots, and logs.
+  - type: dropdown
+    id: userscript
+    attributes:
+      label: Userscript
+      options:
+        - Asura Scans
+        - Comix
+        - DemonicScans / MangaDemon
+        - MangaRead
+        - Archived combined script
+    validations:
+      required: true
+  - type: input
+    id: page_url
+    attributes:
+      label: Affected page URL
+      description: Share a public URL where the bug occurs. Remove private query parameters.
+  - type: input
+    id: environment
+    attributes:
+      label: Userscript version, browser, and userscript manager
+      placeholder: 2026-11-28.1, Firefox 145, Violentmonkey
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or error logs
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I read the instructions.
+          required: true
+        - label: I searched existing issues and found no duplicate.
+          required: true
+        - label: I’m using the latest version of the relevant script or extension.
+          required: true
+        - label: I reproduced the issue with the Neobrutal Scans script enabled and confirmed it goes away when the script is disabled.
+          required: true
+        - label: I’ve ticked all these checkmarks without reading their contents.
