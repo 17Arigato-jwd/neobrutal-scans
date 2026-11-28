@@ -1,5 +1,33 @@
 'use strict';
 
+const readingResumePages = {
+    asurascans: 'img[data-page-index]',
+    comix: '.rpage-main .rpage-page[data-page]',
+    mangaread: '.reading-content img.wp-manga-chapter-img',
+    demonicscans: 'img.imgholder',
+};
+
+function resumeImportedPage(siteName) {
+    const hash = location.hash.match(/^#neobrutal-page=(\d+)$/);
+    if (!hash || !readingImport.hostMatches(readingImport.sites[siteName], location.hostname)) return;
+    const index = Number(hash[1]);
+    if (!Number.isSafeInteger(index)) return;
+    function resume() {
+        const pages = [...document.querySelectorAll(readingResumePages[siteName])];
+        const page = siteName === 'comix'
+            ? pages.find(element => Number(element.dataset.page) === index + 1)
+            : pages[index];
+        if (!page) return false;
+        history.replaceState(history.state, '', location.pathname + location.search);
+        page.scrollIntoView({ block: 'start', inline: 'center' });
+        return true;
+    }
+    if (resume()) return;
+    const observer = new MutationObserver(() => { if (resume()) observer.disconnect(); });
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(() => observer.disconnect(), 10000);
+}
+
 function mountReadingImport(siteName) {
     if (window.top !== window.self || location.pathname !== '/' || !document.body ||
         !readingImport.hostMatches(readingImport.sites[siteName], location.hostname)) return;
@@ -52,7 +80,9 @@ function mountReadingImport(siteName) {
             const history = entry.chapters.filter(chapter => chapter.lastRead).sort((a, b) => b.lastRead - a.lastRead);
             if (history.length) {
                 element(item, 'span', ' · ');
-                link(item, history[0].url, 'Continue reading');
+                const chapter = history[0];
+                const resume = !chapter.read && chapter.page > 0 ? '#neobrutal-page=' + chapter.page : '';
+                link(item, chapter.url + resume, 'Continue reading');
             }
             element(details, 'summary', entry.chapters.length + ' chapters with reading data');
             const chapters = element(details, 'ul');
@@ -129,11 +159,14 @@ function mountReadingImport(siteName) {
     apply.addEventListener('click', () => {
         if (!pending) return;
         try {
-            // The whole merge is written with one setItem, so quota errors leave the old data intact.
             const entries = readingImport.merge(load(), pending.entries);
-            localStorage.setItem(key, JSON.stringify(entries));
+            const changes = nativeReadingImport.updates(siteName, pending.entries, location.origin,
+                name => localStorage.getItem(name));
+            changes.set(key, entries);
+            nativeReadingImport.save(localStorage, changes);
             showSaved();
-            status.textContent = `Import complete. ${entries.length} titles stored on this site.`;
+            status.textContent = `Import complete. ${entries.length} titles stored on this site.` +
+                (changes.size > 1 ? ' Reload this page to see the updated library and Continue Reading.' : '');
         } catch {
             status.textContent = 'Could not save the import. The previous reading data is intact.';
         }

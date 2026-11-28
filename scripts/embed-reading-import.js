@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.join(__dirname, '..');
-const sources = ['tachibk', 'reading-import', 'reading-import-ui'];
+const sources = ['tachibk', 'reading-import', 'reading-import-native', 'reading-import-ui'];
 const bundle = sources.map(name => fs.readFileSync(path.join(root, 'src', name + '.js'), 'utf8').trimEnd()).join('\n\n');
 const start = '// BEGIN GENERATED READING IMPORT';
 const end = '// END GENERATED READING IMPORT';
@@ -20,11 +20,16 @@ for (const site of ['asurascans', 'comix', 'mangaread', 'demonicscans']) {
 ${start}
 (() => {
     'use strict';
-    if (typeof document.addEventListener !== 'function' || location.pathname !== '/' || !location.hostname) return;
+    if (typeof document.addEventListener !== 'function' || !location.hostname ||
+        (location.pathname !== '/' && !location.hash?.startsWith('#neobrutal-page='))) return;
 
 ${bundle.split('\n').map(line => line ? '    ' + line : '').join('\n')}
 
-    const mount = () => mountReadingImport('${site}');
+    const mount = () => {
+        if (window.top !== window.self || !document.body) return;
+        if (location.pathname === '/') mountReadingImport('${site}');
+        else resumeImportedPage('${site}');
+    };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });
     else mount();
 })();
