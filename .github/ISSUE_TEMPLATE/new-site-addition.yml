@@ -1,0 +1,29 @@
+name: New Site Addition
+description: Suggest a comic or novel site to support in Neobrutal Scans.
+title: "[New]: "
+body:
+  - type: input
+    id: site_name
+    attributes:
+      label: Site Name
+    validations:
+      required: true
+  - type: input
+    id: site_url
+    attributes:
+      label: Homepage URL
+      placeholder: https://www.example.com
+    validations:
+      required: true
+  - type: checkboxes
+    id: requested_support
+    attributes:
+      label: What would you like us to do?
+      options:
+        - label: Add Neobrutalism to this website
+        - label: Remove all account features
+  - type: textarea
+    id: additional_features
+    attributes:
+      label: Any other features you want us to add?
+      placeholder: "Example Layout — use a compact grid on the homepage and move chapter navigation below the reader."
