@@ -25,15 +25,27 @@ jobs:
               if (!sections.has(match[1])) sections.set(match[1], match[2].trim());
             }
 
-            const areas = new Map([
-              ['Asura Scans', 'asura scans'],
-              ['Comix', 'comix'],
-              ['DemonicScans / MangaDemon', 'demonicscans'],
-              ['MangaRead', 'mangaread'],
+            // Choose one accent from each userscript's palette for the repository label.
+            const sites = new Map([
+              ['Asura Scans', ['asura scans', '5a3fc2']],
+              ['Comix', ['comix', 'e5484d']],
+              ['DemonicScans / MangaDemon', ['demonicscans', 'ffdc58']],
+              ['MangaRead', ['mangaread', 'd39d6d']],
+            ]);
+            const otherAreas = new Map([
               ['Multiple sites', 'multiple sites'],
               ['Project-wide', 'project-wide'],
               ['Archived combined script', 'archived script'],
             ]);
+            const components = new Map([
+              ['Reader and chapter navigation', 'reader'],
+              ['Downloads and exports', 'downloads'],
+              ['Library and reading progress', 'library'],
+              ['Themes and layout', 'theme and layout'],
+              ['Search and discovery', 'search and discovery'],
+              ['Ads and popups', 'ads and popups'],
+            ]);
+            let site;
             const labels = new Map();
             function checked(section, label) {
               return (sections.get(section) ?? '').split(/\r?\n/).some(line =>
@@ -51,8 +63,13 @@ jobs:
               const bug = issue.title.startsWith('[Bug]:') && sections.has('Userscript');
               if (!feature && !bug) return;
               labels.set(feature ? 'enhancement' : 'bug', feature ? 'a2eeef' : 'd73a4a');
-              const area = areas.get(sections.get(feature ? 'Site or project area' : 'Userscript'));
-              if (area) labels.set(area, '1d76db');
+              const area = sections.get(feature ? 'Site or project area' : 'Userscript');
+              site = sites.get(area);
+              if (site) labels.set(...site);
+              const otherArea = otherAreas.get(area);
+              if (otherArea) labels.set(otherArea, '1d76db');
+              const component = components.get(sections.get('Affected feature'));
+              if (component) labels.set(component, 'bfdadc');
               if (checked('Confirmations', 'I’ve ticked all these checkmarks without reading their contents.')) {
                 labels.set('needs manual review', 'fbca04');
               }
@@ -60,17 +77,23 @@ jobs:
 
             const assigned = new Set(issue.labels.map(label => label.name.toLowerCase()));
             const pending = [...labels].filter(([name]) => !assigned.has(name));
-            for (const [name, color] of pending) {
+            for (const [name, color] of labels) {
+              const isSite = name === site?.[0];
+              if (assigned.has(name) && !isSite) continue;
+              let existing;
               try {
-                await github.rest.issues.getLabel({ owner, repo, name });
+                ({ data: existing } = await github.rest.issues.getLabel({ owner, repo, name }));
               } catch (error) {
                 if (error.status !== 404) throw error;
                 try {
                   await github.rest.issues.createLabel({ owner, repo, name, color });
                 } catch (creationError) {
                   if (creationError.status !== 422) throw creationError;
-                  await github.rest.issues.getLabel({ owner, repo, name });
+                  ({ data: existing } = await github.rest.issues.getLabel({ owner, repo, name }));
                 }
+              }
+              if (isSite && existing && existing.color.toLowerCase() !== color) {
+                await github.rest.issues.updateLabel({ owner, repo, name, color });
               }
             }
             if (pending.length) {

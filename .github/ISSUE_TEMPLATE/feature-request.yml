@@ -20,6 +20,18 @@ body:
         - Project-wide
     validations:
       required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected feature
+      description: Pick the closest match if one applies.
+      options:
+        - Reader and chapter navigation
+        - Downloads and exports
+        - Library and reading progress
+        - Themes and layout
+        - Search and discovery
+        - Ads and popups
   - type: textarea
     id: use_case
     attributes:
@@ -39,6 +51,14 @@ body:
     attributes:
       label: Implementation ideas, examples, or alternatives
       description: Add screenshots, links, or other approaches you considered.
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Would you like to contribute?
+      options:
+        - I can open a pull request
+        - I’d like to work on a pull request with some help
+        - I’m sharing an idea
   - type: checkboxes
     id: confirmations
     attributes:
