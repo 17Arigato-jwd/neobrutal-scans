@@ -3,7 +3,7 @@
   "version": "2026.11.3",
   "description": "Neobrutalist skin and debloater for DemonicScans, Asura Scans, and MangaRead",
   "scripts": {
-    "test": "node test/verify.js && node test/asura.js",
+    "test": "node scripts/embed-reading-import.js --check && node test/verify.js && node test/asura.js && node --test test/reading-import.js",
     "verify": "npm test",
     "test:visual": "node test/visual.js"
   },
