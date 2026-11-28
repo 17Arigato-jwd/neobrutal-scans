@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Asura Scans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-28.1
+// @version      2026-11-28.2
 // @description  Neobrutalist skin for Asura Scans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -20,6 +20,426 @@
 // @connect      asuracomic.net
 // @connect      *
 // ==/UserScript==
+// BEGIN GENERATED READING IMPORT
+(() => {
+    'use strict';
+    if (typeof document.addEventListener !== 'function' || location.pathname !== '/' || !location.hostname) return;
+
+    'use strict';
+
+    // Wire fields used by the Mihon 0.21 backup models and compatible exporters.
+    const tachibk = (() => {
+        const MiB = 1024 * 1024;
+        const utf8 = new TextDecoder('utf-8', { fatal: true });
+        const invalid = () => new Error('Invalid or unsupported .tachibk backup.');
+        const schemas = {
+            backup: { 1: ['manga', 'manga', true], 2: ['categories', 'category', true], 101: ['sources', 'source', true] },
+            manga: {
+                1: ['source', 'id'], 2: ['url', 'text'], 3: ['title', 'text'], 13: ['addedAt', 'int'],
+                16: ['chapters', 'chapter', true], 17: ['categories', 'id', true],
+                100: ['favorite', 'bool'], 104: ['history', 'history', true], 112: ['memo', 'memo'],
+            },
+            category: { 1: ['name', 'text'], 2: ['order', 'id'] },
+            source: { 1: ['name', 'text'], 2: ['id', 'id'] },
+            chapter: {
+                1: ['url', 'text'], 2: ['name', 'text'], 3: ['scanlator', 'text'], 4: ['read', 'bool'],
+                5: ['bookmark', 'bool'], 6: ['page', 'int'], 13: ['memo', 'memo'],
+            },
+            history: { 1: ['url', 'text'], 2: ['lastRead', 'int'], 3: ['duration', 'int'] },
+        };
+
+        function decode(bytes, schema = 'backup') {
+            let offset = 0;
+            const result = {};
+            function varint() {
+                let value = 0n;
+                for (let i = 0; i < 10; i += 1) {
+                    const byte = bytes[offset++];
+                    if (byte === undefined || (i === 9 && byte > 1)) throw invalid();
+                    value |= BigInt(byte & 127) << BigInt(7 * i);
+                    if (byte < 128) return value;
+                }
+                throw invalid();
+            }
+            while (offset < bytes.length) {
+                const tag = varint();
+                if (tag < 8n || tag > 0xffffffffn) throw invalid();
+                const wire = Number(tag & 7n);
+                const field = schemas[schema][Number(tag >> 3n)];
+                let raw;
+                if (wire === 0) raw = varint();
+                else if (wire === 2) {
+                    const length = Number(varint());
+                    if (length > bytes.length - offset) throw invalid();
+                    raw = bytes.subarray(offset, offset + length);
+                    offset += length;
+                } else if (wire === 1 || wire === 5) offset += wire === 1 ? 8 : 4;
+                else throw invalid();
+                if (offset > bytes.length) throw invalid();
+                if (!field) continue;
+
+                const [name, type, repeated] = field;
+                const numeric = type === 'id' || type === 'int' || type === 'bool';
+                if (numeric && wire === 2 && repeated) {
+                    // Protobuf readers must accept packed and unpacked repeated scalars.
+                    const packed = [];
+                    const end = offset;
+                    offset -= raw.length;
+                    while (offset < end) packed.push(varint().toString());
+                    if (offset !== end) throw invalid();
+                    if (packed.length <= 10000) (result[name] ??= []).push(...packed);
+                    if (packed.length > 10000) throw invalid();
+                    continue;
+                }
+                if (wire !== (numeric ? 0 : 2)) throw invalid();
+                let value;
+                if (type === 'id') value = BigInt.asIntN(64, raw).toString();
+                else if (type === 'int') {
+                    const signed = BigInt.asIntN(64, raw);
+                    value = signed >= 0n && signed <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(signed) : 0;
+                } else if (type === 'bool') value = raw !== 0n;
+                else if (type === 'text') value = utf8.decode(raw);
+                else if (type === 'memo') {
+                    try { value = JSON.parse(utf8.decode(raw)); } catch { continue; }
+                } else value = decode(raw, type);
+
+                if (repeated) (result[name] ??= []).push(value);
+                else result[name] = value;
+            }
+            return result;
+        }
+
+        async function read(file) {
+            if (!file.size || file.size > 16 * MiB) throw new Error('Choose a backup under 16 MiB.');
+            if (typeof DecompressionStream !== 'function') throw new Error('This browser cannot decompress backups.');
+            const signature = new Uint8Array(await file.slice(0, 2).arrayBuffer());
+            if (signature[0] !== 31 || signature[1] !== 139) throw invalid();
+            const stream = file.stream().pipeThrough(new DecompressionStream('gzip')).getReader();
+            const chunks = [];
+            let size = 0;
+            try {
+                while (true) {
+                    const { done, value } = await stream.read();
+                    if (done) break;
+                    size += value.length;
+                    if (size > 64 * MiB) {
+                        await stream.cancel();
+                        throw new Error('The unpacked backup exceeds 64 MiB.');
+                    }
+                    chunks.push(value);
+                }
+            } finally {
+                stream.releaseLock();
+            }
+            const bytes = new Uint8Array(size);
+            let offset = 0;
+            for (const chunk of chunks) {
+                bytes.set(chunk, offset);
+                offset += chunk.length;
+            }
+            const backup = decode(bytes);
+            if (!backup.manga?.length || backup.manga.some(manga => manga.source === undefined || !manga.url)) {
+                throw invalid();
+            }
+            return backup;
+        }
+
+        return { read };
+    })();
+
+    'use strict';
+
+    const readingImport = (() => {
+        const sites = {
+            asurascans: {
+                ids: ['6247824327199706550'], names: /^asura scans$/i,
+                hosts: ['asurascans.com', 'asuracomic.net'],
+                series: /^\/comics\/([\w-]+)$/,
+                chapter: /^\/comics\/([\w-]+)\/chapter\/[^/]+$/,
+            },
+            comix: {
+                ids: ['7537715367149829912'], names: /^comix$/i,
+                hosts: ['comix.to', 'comix.ws'],
+                series: /^\/title\/([\w-]+)$/,
+                chapter: /^\/title\/([\w-]+)\/\d+-chapter-[\w.-]+$/,
+            },
+            mangaread: {
+                ids: [], names: /^mangaread(?:\.org)?$/i, hosts: ['mangaread.org'],
+                series: /^\/manga\/([\w-]+)$/,
+                chapter: /^\/manga\/([\w-]+)\/[^/]+$/,
+            },
+            demonicscans: {
+                ids: [], names: /^(?:demonic\s*scans|manga\s*demon|demon\s*reader)$/i,
+                hosts: ['demonicscans.org', 'mangademon.org', 'mangademon.com', 'mangademon.cc', 'mangademon.me', 'mgdemon.org', 'demonreader.org'],
+                series: /^\/(?:manga|title)\/([\w-]+)$/,
+                chapter: /^\/title\/([\w-]+)\/chapter\/[^/]+(?:\/\d+)?$/,
+            },
+        };
+
+        function hostMatches(site, hostname) {
+            return site.hosts.some(host => hostname === host || hostname === 'www.' + host);
+        }
+
+        function sourceSite(id, name) {
+            return Object.values(sites).find(site => site.ids.includes(id)) ??
+                Object.values(sites).find(site => site.names.test(name || ''));
+        }
+
+        function route(value, site, origin, trusted, kind, memo) {
+            if (!value || /[\\\u0000-\u0020]/.test(value) || (!trusted && !/^https?:\/\//i.test(value))) return null;
+            if (value.startsWith('//')) return null;
+            let url;
+            try { url = new URL(value, origin); } catch { return null; }
+            if (!/^https?:$/.test(url.protocol) || url.username || url.password || url.port || !hostMatches(site, url.hostname)) return null;
+
+            let path = url.pathname.replace(/\/$/, '');
+            if (site === sites.asurascans && path.startsWith('/series/')) {
+                const slug = kind === 'series' ? memo?.slug : memo?.mangaSlug;
+                if (typeof slug !== 'string' || !/^[\w-]+$/.test(slug)) return null;
+                path = path.replace(/^\/series\/[^/]+/, '/comics/' + slug);
+            }
+            if (site === sites.comix && trusted && kind === 'series' && /^\/[\w-]+$/.test(path)) path = '/title' + path;
+            if (site === sites.demonicscans && kind === 'series') path = path.replace(/^\/title\//, '/manga/');
+            const match = path.match(site[kind]);
+            if (!match) return null;
+            // MangaRead reader flags and Demonic's chapter queries can affect the destination.
+            return { path: path + url.search, key: match[1], canonical: path };
+        }
+
+        function preview(backup, siteName, origin) {
+            const site = sites[siteName];
+            const names = new Map((backup.sources || []).map(source => [source.id, source.name]));
+            const categories = new Map((backup.categories || []).map(category => [category.order ?? '0', category.name]));
+            const result = { entries: [], unmatched: 0, other: 0, unmatchedChapters: 0 };
+            for (const manga of backup.manga) {
+                const known = sourceSite(manga.source, names.get(manga.source));
+                if (known && known !== site) {
+                    result.other += 1;
+                    continue;
+                }
+                const series = route(manga.url, site, origin, known === site, 'series', manga.memo);
+                if (!series) {
+                    result[known === site ? 'unmatched' : 'other'] += 1;
+                    continue;
+                }
+                const byUrl = new Map();
+                const history = new Map();
+                for (const visit of manga.history || []) {
+                    if ((history.get(visit.url)?.lastRead || 0) <= (visit.lastRead || 0)) history.set(visit.url, visit);
+                }
+                const chapters = [...(manga.chapters || [])];
+                const listed = new Set(chapters.map(chapter => chapter.url));
+                for (const url of history.keys()) {
+                    if (!listed.has(url)) chapters.push({ url });
+                }
+                for (const chapter of chapters) {
+                    const visit = history.get(chapter.url);
+                    if (!chapter.read && !chapter.bookmark && !chapter.page && !visit?.lastRead) continue;
+                    const legacyPrefix = manga.url.replace(/\/$/, '') + '/chapter/';
+                    const memo = chapter.memo ?? (site === sites.asurascans && chapter.url?.startsWith(legacyPrefix)
+                        ? { mangaSlug: manga.memo?.slug } : undefined);
+                    const link = route(chapter.url, site, origin, true, 'chapter', memo);
+                    if (!link || link.key !== series.key) {
+                        result.unmatchedChapters += 1;
+                        continue;
+                    }
+                    const record = {
+                        url: link.path, name: chapter.name || link.canonical.split('/').at(-1),
+                        scanlator: chapter.scanlator || '', read: !!chapter.read, bookmark: !!chapter.bookmark,
+                        page: chapter.page || 0, lastRead: visit?.lastRead || 0, duration: visit?.duration || 0,
+                    };
+                    byUrl.set(record.url, mergeChapter(byUrl.get(record.url), record));
+                }
+                const favorite = manga.favorite !== false;
+                if (favorite || byUrl.size) result.entries.push({
+                    key: series.key, url: series.canonical, title: manga.title || series.key,
+                    favorite, categories: favorite ? [...new Set((manga.categories || []).map(id => categories.get(id)).filter(Boolean))] : [],
+                    addedAt: manga.addedAt || 0, chapters: [...byUrl.values()],
+                });
+            }
+            return result;
+        }
+
+        function mergeChapter(old, incoming) {
+            if (!old) return incoming;
+            const latest = incoming.lastRead > old.lastRead ? incoming : old;
+            return {
+                ...latest, read: old.read || incoming.read, bookmark: old.bookmark || incoming.bookmark,
+                page: Math.max(old.page, incoming.page),
+            };
+        }
+
+        function merge(existing, incoming) {
+            const entries = new Map(existing.map(entry => [entry.key, entry]));
+            for (const entry of incoming) {
+                const old = entries.get(entry.key);
+                if (!old) {
+                    entries.set(entry.key, entry);
+                    continue;
+                }
+                const chapters = new Map(old.chapters.map(chapter => [chapter.url, chapter]));
+                for (const chapter of entry.chapters) chapters.set(chapter.url, mergeChapter(chapters.get(chapter.url), chapter));
+                entries.set(entry.key, {
+                    ...old, favorite: old.favorite || entry.favorite,
+                    categories: [...new Set([...old.categories, ...entry.categories])],
+                    addedAt: old.addedAt && entry.addedAt ? Math.min(old.addedAt, entry.addedAt) : old.addedAt || entry.addedAt,
+                    chapters: [...chapters.values()],
+                });
+            }
+            return [...entries.values()];
+        }
+
+        return { preview, merge, hostMatches, sites };
+    })();
+
+    'use strict';
+
+    function mountReadingImport(siteName) {
+        if (window.top !== window.self || location.pathname !== '/' || !document.body ||
+            !readingImport.hostMatches(readingImport.sites[siteName], location.hostname)) return;
+
+        const key = 'neobrutal-scans:imported-reading:v1';
+        const host = document.createElement('div');
+        const shadow = host.attachShadow({ mode: 'closed' });
+        const style = document.createElement('style');
+        style.textContent = `
+            :host { all: initial; position: fixed; left: 12px; bottom: 12px; z-index: 2147483646; }
+            dialog { box-sizing: border-box; width: min(680px, calc(100vw - 24px)); max-height: 85dvh;
+                overflow: auto; background: #161616; color: #fff; border: 2px solid #e8d85c;
+                box-shadow: 5px 5px 0 #000; font: 16px/1.5 system-ui; padding: 18px; }
+            dialog::backdrop { background: #0009; }
+            button, input { font: inherit; }
+            button { border: 2px solid #131313; border-radius: 4px; padding: 5px 10px; cursor: pointer;
+                background: #e8d85c; color: #141414; margin: 3px; }
+            button:disabled { opacity: .6; cursor: default; }
+            a { color: #e8d85c; }
+            summary { cursor: pointer; }
+            h2 { margin: 0 0 12px; }
+            li { overflow-wrap: anywhere; }
+        `;
+        shadow.append(style);
+        function element(parent, tag, label) {
+            const node = document.createElement(tag);
+            if (label) node.textContent = label;
+            parent.append(node);
+            return node;
+        }
+        function load() {
+            const entries = JSON.parse(localStorage.getItem(key) ?? '[]');
+            if (!Array.isArray(entries)) throw new Error('Stored reading data is invalid.');
+            return entries;
+        }
+        function link(parent, path, label) {
+            const node = element(parent, 'a', label);
+            if (typeof path === 'string' && /^\/(?![\/\\])/.test(path) && !/[\\\s]/.test(path)) node.href = location.origin + path;
+            return node;
+        }
+        function render(parent, entries) {
+            parent.replaceChildren();
+            const list = element(parent, 'ul');
+            for (const entry of entries) {
+                const item = element(list, 'li');
+                link(item, entry.url, entry.title);
+                if (entry.favorite) element(item, 'span', ' · Library' + (entry.categories.length ? ' · ' + entry.categories.join(', ') : ''));
+                if (!entry.chapters.length) continue;
+                const details = element(item, 'details');
+                const history = entry.chapters.filter(chapter => chapter.lastRead).sort((a, b) => b.lastRead - a.lastRead);
+                if (history.length) {
+                    element(item, 'span', ' · ');
+                    link(item, history[0].url, 'Continue reading');
+                }
+                element(details, 'summary', entry.chapters.length + ' chapters with reading data');
+                const chapters = element(details, 'ul');
+                for (const chapter of entry.chapters) {
+                    const row = element(chapters, 'li');
+                    link(row, chapter.url, chapter.name);
+                    const metadata = [
+                        chapter.scanlator, chapter.read && 'Read', chapter.bookmark && 'Bookmarked',
+                        chapter.page > 0 && 'Backup page index ' + chapter.page,
+                        chapter.lastRead > 0 && new Date(chapter.lastRead).toLocaleString(),
+                    ].filter(Boolean);
+                    if (metadata.length) element(row, 'span', ' · ' + metadata.join(' · '));
+                }
+            }
+        }
+
+        const open = element(shadow, 'button', 'Reading backups');
+        const dialog = element(shadow, 'dialog');
+        element(dialog, 'h2', 'Reading backups').id = 'backup-heading';
+        dialog.setAttribute('aria-labelledby', 'backup-heading');
+        const close = element(dialog, 'button', 'Close');
+        const label = element(dialog, 'label', ' Choose a .tachibk backup ');
+        const input = element(label, 'input');
+        input.type = 'file';
+        input.accept = '.tachibk,.gz,application/gzip,application/octet-stream';
+        const status = element(dialog, 'p');
+        status.setAttribute('role', 'status');
+        const apply = element(dialog, 'button', 'Import into this browser');
+        apply.hidden = true;
+        const results = element(dialog, 'div');
+        let pending;
+        let selection = 0;
+
+        function showSaved() {
+            pending = null;
+            apply.hidden = true;
+            try {
+                const entries = load();
+                status.textContent = entries.length ? 'Imported reading data on this site' : 'Choose a backup to preview this site’s reading data.';
+                render(results, entries);
+            } catch {
+                status.textContent = 'Could not read the saved reading data.';
+            }
+        }
+        open.addEventListener('click', () => {
+            showSaved();
+            dialog.showModal();
+        });
+        close.addEventListener('click', () => dialog.close());
+        dialog.addEventListener('close', () => {
+            selection += 1;
+            input.value = '';
+            pending = null;
+        });
+        input.addEventListener('change', async () => {
+            const current = ++selection;
+            showSaved();
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+            status.textContent = 'Reading backup…';
+            try {
+                const backup = await tachibk.read(file);
+                if (current !== selection || !dialog.open) return;
+                pending = readingImport.preview(backup, siteName, location.origin);
+                const { entries, other, unmatched, unmatchedChapters } = pending;
+                status.textContent = `${entries.length} titles ready to merge. ${other} from other or unknown sources, ${unmatched} unmatched titles, ${unmatchedChapters} unmatched chapters. Only library and reading data can be imported.`;
+                render(results, entries);
+                apply.hidden = !entries.length;
+            } catch (error) {
+                if (current === selection && dialog.open) status.textContent = 'Could not open backup. ' + error.message;
+            }
+        });
+        apply.addEventListener('click', () => {
+            if (!pending) return;
+            try {
+                // The whole merge is written with one setItem, so quota errors leave the old data intact.
+                const entries = readingImport.merge(load(), pending.entries);
+                localStorage.setItem(key, JSON.stringify(entries));
+                showSaved();
+                status.textContent = `Import complete. ${entries.length} titles stored on this site.`;
+            } catch {
+                status.textContent = 'Could not save the import. The previous reading data is intact.';
+            }
+        });
+        document.body.append(host);
+    }
+
+    const mount = () => mountReadingImport('asurascans');
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });
+    else mount();
+})();
+// END GENERATED READING IMPORT
 (function boot() {
     'use strict';
     // never run inside frames, except our own background reader frame
@@ -2496,3 +2916,4 @@
         subtree: true,
     });
 })();
+
