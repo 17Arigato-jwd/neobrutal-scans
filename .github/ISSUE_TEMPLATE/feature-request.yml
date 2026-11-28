@@ -1,0 +1,53 @@
+name: Feature Request
+description: Suggest an improvement to a supported site or the project.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues and update to the latest version of your Neobrutal Scans script before submitting.
+        Describe what you want to do and how the feature would help.
+  - type: dropdown
+    id: affected_site
+    attributes:
+      label: Site or project area
+      options:
+        - Asura Scans
+        - Comix
+        - DemonicScans / MangaDemon
+        - MangaRead
+        - Multiple sites
+        - Project-wide
+    validations:
+      required: true
+  - type: textarea
+    id: use_case
+    attributes:
+      label: What are you trying to do?
+      description: Explain where the current workflow gets in your way.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_behavior
+    attributes:
+      label: What should happen?
+      description: Describe how you would use the feature and what you would expect to see.
+    validations:
+      required: true
+  - type: textarea
+    id: examples
+    attributes:
+      label: Implementation ideas, examples, or alternatives
+      description: Add screenshots, links, or other approaches you considered.
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I read the instructions.
+          required: true
+        - label: I searched existing issues and found no duplicate.
+          required: true
+        - label: I’m using the latest version of the relevant script or extension.
+          required: true
+        - label: I’ve ticked all these checkmarks without reading their contents.
