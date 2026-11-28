@@ -35,8 +35,10 @@
 // BEGIN GENERATED READING IMPORT
 (() => {
     'use strict';
+    const isImportPage = location.pathname === '/' || ('demonicscans' === 'asurascans' &&
+        /^\/(?:comics|browse(?:\/comics)?)\/?$/.test(location.pathname));
     if (typeof document.addEventListener !== 'function' || !location.hostname ||
-        (location.pathname !== '/' && !location.hash?.startsWith('#neobrutal-page='))) return;
+        (!isImportPage && !location.hash?.startsWith('#neobrutal-page='))) return;
 
     'use strict';
 
@@ -227,8 +229,23 @@
             return { path: path + url.search, key: match[1], canonical: path };
         }
 
-        function preview(backup, siteName, origin) {
+        function asuraSlugIndex(links, origin) {
+            const slugs = new Map();
+            for (const href of links) {
+                const site = sites.asurascans;
+                const match = route(href, site, origin, false, 'series') ?? route(href, site, origin, false, 'chapter');
+                const slug = match?.key;
+                const legacy = slug?.replace(/-[a-f0-9]{8}$/i, '');
+                if (!legacy || legacy === slug) continue;
+                if (!slugs.has(legacy)) slugs.set(legacy, slug);
+                else if (slugs.get(legacy) !== slug) slugs.set(legacy, null);
+            }
+            return slugs;
+        }
+
+        function preview(backup, siteName, origin, pageLinks = []) {
             const site = sites[siteName];
+            const asuraSlugs = site === sites.asurascans ? asuraSlugIndex(pageLinks, origin) : null;
             const names = new Map((backup.sources || []).map(source => [source.id, source.name]));
             const categories = new Map((backup.categories || []).map(category => [category.order ?? '0', category.name]));
             const result = { entries: [], unmatched: 0, other: 0, unmatchedChapters: 0 };
@@ -238,7 +255,10 @@
                     result.other += 1;
                     continue;
                 }
-                const series = route(manga.url, site, origin, known === site, 'series', manga.memo);
+                const legacySlug = known === sites.asurascans && asuraSlugs
+                    ? manga.url.match(/^\/series\/([\w-]+)\/?$/)?.[1] : null;
+                const seriesMemo = manga.memo?.slug ? manga.memo : { slug: asuraSlugs?.get(legacySlug) };
+                const series = route(manga.url, site, origin, known === site, 'series', seriesMemo);
                 if (!series) {
                     result[known === site ? 'unmatched' : 'other'] += 1;
                     continue;
@@ -264,8 +284,8 @@
                     const visit = history.get(chapter.url);
                     if (!chapter.read && !chapter.bookmark && !chapter.page && !visit?.lastRead) continue;
                     const legacyPrefix = manga.url.replace(/\/$/, '') + '/chapter/';
-                    const memo = chapter.memo ?? (site === sites.asurascans && chapter.url?.startsWith(legacyPrefix)
-                        ? { mangaSlug: manga.memo?.slug } : undefined);
+                    const memo = chapter.memo?.mangaSlug ? chapter.memo : (site === sites.asurascans && chapter.url?.startsWith(legacyPrefix)
+                        ? { mangaSlug: seriesMemo.slug } : undefined);
                     const link = route(chapter.url, site, origin, true, 'chapter', memo,
                         legacyLinks.size === 1 ? series.key : undefined);
                     if (!link || link.key !== series.key) {
@@ -459,7 +479,7 @@
     }
 
     function mountReadingImport(siteName) {
-        if (window.top !== window.self || location.pathname !== '/' || !document.body ||
+        if (window.top !== window.self || !document.body ||
             !readingImport.hostMatches(readingImport.sites[siteName], location.hostname)) return;
 
         const key = 'neobrutal-scans:imported-reading:v1';
@@ -580,7 +600,9 @@
             try {
                 const backup = await tachibk.read(file);
                 if (current !== selection || !dialog.open) return;
-                pending = readingImport.preview(backup, siteName, location.origin);
+                const pageLinks = siteName === 'asurascans'
+                    ? [...document.querySelectorAll('a[href]')].map(anchor => anchor.href) : [];
+                pending = readingImport.preview(backup, siteName, location.origin, pageLinks);
                 const { entries, other, unmatched, unmatchedChapters } = pending;
                 status.textContent = `${entries.length} titles ready to merge. ${other} from other or unknown sources, ${unmatched} unmatched titles, ${unmatchedChapters} unmatched chapters. Only library and reading data can be imported.`;
                 render(results, entries);
@@ -609,7 +631,7 @@
 
     const mount = () => {
         if (window.top !== window.self || !document.body) return;
-        if (location.pathname === '/') mountReadingImport('demonicscans');
+        if (isImportPage) mountReadingImport('demonicscans');
         else resumeImportedPage('demonicscans');
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });

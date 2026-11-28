@@ -20,14 +20,16 @@ for (const site of ['asurascans', 'comix', 'mangaread', 'demonicscans']) {
 ${start}
 (() => {
     'use strict';
+    const isImportPage = location.pathname === '/' || ('${site}' === 'asurascans' &&
+        /^\\/(?:comics|browse(?:\\/comics)?)\\/?$/.test(location.pathname));
     if (typeof document.addEventListener !== 'function' || !location.hostname ||
-        (location.pathname !== '/' && !location.hash?.startsWith('#neobrutal-page='))) return;
+        (!isImportPage && !location.hash?.startsWith('#neobrutal-page='))) return;
 
 ${bundle.split('\n').map(line => line ? '    ' + line : '').join('\n')}
 
     const mount = () => {
         if (window.top !== window.self || !document.body) return;
-        if (location.pathname === '/') mountReadingImport('${site}');
+        if (isImportPage) mountReadingImport('${site}');
         else resumeImportedPage('${site}');
     };
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount, { once: true });

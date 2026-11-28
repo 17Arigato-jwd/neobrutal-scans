@@ -29,7 +29,7 @@ function resumeImportedPage(siteName) {
 }
 
 function mountReadingImport(siteName) {
-    if (window.top !== window.self || location.pathname !== '/' || !document.body ||
+    if (window.top !== window.self || !document.body ||
         !readingImport.hostMatches(readingImport.sites[siteName], location.hostname)) return;
 
     const key = 'neobrutal-scans:imported-reading:v1';
@@ -150,7 +150,9 @@ function mountReadingImport(siteName) {
         try {
             const backup = await tachibk.read(file);
             if (current !== selection || !dialog.open) return;
-            pending = readingImport.preview(backup, siteName, location.origin);
+            const pageLinks = siteName === 'asurascans'
+                ? [...document.querySelectorAll('a[href]')].map(anchor => anchor.href) : [];
+            pending = readingImport.preview(backup, siteName, location.origin, pageLinks);
             const { entries, other, unmatched, unmatchedChapters } = pending;
             status.textContent = `${entries.length} titles ready to merge. ${other} from other or unknown sources, ${unmatched} unmatched titles, ${unmatchedChapters} unmatched chapters. Only library and reading data can be imported.`;
             render(results, entries);

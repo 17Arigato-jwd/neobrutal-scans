@@ -167,3 +167,21 @@ test('imports legacy Manga Demon query routes from the verified extension source
     assert.equal(plan.entries[1].chapters.length, 0);
     assert.equal(plan.unmatchedChapters, 2);
 });
+
+test('recovers a legacy Asura slug from a unique current site link', async () => {
+    const original = '/series/surviving-the-game-as-a-barbarian';
+    const slug = 'surviving-the-game-as-a-barbarian-7de80a82';
+    const decoded = await tachibk.read(backup(manga(asuraId, original,
+        message(16, bytes(1, original + '/chapter/152'), number(4, 1)))));
+    const links = [origin + '/comics/' + slug, origin + '/comics/' + slug + '/chapter/152'];
+    const plan = readingImport.preview(decoded, 'asurascans', origin, links);
+    assert.equal(plan.entries[0]?.url, '/comics/' + slug);
+    assert.equal(plan.entries[0].chapters[0].url, '/comics/' + slug + '/chapter/152');
+    for (const candidates of [
+        ['https://other.invalid/comics/' + slug],
+        [...links, origin + '/comics/surviving-the-game-as-a-barbarian-deadbeef'],
+        [origin + '/comics/surviving-the-game-as-a-barbarian-side-story-7de80a82'],
+    ]) {
+        assert.equal(readingImport.preview(decoded, 'asurascans', origin, candidates).unmatched, 1);
+    }
+});
