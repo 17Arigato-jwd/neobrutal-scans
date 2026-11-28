@@ -1,0 +1,78 @@
+name: Label issues
+
+on:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  issues: write
+
+concurrency:
+  group: issue-labels-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const { owner, repo, number: issue_number } = context.issue;
+            const { data: issue } = await github.rest.issues.get({ owner, repo, issue_number });
+            const sections = new Map();
+            for (const match of (issue.body ?? '').matchAll(/^### ([^\r\n]+)\r?\n([\s\S]*?)(?=^### |(?![\s\S]))/gm)) {
+              if (!sections.has(match[1])) sections.set(match[1], match[2].trim());
+            }
+
+            const areas = new Map([
+              ['Asura Scans', 'asura scans'],
+              ['Comix', 'comix'],
+              ['DemonicScans / MangaDemon', 'demonicscans'],
+              ['MangaRead', 'mangaread'],
+              ['Multiple sites', 'multiple sites'],
+              ['Project-wide', 'project-wide'],
+              ['Archived combined script', 'archived script'],
+            ]);
+            const labels = new Map();
+            function checked(section, label) {
+              return (sections.get(section) ?? '').split(/\r?\n/).some(line =>
+                line.trim() === '- [x] ' + label || line.trim() === '- [X] ' + label
+              );
+            }
+
+            if (issue.title.startsWith('[New]:') && sections.has('Site Name')) {
+              labels.set('new site', '0e8a16');
+              const section = 'What would you like us to do?';
+              if (checked(section, 'Add Neobrutalism to this website')) labels.set('neobrutalism', '0e8a16');
+              if (checked(section, 'Remove all account features')) labels.set('account removal', '0e8a16');
+            } else {
+              const feature = issue.title.startsWith('[Feature]:') && sections.has('Site or project area');
+              const bug = issue.title.startsWith('[Bug]:') && sections.has('Userscript');
+              if (!feature && !bug) return;
+              labels.set(feature ? 'enhancement' : 'bug', feature ? 'a2eeef' : 'd73a4a');
+              const area = areas.get(sections.get(feature ? 'Site or project area' : 'Userscript'));
+              if (area) labels.set(area, '1d76db');
+              if (checked('Confirmations', 'I’ve ticked all these checkmarks without reading their contents.')) {
+                labels.set('needs manual review', 'fbca04');
+              }
+            }
+
+            const assigned = new Set(issue.labels.map(label => label.name.toLowerCase()));
+            const pending = [...labels].filter(([name]) => !assigned.has(name));
+            for (const [name, color] of pending) {
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                try {
+                  await github.rest.issues.createLabel({ owner, repo, name, color });
+                } catch (creationError) {
+                  if (creationError.status !== 422) throw creationError;
+                  await github.rest.issues.getLabel({ owner, repo, name });
+                }
+              }
+            }
+            if (pending.length) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number, labels: pending.map(([name]) => name) });
+            }
