@@ -8,8 +8,9 @@ const { gzipSync } = require('node:zlib');
 const { test } = require('node:test');
 
 const source = name => fs.readFileSync(path.join(__dirname, '..', 'src', name + '.js'), 'utf8');
-const { tachibk, readingImport } = vm.runInNewContext(
-    source('tachibk') + source('reading-import') + '\n({ tachibk, readingImport })',
+const { tachibk, readingImport, nativeReadingImport } = vm.runInNewContext(
+    [source('tachibk'), source('reading-import'), source('reading-import-native'),
+        '({ tachibk, readingImport, nativeReadingImport })'].join('\n'),
     { TextDecoder, DecompressionStream, Uint8Array, URL },
 );
 
@@ -108,4 +109,41 @@ test('preserves newer history and bookmarks, and importing twice does not change
     assert.equal(merged[0].chapters[0].bookmark, true);
     assert.equal(merged[0].chapters[0].page, 7);
     assert.deepEqual(normalize(readingImport.merge(merged, entries)), normalize(merged));
+});
+
+test('merges Comix history and categories while preserving newer history and existing saves', () => {
+    const history = [{ seriesPath: '/title/abc-example', url: '/title/abc-example/12-chapter-1', updatedAt: 500 }];
+    const storage = new Map([['nb-comix:history', JSON.stringify(history)]]);
+    const chapter = { url: '/title/abc-example/13-chapter-2', name: 'Chapter 2', lastRead: 300, page: 4 };
+    const entry = { key: 'abc-example', url: '/title/abc-example', title: 'Example', favorite: true,
+        addedAt: 20, categories: ['Weekly'], chapters: [chapter] };
+    const get = key => storage.get(key) ?? null;
+    const first = nativeReadingImport.updates('comix', [entry], 'https://comix.to', get);
+    assert.equal(first.has('md-comix-history'), false);
+    assert.equal(first.get('md-comix-lists').lists.at(-1).items[0].path, entry.url);
+    storage.set('md-comix-lists', JSON.stringify(first.get('md-comix-lists')));
+    assert.equal(nativeReadingImport.updates('comix', [entry], 'https://comix.to', get).size, 0);
+});
+
+test('MangaRead imports history-only records without creating library membership', () => {
+    const entries = [{ key: 'Example', url: '/manga/Example', title: 'Example', favorite: false, categories: [],
+        chapters: [{ url: '/manga/Example/chapter-2', name: 'Chapter 2', lastRead: 300, page: 4 }] }];
+    const changes = nativeReadingImport.updates('mangaread', entries, 'https://www.mangaread.org', () => null);
+    assert.equal(changes.has('md-library'), false);
+    assert.equal(changes.get('md-history')[0].chapterUrl, 'https://www.mangaread.org/manga/Example/chapter-2');
+    assert.equal(changes.get('md-history')[0].pct, 0);
+});
+
+test('rolls back a partial import when the next storage write exceeds quota', () => {
+    const data = new Map([['lists', 'previous']]);
+    const storage = {
+        getItem: key => data.get(key) ?? null,
+        setItem(key, value) {
+            if (key === 'history') throw new Error('quota exceeded');
+            data.set(key, value);
+        },
+        removeItem: key => data.delete(key),
+    };
+    assert.throws(() => nativeReadingImport.save(storage, new Map([['lists', {}], ['new', []], ['history', []]])), /quota/);
+    assert.deepEqual([...data], [['lists', 'previous']]);
 });

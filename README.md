@@ -214,7 +214,7 @@ Open **Reading backups** on the site homepage, choose a `.tachibk` backup, and r
 
 The importer uses the Mihon 0.21 protobuf layout and prioritizes matching current Keiyoushi Asura Scans and Comix records. MangaRead and Demonic Scans accept compatible records with recognized source names or site URLs. On older Asura records, a missing current browser slug can leave links unresolved. The preview reports skipped records. Reading positions are displayed as backup page indices.
 
-The import is processed in the browser. The panel keeps imported records separate from the existing site library and history. Current tests use synthetic protobuf fixtures.
+The import is processed in the browser. Comix and MangaRead also merge favorites and the most recent chapter per series into their Library and Continue Reading views. The backup panel keeps the full imported record across all four sites. Its Continue reading link resumes an unfinished chapter at the saved page when the reader exposes that page. Current tests use synthetic protobuf fixtures.
 
 ## Roadmap & Progress
 
