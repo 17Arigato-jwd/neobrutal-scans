@@ -37,6 +37,14 @@ jobs:
               ['Project-wide', 'project-wide'],
               ['Archived combined script', 'archived script'],
             ]);
+            const components = new Map([
+              ['Reader and chapter navigation', 'reader'],
+              ['Downloads and exports', 'downloads'],
+              ['Library and reading progress', 'library'],
+              ['Themes and layout', 'theme and layout'],
+              ['Search and discovery', 'search and discovery'],
+              ['Ads and popups', 'ads and popups'],
+            ]);
             let site;
             const labels = new Map();
             function checked(section, label) {
@@ -60,6 +68,8 @@ jobs:
               if (site) labels.set(...site);
               const otherArea = otherAreas.get(area);
               if (otherArea) labels.set(otherArea, '1d76db');
+              const component = components.get(sections.get('Affected feature'));
+              if (component) labels.set(component, 'bfdadc');
               if (checked('Confirmations', 'I’ve ticked all these checkmarks without reading their contents.')) {
                 labels.set('needs manual review', 'fbca04');
               }

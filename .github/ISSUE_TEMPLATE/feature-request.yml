@@ -20,6 +20,18 @@ body:
         - Project-wide
     validations:
       required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Affected feature
+      description: Pick the closest match if one applies.
+      options:
+        - Reader and chapter navigation
+        - Downloads and exports
+        - Library and reading progress
+        - Themes and layout
+        - Search and discovery
+        - Ads and popups
   - type: textarea
     id: use_case
     attributes:
