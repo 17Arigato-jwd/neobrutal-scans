@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Asura Scans Neobrutalism + De-bloat
 // @namespace    https://github.com/17Arigato-jwd/neobrutal-scans
-// @version      2026-11-18.2
+// @version      2026-11-28.1
 // @description  Neobrutalist skin for Asura Scans (comic + novel sides): removes ads/popups/account UI/community links, comic<->novel switch, novel reader formatting, adds reader tools (zoom, background, .cbz download) and multi-chapter select + zip download.
 // @author       17Arigato-jwd
 // @homepageURL  https://github.com/17Arigato-jwd/neobrutal-scans
@@ -55,7 +55,13 @@
     const root = document.documentElement;
     root.dataset.mdSite = 'asura';
 
+    const store = {
+        get: (k, def) => { try { const v = localStorage.getItem('md-' + k); return v === null ? def : JSON.parse(v); } catch (_) { return def; } },
+        set: (k, v) => { try { localStorage.setItem('md-' + k, JSON.stringify(v)); } catch (_) {} }
+    };
     const savedTheme = (() => {
+        const theme = store.get('theme', null);
+        if (theme === 'light' || theme === 'dark') return theme;
         try {
             const t = localStorage.getItem('md-theme');
             if (t === 'light' || t === 'dark') return t;
@@ -63,17 +69,6 @@
         return 'dark';
     })();
     root.dataset.mdTheme = savedTheme;
-
-    function setTheme(t, persist = true) {
-        const val = t === 'light' ? 'light' : 'dark';
-        root.dataset.mdTheme = val;
-        if (persist) store.set('theme', val);
-        const b = document.getElementById('md-theme');
-        if (b) {
-            b.setAttribute('aria-checked', String(val === 'dark'));
-            b.setAttribute('title', val === 'dark' ? 'Theme: Dark (click for Light)' : 'Theme: Light (click for Dark)');
-        }
-    }
 
     function detectPage() {
         const p = location.pathname;
@@ -109,10 +104,9 @@
     const $ = (s, r = document) => r.querySelector(s);
     const $$ = (s, r = document) => [...r.querySelectorAll(s)];
     const rect = el => el.getBoundingClientRect();
-    const store = {
-        get: (k, def) => { try { const v = localStorage.getItem('md-' + k); return v === null ? def : JSON.parse(v); } catch (_) { return def; } },
-        set: (k, v) => { try { localStorage.setItem('md-' + k, JSON.stringify(v)); } catch (_) {} }
-    };
+    function updateText(el, text) {
+        if (el.textContent !== text) el.textContent = text;
+    }
 
     const OV = 'html[data-md-page="overview"]';
     const CP = 'html[data-md-page="chapter"]';
@@ -961,18 +955,26 @@
         const setSel = (a, on) => { if (on) picked.add(key(a)); else picked.delete(key(a)); a.classList.toggle('md-sel', on); };
         const sync = () => links().forEach(a => a.classList.toggle('md-sel', picked.has(key(a))));
         const chosen = () => links().filter(isSel);
-        let job = null, lastIdx = -1, lastFail = '', curFmt = 'zip';
+        let job = null, anchorHref = null, lastFail = '', curFmt = 'zip';
 
         const refresh = () => {
-            const n = chosen().length;
-            count.textContent = job ? '' : n + ' of ' + links().length + ' selected';
-            pdfBtn.disabled = !n || !!job; pdfBtn.textContent = n ? `Download ${n} .pdf` : 'Download .pdf';
-            if (!job) { dl.disabled = !n; dl.dataset.state = ''; dl.style.removeProperty('--p'); dl.textContent = n ? `Download ${n} .zip` : 'Download .zip'; }
+            const all = links(), n = all.filter(isSel).length;
+            updateText(count, job ? '' : lastFail || n + ' of ' + all.length + ' selected');
+            pdfBtn.disabled = !n || !!job;
+            updateText(pdfBtn, n ? `Download ${n} .pdf` : 'Download .pdf');
+            if (!job) {
+                dl.disabled = !n;
+                dl.dataset.state = '';
+                dl.style.removeProperty('--p');
+                updateText(dl, n ? `Download ${n} .zip` : 'Download .zip');
+            }
         };
         const setMode = on => {
             tog.setAttribute('aria-pressed', String(on));
             tog.textContent = on ? 'Done' : 'Select';
             tools.hidden = !on;
+            anchorHref = null;
+            lastFail = '';
             if (on) list.setAttribute('data-md-select', ''); else { list.removeAttribute('data-md-select'); picked.clear(); sync(); }
             refresh();
         };
@@ -982,10 +984,13 @@
             if (!b || b.disabled && b.dataset.s !== 'dl') return;
             const act = b.dataset.s;
             if (act === 'toggle') { if (job) return;  setMode(!list.hasAttribute('data-md-select')); }
-            else if (act === 'all') { links().forEach(a => setSel(a, true)); refresh(); }
-            else if (act === 'inv') { links().forEach(a => setSel(a, !isSel(a))); refresh(); }
+            else if (act === 'all' || act === 'inv') {
+                lastFail = '';
+                links().forEach(a => setSel(a, act === 'all' || !isSel(a)));
+                refresh();
+            }
             else if (act === 'dl') {
-                if (job) { job.cancelled = true; job.aborts.forEach(f => f()); }
+                if (job) cancelDownload(job);
                 else download('zip');
             }
             else if (act === 'pdf') { if (!job) download('pdf'); }
@@ -995,14 +1000,17 @@
         list.addEventListener('click', e => {
             if (!list.hasAttribute('data-md-select')) return;
             const a = e.target.closest('a');
-            if (!a || !links().includes(a)) return;
-            e.preventDefault(); e.stopPropagation();
             const all = links(), i = all.indexOf(a);
-            if (e.shiftKey && lastIdx >= 0) {
-                const [lo, hi] = [Math.min(i, lastIdx), Math.max(i, lastIdx)], on = !isSel(a);
+            if (i < 0) return;
+            e.preventDefault(); e.stopPropagation();
+            const anchor = e.shiftKey && anchorHref !== null ? all.findIndex(link => key(link) === anchorHref) : -1;
+            if (anchor >= 0) {
+                const [lo, hi] = [Math.min(i, anchor), Math.max(i, anchor)], on = !isSel(a);
                 for (let k = lo; k <= hi; k++) setSel(all[k], on);
             } else setSel(a, !isSel(a));
-            lastIdx = i; refresh();
+            anchorHref = key(a);
+            lastFail = '';
+            refresh();
         }, true);
 
         const linkLabel = A.label;
@@ -1020,12 +1028,15 @@
         async function chapterCbz(a, ctl, onProg) {
             const url = new URL(a.getAttribute('href'), location.href).href;
             const ac = new AbortController();
-            ctl.aborts.add(() => ac.abort());
-            const r = await fetch(url, { credentials: 'include', signal: ac.signal });
-            if (!r.ok) throw new Error('HTTP ' + r.status);
-            const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
-            ctl.referer = url;
-            return buildCbz(ctxOf(a, doc, url, pagesOf(doc, url)), onProg, ctl);
+            const abort = () => ac.abort();
+            ctl.aborts.add(abort);
+            let doc;
+            try {
+                const r = await fetch(url, { credentials: 'include', signal: ac.signal });
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                doc = new DOMParser().parseFromString(await r.text(), 'text/html');
+            } finally { ctl.aborts.delete(abort); }
+            return buildCbz(ctxOf(a, doc, url, pagesOf(doc, url)), onProg, ctl, url);
         }
 
         /* ---- fallback route: open the chapter in a (blurred) background frame running OUR reader, scroll through it
@@ -1052,22 +1063,22 @@
             return new Promise((resolve, reject) => {
                 const f = document.createElement('iframe');
                 f.name = 'md-bg-frame'; f.src = url; f.setAttribute('aria-hidden', 'true');
-                const fail = e => { clearTimeout(to); f.remove(); reject(e); };
+                const cleanup = () => { clearTimeout(to); ctl.aborts.delete(abort); };
+                const fail = e => { cleanup(); f.remove(); reject(e); };
                 const to = setTimeout(() => fail(new Error('page timeout')), 60000);
-                ctl.aborts.add(() => fail(new Error('cancelled')));
+                const abort = () => fail(new Error('cancelled'));
+                ctl.aborts.add(abort);
                 f.addEventListener('load', async () => {
                     const t0 = Date.now();
                     try {
                         while (Date.now() - t0 < 25000 && !ctl.cancelled) {
                             const d = f.contentDocument;
-                            if (d && framePages(d).length) break;
+                            if (d && framePages(d).length) { cleanup(); resolve(f); return; }
                             await sleep(300);
                         }
                     } catch (e) { return fail(new Error('frame blocked')); }
-                    clearTimeout(to);
-                    if (!framePages(f.contentDocument).length) return fail(new Error('no pages found'));
-                    resolve(f);
-                });
+                    if (!ctl.cancelled) fail(new Error('no pages found'));
+                }, { once: true });
                 $('#md-bg-stage').appendChild(f);
             });
         }
@@ -1082,41 +1093,57 @@
             } catch (e) { return null; }           // cross-origin images taint the canvas
         }
 
-        async function chapterViaFrame(a, ctl, status, onFrac) {
+        function chapterViaFrame(a, job, status, onFrac) {
             const url = new URL(a.getAttribute('href'), location.href).href;
-            status('opening page');
-            const f = await openFrame(url, ctl);
-            try {
-                const win = f.contentWindow, doc = f.contentDocument;
-                ctl.referer = url;
-                const n = framePages(doc).length, datas = new Array(n), srcs = new Array(n), jobs = [];
-                for (let i = 0; i < n && !ctl.cancelled; i++) {
-                    const img = framePages(doc)[i];
-                    if (!img) throw new Error('page list changed');
-                    status(`scrolling · page ${i + 1}/${n}`);
-                    await smoothScroll(win, Math.max(0, img.getBoundingClientRect().top + win.scrollY - 60), ctl);
-                    // wait for this page to load (scrolling to it is what makes the site load it); nudge once if it stalls
-                    let t0 = Date.now(), nudged = false;
-                    while (!imgOk(img) && !ctl.cancelled) {
-                        if (!nudged && Date.now() - t0 > 12000) { nudged = true; try { const u = img.currentSrc || img.src; img.src = ''; img.src = u; } catch (e) { /* ignore */ } t0 = Date.now(); }
-                        else if (nudged && Date.now() - t0 > 20000) throw new Error(`page ${i + 1} would not load`);
-                        await sleep(200);
+            return withChapterDownload(job, url, async ctl => {
+                status('opening page');
+                const f = await openFrame(url, ctl);
+                const jobs = [];
+                let failure, finished = 0;
+                try {
+                    const win = f.contentWindow, doc = f.contentDocument;
+                    const n = framePages(doc).length, datas = new Array(n), srcs = new Array(n);
+                    for (let i = 0; i < n && !ctl.cancelled; i++) {
+                        const img = framePages(doc)[i];
+                        if (!img) throw new Error('page list changed');
+                        status(`scrolling · page ${i + 1}/${n}`);
+                        await smoothScroll(win, Math.max(0, img.getBoundingClientRect().top + win.scrollY - 60), ctl);
+                        // wait for this page to load (scrolling to it is what makes the site load it); nudge once if it stalls
+                        let t0 = Date.now(), nudged = false;
+                        while (!imgOk(img) && !ctl.cancelled) {
+                            if (!nudged && Date.now() - t0 > 12000) { nudged = true; try { const u = img.currentSrc || img.src; img.src = ''; img.src = u; } catch (e) { /* ignore */ } t0 = Date.now(); }
+                            else if (nudged && Date.now() - t0 > 20000) throw new Error(`page ${i + 1} would not load`);
+                            await sleep(200);
+                        }
+                        if (ctl.cancelled) break;
+                        srcs[i] = img.currentSrc || img.src;
+                        status(`downloading · page ${i + 1}/${n}`);
+                        // grab it while the next page is scrolled into view
+                        jobs.push((async () => {
+                            try { datas[i] = await fetchPage(srcs[i], ctl); }
+                            catch (e) {
+                                if (ctl.cancelled) return;
+                                datas[i] = await canvasBytes(img);
+                                if (!datas[i]) throw e;
+                            }
+                            if (!ctl.cancelled) onFrac(++finished / n);
+                        })().catch(error => {
+                            failure ??= error;
+                            cancelDownload(ctl);
+                        }));
+                        if (jobs.length >= 4) await jobs.shift();
+                        await sleep(120);
                     }
-                    srcs[i] = img.currentSrc || img.src;
-                    status(`downloading · page ${i + 1}/${n}`);
-                    // grab it while the next page is scrolled into view
-                    jobs.push((async () => {
-                        try { datas[i] = await fetchPage(srcs[i], ctl); }
-                        catch (e) { datas[i] = await canvasBytes(img); if (!datas[i]) throw e; }
-                        onFrac((i + 1) / n);
-                    })());
-                    if (jobs.length >= 4) await jobs.shift();
-                    await sleep(120);
+                    await Promise.all(jobs);
+                    if (failure) throw failure;
+                    if (ctl.cancelled) throw new Error('cancelled');
+                    return packCbz(ctxOf(a, doc, url, srcs), datas, srcs);
+                } finally {
+                    cancelDownload(ctl);
+                    f.remove();
+                    await Promise.all(jobs);
                 }
-                await Promise.all(jobs);
-                if (ctl.cancelled) throw new Error('cancelled');
-                return packCbz(ctxOf(a, doc, url, srcs), datas, srcs);
-            } finally { f.remove(); }
+            });
         }
 
         function stage(on) {
@@ -1134,6 +1161,7 @@
             const sel = chosen().sort((x, y) => numOf(x) - numOf(y));
             if (!sel.length) return;
             curFmt = fmt;
+            lastFail = '';
             const pdfChapters = [];
             const ctl = job = { cancelled: false, aborts: new Set() };
             dl.dataset.state = 'busy';
@@ -1181,7 +1209,7 @@
                 const still = [];
                 if (failed.length && !ctl.cancelled) {
                     const st = stage(true);
-                    st.cancel.onclick = () => { ctl.cancelled = true; ctl.aborts.forEach(f => f()); };
+                    st.cancel.onclick = () => cancelDownload(ctl);
                     for (let j = 0; j < failed.length && !ctl.cancelled; j++) {
                         const { a } = failed[j], label = linkLabel(a);
                         const head = `${label} · background ${j + 1}/${failed.length}`;
@@ -1204,6 +1232,7 @@
                 if (fmt === 'pdf' && pdfChapters.length) {
                     dl.textContent = 'Building PDF…';
                     await sleep(50);
+                    if (ctl.cancelled) { toast('Download cancelled'); return; }
                     pdfChapters.sort((x, y) => x.num - y.num);
                     const pdfName = `${safeName(series || 'Chapters')} - ${pdfChapters.length} chapter${pdfChapters.length > 1 ? 's' : ''}.pdf`;
                     saveBlob(buildPdf(pdfChapters, series || 'Chapters'), pdfName);
@@ -1217,7 +1246,6 @@
                 if (still.length) lastFail = 'Not included: ' + still.map(f => linkLabel(f.a) + ' (' + f.why + ')').join('; ') + ' - still selected, press Download to retry';
             } finally {
                 stage(false); job = null; refresh();
-                if (lastFail) { count.textContent = lastFail; lastFail = ''; }
             }
         }
         bar.__all = () => {
@@ -1456,14 +1484,31 @@
         typeof GM_xmlhttpRequest === 'function' ? GM_xmlhttpRequest
             : (typeof GM !== 'undefined' && GM.xmlHttpRequest ? GM.xmlHttpRequest.bind(GM) : null);
 
+    function cancelDownload(ctl) {
+        ctl.cancelled = true;
+        ctl.aborts.forEach(abort => abort());
+        ctl.aborts.clear();
+    }
+
+    async function withChapterDownload(job, referer, run) {
+        if (job.cancelled) throw new Error('cancelled');
+        const ctl = { cancelled: false, aborts: new Set(), referer };
+        const abort = () => cancelDownload(ctl);
+        job.aborts.add(abort);
+        try { return await run(ctl); }
+        finally { job.aborts.delete(abort); }
+    }
+
     // GM_xmlhttpRequest is used because the image CDN does not send CORS headers
     function fetchBuf(url, ctl) {
+        let abort;
         return new Promise((resolve, reject) => {
             if (ctl.cancelled) return reject(new Error('cancelled'));
             const gm = getGM();
             if (!gm) {
                 const ac = new AbortController();
-                ctl.aborts.add(() => ac.abort());
+                abort = () => ac.abort();
+                ctl.aborts.add(abort);
                 return fetch(url, { credentials: 'omit', signal: ac.signal })
                     .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); }).then(resolve, reject);
             }
@@ -1475,8 +1520,14 @@
                 ontimeout: () => reject(new Error('timeout')),
                 onabort: () => reject(new Error('cancelled')),
             });
-            ctl.aborts.add(() => { try { h && h.abort && h.abort(); } catch (e) { /* ignore */ } });
-        });
+            if (typeof h?.catch === 'function') h.catch(reject);
+            abort = () => {
+                try { h?.abort?.(); }
+                catch (_) { /* some userscript managers no longer have an active request */ }
+                reject(new Error('cancelled'));
+            };
+            ctl.aborts.add(abort);
+        }).finally(() => { if (abort) ctl.aborts.delete(abort); });
     }
 
     async function fetchPage(url, ctl) {
@@ -1565,21 +1616,29 @@
         return new Blob(parts, { type: 'application/pdf' });
     }
 
-    async function buildCbz(ctx, onProgress, ctl) {
-        const srcs = ctx.srcs || pageImages().map(i => i.currentSrc || i.src);
-        if (!srcs.length) throw new Error('no pages found');
-        const total = srcs.length, out = new Array(total);
-        let next = 0, done = 0;
-        const worker = async () => {
-            while (next < total && !ctl.cancelled) {
-                const i = next++;
-                out[i] = await fetchPage(srcs[i], ctl);
-                onProgress(++done, total);
-            }
-        };
-        await Promise.all(Array.from({ length: Math.min(CONFIG.reader.concurrency, total) }, worker));
-        if (ctl.cancelled) throw new Error('cancelled');
-        return packCbz(ctx, out, srcs);
+    function buildCbz(ctx, onProgress, job, referer = job.referer) {
+        return withChapterDownload(job, referer, async ctl => {
+            const srcs = ctx.srcs || pageImages().map(i => i.currentSrc || i.src);
+            if (!srcs.length) throw new Error('no pages found');
+            const total = srcs.length, out = new Array(total);
+            let next = 0, done = 0, failure;
+            const worker = async () => {
+                try {
+                    while (next < total && !ctl.cancelled) {
+                        const i = next++;
+                        out[i] = await fetchPage(srcs[i], ctl);
+                        if (!ctl.cancelled) onProgress(++done, total);
+                    }
+                } catch (error) {
+                    failure ??= error;
+                    cancelDownload(ctl);
+                }
+            };
+            await Promise.all(Array.from({ length: Math.min(CONFIG.reader.concurrency, total) }, worker));
+            if (failure) throw failure;
+            if (ctl.cancelled) throw new Error('cancelled');
+            return packCbz(ctx, out, srcs);
+        });
     }
 
     function packCbz(ctx, out, srcs) {
@@ -1619,9 +1678,9 @@
     }
 
     async function toggleDownload() {
-        if (reader.job) { reader.job.cancelled = true; reader.job.aborts.forEach(f => f()); return; }   // second click = cancel
-        const ctl = reader.job = { cancelled: false, aborts: new Set() };
+        if (reader.job) { cancelDownload(reader.job); return; }
         const ctx = chapterContext();
+        const ctl = reader.job = { cancelled: false, aborts: new Set() };
         setDl('busy', '0/' + pageImages().length, 0);
         try {
             const { blob, filename } = await buildCbz(ctx, (n, t) => setDl('busy', `${n}/${t}`, Math.round(n / t * 100)), ctl);
@@ -1882,7 +1941,7 @@
         NR_SLIDERS.forEach(([k, , , , , fmt]) => {
             const r = $(`[data-np-r="${k}"]`, p), o = $(`[data-np-o="${k}"]`, p);
             if (r && document.activeElement !== r) r.value = s[k];
-            if (o) o.textContent = fmt(s[k]);
+            if (o) updateText(o, fmt(s[k]));
         });
     }
 
@@ -2026,7 +2085,7 @@
             if (until) {
                 a.dataset.mdLocked = until;
                 if (!cd) { cd = document.createElement('span'); cd.className = 'md-cd'; cd.innerHTML = ICON.lock + '<b></b>'; a.appendChild(cd); }
-                $('b', cd).textContent = fmtCd(until - Date.now());
+                updateText($('b', cd), fmtCd(until - Date.now()));
             } else { a.removeAttribute('data-md-locked'); if (cd) cd.remove(); }
         }));
         if (!markLocks.timer) markLocks.timer = setInterval(tickLocks, 1000);
@@ -2035,7 +2094,7 @@
         $$('a[data-md-locked]').forEach(a => {
             const left = +a.dataset.mdLocked - Date.now();
             if (left <= 0) { a.removeAttribute('data-md-locked'); const cd = a.querySelector(':scope > .md-cd'); if (cd) cd.remove(); delete LOCKS[lockKey(a)]; return; }
-            const b = a.querySelector(':scope > .md-cd b'); if (b) b.textContent = fmtCd(left);
+            const b = a.querySelector(':scope > .md-cd b'); if (b) updateText(b, fmtCd(left));
         });
         const m = $('#md-lock');
         if (m) {
@@ -2043,7 +2102,7 @@
             if (left <= 0 && !m.dataset.open) {
                 m.dataset.open = '1';
                 $('.md-lock-card', m).innerHTML = `<div class="md-lock-ic">${ICON.check}</div><h3>Chapter ${m.dataset.num} is unlocked</h3><a class="md-lock-go" href="${m.dataset.href}">Open chapter</a><button type="button" data-lock="close">Close</button>`;
-            } else if (left > 0) $('.md-lock-t', m).textContent = fmtCd(left);
+            } else if (left > 0) updateText($('.md-lock-t', m), fmtCd(left));
         }
     }
     function showLock(num, until, href) {
@@ -2102,7 +2161,7 @@
             c.getContext('2d').drawImage(bmp, 0, 0);
             const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', .92));
             return { data: new Uint8Array(await blob.arrayBuffer()), ext: 'jpg', mime: 'image/jpeg' };
-        } catch (e) { console.warn('[MD] cover', e); return null; }
+        } catch (e) { if (!ctl.cancelled) console.warn('[MD] cover', e); return null; }
     }
     function makeEpub(meta, chapters, cover) {
         const enc = s => new TextEncoder().encode(s);
@@ -2138,9 +2197,11 @@
         const btn = $('#md-epub', bar), note = $('.md-epub-note', bar);
         let job = null;
         btn.addEventListener('click', async () => {
-            if (job) { job.cancelled = true; job.aborts.forEach(f => f()); return; }
+            if (job) { cancelDownload(job); return; }
             if (!free.length) return;
             const ctl = job = { cancelled: false, aborts: new Set(), referer: location.href };
+            const chapterRequests = new AbortController();
+            ctl.aborts.add(() => chapterRequests.abort());
             btn.dataset.state = 'busy'; btn.style.setProperty('--p', '0%');
             const title = ($('h1') || {}).textContent ? $('h1').textContent.trim() : (props.novelSlug || 'Novel');
             const done = [], failed = [];
@@ -2151,7 +2212,9 @@
                     let ok = false;
                     for (let t = 1; t <= 3 && !ok && !ctl.cancelled; t++) {
                         try {
-                            const r = await fetch(`/novels/${props.novelSlug}/chapter/${c.number}`, { credentials: 'include' });
+                            const r = await fetch(`/novels/${props.novelSlug}/chapter/${c.number}`, {
+                                credentials: 'include', signal: chapterRequests.signal,
+                            });
                             if (!r.ok) throw new Error('HTTP ' + r.status);
                             const doc = new DOMParser().parseFromString(await r.text(), 'text/html');
                             const isl = doc.querySelector('astro-island[component-url*="NovelReader"]'), p = isl && astroProps(isl);
@@ -2159,9 +2222,13 @@
                             const body = paraXhtml([].concat(p.paragraphs || []).join('\n'));
                             if (!body) throw new Error('empty');
                             done.push({ num: c.number, title: 'Chapter ' + c.number + (c.title ? ' - ' + c.title : ''), body }); ok = true;
-                        } catch (e) { if (e.message === 'locked') break; await new Promise(r => setTimeout(r, 800 * t)); }
+                        } catch (e) {
+                            if (ctl.cancelled || e.message === 'locked') break;
+                            if (t < 3) await new Promise(r => setTimeout(r, 800 * t));
+                        }
                     }
-                    if (!ok && !ctl.cancelled) failed.push(c.number);
+                    if (ctl.cancelled) return;
+                    if (!ok) failed.push(c.number);
                     finished++;
                     btn.style.setProperty('--p', Math.round(finished / free.length * 100) + '%');
                     btn.textContent = `Chapter ${finished}/${free.length} · Cancel`;
@@ -2172,10 +2239,11 @@
                 await Promise.all(Array.from({ length: 4 }, worker));
                 if (ctl.cancelled) { toast('Download cancelled'); return; }
                 if (!done.length) { toast('Nothing could be fetched', 4500); return; }
-                btn.textContent = 'Packing…';
+                btn.textContent = 'Packing… · Cancel';
                 done.sort((a, b) => a.num - b.num);
                 const coverUrl = ($('img[src*="/covers/"]') || {}).src || '';
                 const cover = coverUrl ? await coverJpeg(coverUrl, ctl) : null;
+                if (ctl.cancelled) { toast('Download cancelled'); return; }
                 const desc = (($('#description-text') || $('meta[name="description"]') || {}).textContent || ($('meta[name="description"]') || {}).content || '').trim();
                 const blob = makeEpub({ title, source: 'Asura Scans', desc }, done, cover);
                 saveBlob(blob, `${safeName(title)} (${done.length} chapters).epub`);
@@ -2259,7 +2327,7 @@
             if (Math.abs(dy) < 6) return;
             last = y;
             const nav = $('body > nav, body > header, header.asura-site-header');
-            const busy = (nav && nav.contains(document.activeElement)) || menuOpen();
+            const busy = nav && (nav.contains(document.activeElement) || nav.querySelector('[aria-expanded="true"], details[open]'));
             if (busy || y < 80 || dy < 0) delete root.dataset.mdNavhide; else root.dataset.mdNavhide = '1';
         }, { passive: true });
     }
