@@ -149,6 +149,7 @@
     'use strict';
 
     const readingImport = (() => {
+        const mangaDemonSource = '2900023289777642714';
         const sites = {
             asurascans: {
                 ids: ['6247824327199706550'], names: /^asura scans$/i,
@@ -168,7 +169,7 @@
                 chapter: /^\/manga\/([\w-]+)\/[^/]+$/,
             },
             demonicscans: {
-                ids: [], names: /^(?:demonic\s*scans|manga\s*demon|demon\s*reader)$/i,
+                ids: [mangaDemonSource], names: /^(?:demonic\s*scans|manga\s*demon|demon\s*reader)$/i,
                 hosts: ['demonicscans.org', 'mangademon.org', 'mangademon.com', 'mangademon.cc', 'mangademon.me', 'mgdemon.org', 'demonreader.org'],
                 series: /^\/(?:manga|title)\/([\w-]+)$/,
                 chapter: /^\/title\/([\w-]+)\/chapter\/[^/]+(?:\/\d+)?$/,
@@ -184,7 +185,7 @@
                 Object.values(sites).find(site => site.names.test(name || ''));
         }
 
-        function route(value, site, origin, trusted, kind, memo) {
+        function route(value, site, origin, trusted, kind, memo, legacySeriesKey) {
             if (!value || /[\\\u0000-\u0020]/.test(value) || (!trusted && !/^https?:\/\//i.test(value))) return null;
             if (value.startsWith('//')) return null;
             let url;
@@ -199,6 +200,13 @@
             }
             if (site === sites.comix && trusted && kind === 'series' && /^\/[\w-]+$/.test(path)) path = '/title' + path;
             if (site === sites.demonicscans && kind === 'series') path = path.replace(/^\/title\//, '/manga/');
+            if (legacySeriesKey && path === '/chaptered.php') {
+                const params = [...url.searchParams];
+                const mangaId = url.searchParams.get('manga');
+                const chapterNumber = url.searchParams.get('chapter');
+                if (params.length !== 2 || !/^\d+$/.test(mangaId || '') || !/^\d+(?:\.\d+)?$/.test(chapterNumber || '')) return null;
+                return { path: path + '?manga=' + mangaId + '&chapter=' + chapterNumber, key: legacySeriesKey, canonical: path };
+            }
             const match = path.match(site[kind]);
             if (!match) return null;
             // MangaRead reader flags and Demonic's chapter queries can affect the destination.
@@ -231,13 +239,21 @@
                 for (const url of history.keys()) {
                     if (!listed.has(url)) chapters.push({ url });
                 }
+                // This extension stores the numeric manga ID only in chapter URLs.
+                // Require all usable legacy routes in the series to agree on that ID.
+                const legacyLinks = manga.source === mangaDemonSource && site === sites.demonicscans
+                    ? new Set(chapters.map(chapter => route(chapter.url, site, origin, true, 'chapter', null, series.key))
+                        .filter(link => link?.canonical === '/chaptered.php')
+                        .map(link => new URL(link.path, origin).searchParams.get('manga')))
+                    : new Set();
                 for (const chapter of chapters) {
                     const visit = history.get(chapter.url);
                     if (!chapter.read && !chapter.bookmark && !chapter.page && !visit?.lastRead) continue;
                     const legacyPrefix = manga.url.replace(/\/$/, '') + '/chapter/';
                     const memo = chapter.memo ?? (site === sites.asurascans && chapter.url?.startsWith(legacyPrefix)
                         ? { mangaSlug: manga.memo?.slug } : undefined);
-                    const link = route(chapter.url, site, origin, true, 'chapter', memo);
+                    const link = route(chapter.url, site, origin, true, 'chapter', memo,
+                        legacyLinks.size === 1 ? series.key : undefined);
                     if (!link || link.key !== series.key) {
                         result.unmatchedChapters += 1;
                         continue;

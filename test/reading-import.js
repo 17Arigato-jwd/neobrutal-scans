@@ -147,3 +147,23 @@ test('rolls back a partial import when the next storage write exceeds quota', ()
     assert.throws(() => nativeReadingImport.save(storage, new Map([['lists', {}], ['new', []], ['history', []]])), /quota/);
     assert.deepEqual([...data], [['lists', 'previous']]);
 });
+
+test('imports legacy Manga Demon query routes from the verified extension source', async () => {
+    const legacyId = 2900023289777642714n;
+    const chapter = '/chaptered.php?manga=188&chapter=8.5';
+    const decoded = await tachibk.read(backup(
+        manga(legacyId, '/manga/Example',
+            message(16, bytes(1, chapter), number(5, 1)),
+            message(104, bytes(1, chapter), number(2, 123)),
+            message(16, bytes(1, '/chaptered.php?manga=188&chapter=8&chapter=9'), number(5, 1))),
+        manga(9n, 'https://www.mangademon.org/manga/Other',
+            message(16, bytes(1, chapter), number(5, 1))),
+        message(101, bytes(1, 'Manga Demon'), number(2, legacyId)),
+    ));
+    const plan = readingImport.preview(decoded, 'demonicscans', 'https://www.mangademon.org');
+    assert.equal(plan.entries.length, 2);
+    assert.equal(plan.entries[0].chapters[0]?.url, chapter);
+    assert.equal(plan.entries[0].chapters[0].lastRead, 123);
+    assert.equal(plan.entries[1].chapters.length, 0);
+    assert.equal(plan.unmatchedChapters, 2);
+});
