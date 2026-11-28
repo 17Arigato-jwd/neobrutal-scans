@@ -528,11 +528,14 @@
             }
         }
         open.addEventListener('click', () => {
+            selection += 1;
+            input.value = '';
             showSaved();
             dialog.showModal();
         });
         close.addEventListener('click', () => dialog.close());
         dialog.addEventListener('close', () => {
+            if (dialog.open) return;
             selection += 1;
             input.value = '';
             pending = null;
