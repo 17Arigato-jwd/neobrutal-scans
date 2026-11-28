@@ -47,10 +47,10 @@ Choose the dedicated script for your site:
 
 | Dedicated Extension | Current Version | One-Click Install | Supported Domains |
 |:---|:---:|:---:|:---|
-| **Asura Scans Dedicated** | [![Version](https://img.shields.io/badge/version-2026--11--28.1-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js) | **[Install Asura Scans Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)** | `asurascans.com`, `*.asurascans.com` |
-| **Comix Dedicated** | [![Version](https://img.shields.io/badge/version-2026--11--21.19-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js) | **[Install Comix Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)** | `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` |
-| **Demonic Scans Dedicated** *(MangaDemon)* | [![Version](https://img.shields.io/badge/version-2026--11--18.3-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **[Install DemonicScans Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** | `demonicscans.org`, `mangademon.org`, & mirrors |
-| **MangaRead Dedicated** *(mangaread.org)* | [![Version](https://img.shields.io/badge/version-2026--11--21.16-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) | **[Install MangaRead Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)** | `mangaread.org`, `*.mangaread.org` |
+| **Asura Scans Dedicated** | [![Version](https://img.shields.io/badge/version-2026--11--28.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js) | **[Install Asura Scans Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/asurascans.user.js)** | `asurascans.com`, `*.asurascans.com` |
+| **Comix Dedicated** | [![Version](https://img.shields.io/badge/version-2026--11--28.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js) | **[Install Comix Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/comix.user.js)** | `comix.to`, `*.comix.to`, `comix.ws`, `*.comix.ws` |
+| **Demonic Scans Dedicated** *(MangaDemon)* | [![Version](https://img.shields.io/badge/version-2026--11--28.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js) | **[Install DemonicScans Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/demonicscans.user.js)** | `demonicscans.org`, `mangademon.org`, & mirrors |
+| **MangaRead Dedicated** *(mangaread.org)* | [![Version](https://img.shields.io/badge/version-2026--11--28.2-blue?style=for-the-badge)](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js) | **[Install MangaRead Edition](https://raw.githubusercontent.com/17Arigato-jwd/neobrutal-scans/main/mangaread.user.js)** | `mangaread.org`, `*.mangaread.org` |
 
 *(Note: The legacy monolithic combined script has been archived to [`archive/neobrutal-scans.user.js`](archive/neobrutal-scans.user.js)).*
 
@@ -207,6 +207,16 @@ To modify settings, open your userscript manager's dashboard, select your instal
 - `@connect`: Grants explicit permissions to access comic image domains (such as `cdn.asurascans.com`, `demoniclibs.com`, `librarydm.com`, `readermc.org`, `mangafirst.org`, `mangaread.org`, `comix.to`, `comix.ws`).
 
 ---
+
+## Import reading backups
+
+Open **Reading backups** on the site homepage, choose a `.tachibk` backup, and review the titles and chapters before selecting **Import into this browser**. The same mixed-site backup can be opened on each site. Imports are saved in the Reading backups panel for that browser origin. The panel links to series and chapters and shows library membership, categories, read flags, bookmarks, the backup page index, and reading history.
+
+The importer uses the Mihon 0.21 protobuf layout and prioritizes matching current Keiyoushi Asura Scans and Comix records. MangaRead and Demonic Scans accept compatible records with recognized source names or site URLs. For a legacy Asura entry, open the import panel from the comics or browse listing that shows the series. The importer can recover the current slug when that listing contains a unique matching link. The preview reports skipped records. Reading positions are displayed as backup page indices.
+
+The import is processed in the browser. Comix and MangaRead also merge favorites and the most recent chapter per series into their Library and Continue Reading views. The backup panel keeps the full imported record across all four sites. Its Continue reading link resumes an unfinished chapter at the saved page when the reader exposes that page.
+
+The backup fields used by the importer were checked against [Mihon 0.21.3](https://github.com/mihonapp/mihon/tree/v0.21.3/app/src/main/java/eu/kanade/tachiyomi/data/backup), [TachiyomiSY 1.13.2](https://github.com/jobobby04/TachiyomiSY/tree/1.13.2/app/src/main/java/eu/kanade/tachiyomi/data/backup), and [Komikku 1.14.1](https://github.com/komikku-app/komikku/tree/v1.14.1/app/src/main/java/eu/kanade/tachiyomi/data/backup). The automated tests use synthetic fixtures. A public TachiyomiJ2K export was also tested manually. Exports from the three listed releases still need hands-on verification.
 
 ## Roadmap & Progress
 
