@@ -185,3 +185,27 @@ test('recovers a legacy Asura slug from a unique current site link', async () =>
         assert.equal(readingImport.preview(decoded, 'asurascans', origin, candidates).unmatched, 1);
     }
 });
+
+test('retains reading data alongside current TachiyomiSY and Komikku fork fields', async () => {
+    // These tags come from TachiyomiSY 1.13.2 and Komikku 1.14.1.
+    const series = '/series/example';
+    const chapter = series + '/chapter/1';
+    const decoded = await tachibk.read(backup(
+        manga(asuraId, series,
+            message(16, bytes(1, chapter), bytes(2, 'Chapter 1'),
+                number(5, 1), number(6, 2), number(11, 125), number(12, 2),
+                bytes(13, '{"mangaSlug":"example-browser"}')),
+            number(17, 3), bytes(112, '{"slug":"example-browser"}'),
+            message(104, bytes(1, chapter), number(2, 150)),
+            bytes(800, 'Custom title')),
+        message(2, bytes(1, 'Weekly'), number(2, 3), number(601, 1), number(900, 1)),
+        message(600, bytes(1, 'Saved search')),
+        message(610, bytes(1, 'Feed')),
+    ));
+    const { entries } = readingImport.preview(decoded, 'asurascans', origin);
+    assert.deepEqual(normalize(entries[0].categories), ['Weekly']);
+    assert.equal(entries[0].chapters[0].url, '/comics/example-browser/chapter/1');
+    assert.equal(entries[0].chapters[0].bookmark, true);
+    assert.equal(entries[0].chapters[0].page, 2);
+    assert.equal(entries[0].chapters[0].lastRead, 150);
+});
